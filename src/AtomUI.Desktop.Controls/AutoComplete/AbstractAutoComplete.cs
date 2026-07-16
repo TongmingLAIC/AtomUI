@@ -36,7 +36,7 @@ public enum AutoCompletePlacementMode
 
 [PseudoClasses(AutoCompletePseudoClass.CandidatePopupOpen)]
 public abstract class AbstractAutoComplete : TemplatedControl, 
-                                             ISizeTypeAware,
+                                             ICustomizableSizeTypeAware,
                                              IMotionAwareControl,
                                              IFormItemAware,
                                              IInputControlStatusAware,
@@ -47,8 +47,8 @@ public abstract class AbstractAutoComplete : TemplatedControl,
     public static readonly StyledProperty<PathIcon?> ClearIconProperty =
         AvaloniaProperty.Register<AbstractAutoComplete, PathIcon?>(nameof(ClearIcon));
     
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractAutoComplete>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractAutoComplete>();
     
     public static readonly StyledProperty<int> CaretIndexProperty =
         AvaloniaTextBox.CaretIndexProperty.AddOwner<AbstractAutoComplete>(new(
@@ -184,7 +184,7 @@ public abstract class AbstractAutoComplete : TemplatedControl,
         set => SetValue(ClearIconProperty, value);
     }
     
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -660,7 +660,6 @@ public abstract class AbstractAutoComplete : TemplatedControl,
 
     public AbstractAutoComplete()
     {
-        this.RegisterTokenResourceScope(AutoCompleteToken.ScopeProvider);
         Options.CollectionChanged += HandleOptionsChanged;
     }
 
@@ -1665,10 +1664,11 @@ public abstract class AbstractAutoComplete : TemplatedControl,
             // is pressed, close the drop-down
             if (e.Source is Control sourceControl)
             {
-                var TextInputBox = sourceControl.FindAncestorOfType<AvaloniaTextBox>();
-                if (TextInputBox != null)
+                var textInputBox = sourceControl.FindAncestorOfType<AvaloniaTextBox>();
+                if (textInputBox != null)
                 {
                     _ignorePopupClose = true;
+                    e.Handled         = true;
                     return;
                 }
             }
@@ -1677,10 +1677,13 @@ public abstract class AbstractAutoComplete : TemplatedControl,
                 SetCurrentValue(IsDropDownOpenProperty, false); 
                 e.Handled = true;
             }
+
+            e.Handled = true;
         }
         else
         {
             PseudoClasses.Set(StdPseudoClass.Pressed, true);
+            e.Handled = true;
         }
     }
     

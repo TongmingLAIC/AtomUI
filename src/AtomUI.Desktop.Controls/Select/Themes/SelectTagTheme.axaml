@@ -27,8 +27,13 @@
                 <Setter Property="Height" Value="{atom:SelectTokenResource MultipleItemHeightLG}" />
             </Style>
 
-            <Style Selector="^[SizeType=Middle]">
+            <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
                 <Setter Property="Height" Value="{atom:SelectTokenResource MultipleItemHeight}" />
+            </Style>
+
+            <Style Selector="^[SizeType=Custom][HasCustomTagHeight=True]">
+                <Setter Property="Height"
+                        Value="{Binding CustomTagHeight, RelativeSource={RelativeSource Self}}" />
             </Style>
 
             <Style Selector="^[SizeType=Small]">

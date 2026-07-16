@@ -10,7 +10,6 @@ namespace AtomUI.Desktop.Controls;
 internal class AddOnDecoratedBoxToken : AbstractControlDesignToken
 {
     public const string ID = "AddOnDecoratedBox";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
     
     public AddOnDecoratedBoxToken()
         : base(ID)
@@ -50,17 +49,17 @@ internal class AddOnDecoratedBoxToken : AbstractControlDesignToken
     /// <summary>
     /// 激活态阴影
     /// </summary>
-    public BoxShadow ActiveShadow { get; set; }
+    public BoxShadows ActiveShadow { get; set; }
 
     /// <summary>
     /// 错误状态时激活态阴影
     /// </summary>
-    public BoxShadow ErrorActiveShadow { get; set; }
+    public BoxShadows ErrorActiveShadow { get; set; }
 
     /// <summary>
     /// 警告状态时激活态阴影
     /// </summary>
-    public BoxShadow WarningActiveShadow { get; set; }
+    public BoxShadows WarningActiveShadow { get; set; }
 
     /// <summary>
     /// hover 状态时背景颜色
@@ -125,21 +124,21 @@ internal class AddOnDecoratedBoxToken : AbstractControlDesignToken
         AddonBg           = SharedToken.ColorFillAlter;
         ActiveBorderColor = SharedToken.ColorPrimary;
         HoverBorderColor  = SharedToken.ColorPrimaryHover;
-        ActiveShadow = new BoxShadow
+        ActiveShadow = new BoxShadows(new BoxShadow
         {
             Spread = SharedToken.ControlOutlineWidth,
             Color  = SharedToken.ColorControlOutline
-        };
-        ErrorActiveShadow = new BoxShadow
+        });
+        ErrorActiveShadow = new BoxShadows(new BoxShadow
         {
             Spread = SharedToken.ControlOutlineWidth,
             Color  = SharedToken.ColorErrorOutline
-        };
-        WarningActiveShadow = new BoxShadow
+        });
+        WarningActiveShadow = new BoxShadows(new BoxShadow
         {
             Spread = SharedToken.ControlOutlineWidth,
             Color  = SharedToken.ColorWarningOutline
-        };
+        });
         HoverBg    = SharedToken.ColorBgContainer;
         ActiveBg   = SharedToken.ColorTransparent;
 

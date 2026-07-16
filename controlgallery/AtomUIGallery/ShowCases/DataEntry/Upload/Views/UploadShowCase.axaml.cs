@@ -5,9 +5,9 @@ using AtomUI.Controls;
 using AtomUI.Data;
 using AtomUI.Desktop.Controls;
 using AtomUI.Theme.Language;
+using AtomUIGallery.Localization;
 using Avalonia;
 using Avalonia.Controls;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Upload;
 
@@ -15,25 +15,22 @@ public partial class UploadShowCase : GalleryReactiveUserControl<UploadViewModel
 {
     public const string LanguageId = nameof(UploadShowCase);
 
-    private const string BasicScenario       = "Basic";
-    private const string PicturesScenario    = "Pictures";
-    private const string ConstraintsScenario = "Constraints";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
+    private WindowMessageManager? _messageManager;
 
     public UploadShowCase()
     {
         InitializeComponent();
+
         this.WhenActivated(disposables =>
         {
-            if (DataContext is UploadViewModel vm)
+            if (DataContext is UploadViewModel viewModel)
             {
-                RefreshLocalizedTaskLists(vm);
+                RefreshLocalizedFiles(viewModel);
 
                 var themeManager = Application.Current?.GetThemeManager();
                 if (themeManager != null)
                 {
-                    EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshLocalizedTaskLists(vm);
+                    EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshLocalizedFiles(viewModel);
                     themeManager.LanguageVariantChanged += handler;
                     Disposable.Create(() => themeManager.LanguageVariantChanged -= handler)
                               .DisposeWith(disposables);
@@ -41,93 +38,53 @@ public partial class UploadShowCase : GalleryReactiveUserControl<UploadViewModel
 
                 Disposable.Create(() =>
                 {
-                    vm.DefaultTaskList                 = null;
-                    vm.PicturesWallDefaultTaskList     = null;
-                    vm.PictureListStyleDefaultTaskList = null;
+                    viewModel.DefaultFiles          = null;
+                    viewModel.PicturesWallFiles     = null;
+                    viewModel.PictureCircleFiles    = null;
+                    viewModel.PictureListStyleFiles = null;
+                    viewModel.ScrollableUploadFiles = null;
                 }).DisposeWith(disposables);
             }
         });
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
-        {
-            content.DataContext = DataContext;
-        }
+        base.OnDetachedFromVisualTree(e);
+        _messageManager?.Dispose();
+        _messageManager = null;
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    private void RefreshLocalizedFiles(UploadViewModel viewModel)
     {
-        EnsureSelectedScenarioContent();
+        InitDefaultFiles(viewModel);
+        InitPictureWallFiles(viewModel);
+        InitPictureCircleFiles(viewModel);
+        InitPictureListStyleFiles(viewModel);
+        InitScrollableFiles(viewModel);
     }
 
-    private void EnsureSelectedScenarioContent()
+    private void InitDefaultFiles(UploadViewModel viewModel)
     {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
-        {
-            return;
-        }
-
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
-    }
-
-    private static Control CreateScenarioContent(string scenario)
-    {
-        return scenario switch
-        {
-            BasicScenario       => new UploadBasicShowCase(),
-            PicturesScenario    => new UploadPicturesShowCase(),
-            ConstraintsScenario => new UploadConstraintsShowCase(),
-            _                   => throw new InvalidOperationException($"Unknown Upload scenario: {scenario}")
-        };
-    }
-
-    private void RefreshLocalizedTaskLists(UploadViewModel vm)
-    {
-        InitDefaultTaskList(vm);
-        InitPictureWallTaskList(vm);
-        InitPictureListTaskList(vm);
-    }
-
-    private void InitDefaultTaskList(UploadViewModel vm)
-    {
-        vm.DefaultTaskList =
+        viewModel.DefaultFiles =
         [
-            new UploadTaskInfo()
+            new UploadFileItem
             {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "xxx.png",
+                Name        = "xxx.png",
                 IsImageFile = true,
                 Status      = FileUploadStatus.Uploading,
                 Progress    = 33
             },
-            new UploadTaskInfo()
+            new UploadFileItem
             {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "yyy.png",
+                Name        = "yyy.png",
                 IsImageFile = true,
                 Status      = FileUploadStatus.Success,
                 Progress    = 100
             },
-            new UploadTaskInfo()
+            new UploadFileItem
             {
-                TaskId       = Guid.NewGuid(),
-                FileName     = "zzz.png",
+                Name         = "zzz.png",
                 IsImageFile  = true,
                 Status       = FileUploadStatus.Failed,
                 ErrorMessage = UploadShowCaseLanguage.Get(
@@ -137,53 +94,24 @@ public partial class UploadShowCase : GalleryReactiveUserControl<UploadViewModel
         ];
     }
 
-    private void InitPictureWallTaskList(UploadViewModel uploadViewModel)
+    private void InitPictureWallFiles(UploadViewModel uploadViewModel)
     {
-        uploadViewModel.PicturesWallDefaultTaskList = [
-            new UploadTaskInfo()
+        uploadViewModel.PicturesWallFiles =
+        [
+            CreatePictureFile(FileUploadStatus.Success),
+            CreatePictureFile(FileUploadStatus.Success),
+            CreatePictureFile(FileUploadStatus.Success),
+            CreatePictureFile(FileUploadStatus.Success),
+            new UploadFileItem
             {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "image.png",
-                IsImageFile = true,
-                Status      = FileUploadStatus.Success,
-                FilePath    = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
-            },
-            new UploadTaskInfo()
-            {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "image.png",
-                IsImageFile = true,
-                Status      = FileUploadStatus.Success,
-                FilePath    = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
-            },
-            new UploadTaskInfo()
-            {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "image.png",
-                IsImageFile = true,
-                Status      = FileUploadStatus.Success,
-                FilePath    = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
-            },
-            new UploadTaskInfo()
-            {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "image.png",
-                IsImageFile = true,
-                Status      = FileUploadStatus.Success,
-                FilePath    = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
-            },
-            new UploadTaskInfo()
-            {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "image.png",
+                Name        = "image.png",
                 IsImageFile = true,
                 Status      = FileUploadStatus.Uploading,
                 Progress    = 50
             },
-            new UploadTaskInfo()
+            new UploadFileItem
             {
-                TaskId       = Guid.NewGuid(),
-                FileName     = "image.png",
+                Name         = "image.png",
                 IsImageFile  = true,
                 Status       = FileUploadStatus.Failed,
                 ErrorMessage = UploadShowCaseLanguage.Get(
@@ -193,30 +121,31 @@ public partial class UploadShowCase : GalleryReactiveUserControl<UploadViewModel
         ];
     }
 
-    private void InitPictureListTaskList(UploadViewModel uploadViewModel)
+    private void InitPictureCircleFiles(UploadViewModel uploadViewModel)
     {
-        uploadViewModel.PictureListStyleDefaultTaskList =
+        uploadViewModel.PictureCircleFiles =
         [
-            new UploadTaskInfo()
+            CreatePictureFile(FileUploadStatus.Success),
+            CreatePictureFile(FileUploadStatus.Success),
+            CreatePictureFile(FileUploadStatus.Success)
+        ];
+    }
+
+    private void InitPictureListStyleFiles(UploadViewModel uploadViewModel)
+    {
+        uploadViewModel.PictureListStyleFiles =
+        [
+            new UploadFileItem
             {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "xxx.png",
+                Name        = "xxx.png",
                 IsImageFile = true,
                 Status      = FileUploadStatus.Uploading,
                 Progress    = 33
             },
-            new UploadTaskInfo()
+            CreatePictureFile(FileUploadStatus.Success, "yyy.png"),
+            new UploadFileItem
             {
-                TaskId      = Guid.NewGuid(),
-                FileName    = "yyy.png",
-                IsImageFile = true,
-                Status      = FileUploadStatus.Success,
-                FilePath    = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
-            },
-            new UploadTaskInfo()
-            {
-                TaskId       = Guid.NewGuid(),
-                FileName     = "zzz.png",
+                Name         = "zzz.png",
                 IsImageFile  = true,
                 Status       = FileUploadStatus.Failed,
                 ErrorMessage = UploadShowCaseLanguage.Get(
@@ -225,37 +154,53 @@ public partial class UploadShowCase : GalleryReactiveUserControl<UploadViewModel
             },
         ];
     }
-}
 
-public abstract class UploadScenarioShowCase : GalleryReactiveUserControl<UploadViewModel>
-{
-    private WindowMessageManager? _messageManager;
-
-    protected IDisposable AttachUpload(
-        AtomUI.Desktop.Controls.Upload upload,
-        EventHandler<UploadTaskAboutToSchedulingEventArgs>? aboutToScheduling = null)
+    private void InitScrollableFiles(UploadViewModel uploadViewModel)
     {
-        upload.UploadTransport     = new UploadMockTransport();
-        upload.UploadTaskFailed    += HandleUploadFailed;
-        upload.UploadTaskCompleted += HandleUploadCompleted;
-        if (aboutToScheduling is not null)
-        {
-            upload.UploadTaskAboutToScheduling += aboutToScheduling;
-        }
-
-        return Disposable.Create(() =>
-        {
-            upload.UploadTransport     = null;
-            upload.UploadTaskFailed    -= HandleUploadFailed;
-            upload.UploadTaskCompleted -= HandleUploadCompleted;
-            if (aboutToScheduling is not null)
-            {
-                upload.UploadTaskAboutToScheduling -= aboutToScheduling;
-            }
-        });
+        uploadViewModel.ScrollableUploadFiles =
+        [
+            CreateTextFile("design-spec.pdf", FileUploadStatus.Success),
+            CreateTextFile("avatar.png", FileUploadStatus.Success),
+            CreateTextFile("release-notes.md", FileUploadStatus.Uploading, 68),
+            CreateTextFile("large-video.mov", FileUploadStatus.Failed, errorMessage: UploadShowCaseLanguage.Get(
+                UploadShowCaseLangResourceKind.P2ErrorServer500,
+                "Server Error 500")),
+            CreateTextFile("contract.docx", FileUploadStatus.Success),
+            CreateTextFile("screenshot.jpg", FileUploadStatus.Success),
+            CreateTextFile("archive.zip", FileUploadStatus.Uploading, 41),
+            CreateTextFile("data.csv", FileUploadStatus.Success)
+        ];
     }
 
-    protected void HandleImageUploadAboutToScheduling(object? sender, UploadTaskAboutToSchedulingEventArgs e)
+    private static UploadFileItem CreatePictureFile(FileUploadStatus status, string name = "image.png")
+    {
+        return new UploadFileItem
+        {
+            Name        = name,
+            IsImageFile = true,
+            Status      = status,
+            Progress    = status == FileUploadStatus.Success ? 100 : 0,
+            Path        = new Uri("avares://AtomUIGallery/Assets/ImagePreviewerShowCase/1.png")
+        };
+    }
+
+    private static UploadFileItem CreateTextFile(
+        string name,
+        FileUploadStatus status,
+        double progress = 100,
+        string? errorMessage = null)
+    {
+        return new UploadFileItem
+        {
+            Name         = name,
+            Status       = status,
+            Progress     = progress,
+            Size         = 1024 * 128,
+            ErrorMessage = errorMessage
+        };
+    }
+
+    private void HandleImageUploadAboutToScheduling(object? sender, UploadTaskAboutToSchedulingEventArgs e)
     {
         var fileInfo          = e.UploadFileInfo;
         var ext               = Path.GetExtension(fileInfo.FilePath.LocalPath);
@@ -279,7 +224,7 @@ public abstract class UploadScenarioShowCase : GalleryReactiveUserControl<Upload
         }
     }
 
-    protected void HandlePngUploadAboutToScheduling(object? sender, UploadTaskAboutToSchedulingEventArgs e)
+    private void HandlePngUploadAboutToScheduling(object? sender, UploadTaskAboutToSchedulingEventArgs e)
     {
         var fileInfo = e.UploadFileInfo;
         var ext      = Path.GetExtension(fileInfo.FilePath.LocalPath);
@@ -290,13 +235,6 @@ public abstract class UploadScenarioShowCase : GalleryReactiveUserControl<Upload
                 UploadShowCaseLangResourceKind.P2CancelPngOnly,
                 "You can only upload PNG file!");
         }
-    }
-
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnDetachedFromVisualTree(e);
-        _messageManager?.Dispose();
-        _messageManager = null;
     }
 
     private void HandleUploadFailed(object? sender, UploadTaskFailedEventArgs e)

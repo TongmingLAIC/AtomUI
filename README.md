@@ -1,11 +1,12 @@
-<img src="./resources/images/readme/AtomUIOSS.png"/>
+<img src="./resources/images/readme/atomui-oss-banner.png"/>
 <br/>
 <div align="center">
 
-[![AntDesign](https://img.shields.io/badge/AntDesign%20-5.0-1677ff?style=flat-square&logo=antdesign)](https://ant-design.antgroup.com/components/overview)
+[![AntDesign](https://img.shields.io/badge/AntDesign%20-6.0-1677ff?style=flat-square&logo=antdesign)](https://ant-design.antgroup.com/components/overview)
+[![AtomUI](https://img.shields.io/badge/AtomUI-6.0.7-1677ff?style=flat-square)](https://www.nuget.org/packages/AtomUI.Desktop.Controls)
 [![][github-contributors-shield]][github-contributors-link]
 [![][github-stars-shield]][github-stars-link]
-[![Nuget Download](https://img.shields.io/nuget/dt/AtomUI.Desktop.Controls?style=flat-square&logo=nuget&label=downloads)](https://www.nuget.org/packages/AtomUI.Desktop.Controls)
+[![NuGet Download](https://img.shields.io/nuget/dt/AtomUI.Desktop.Controls?style=flat-square&logo=nuget&label=downloads)](https://www.nuget.org/packages/AtomUI.Desktop.Controls)
 [![][github-license-shield]][github-license-link]
 
 [Changelog](./CHANGELOG.md) · [Report Bug][github-issues-link] · [Request Feature][github-issues-link]
@@ -22,7 +23,7 @@
 
 [github-releasedate-link]: https://github.com/AtomUI/AtomUI/releases
 
-[github-contributors-shield]: https://img.shields.io/github/contributors/AtomUI/AtomUI?color=c4f042&labelColor=black&style=flat-square
+[github-contributors-shield]: https://img.shields.io/badge/contributors-welcome-c4f042?labelColor=black&style=flat-square
 
 [github-contributors-link]: https://github.com/AtomUI/AtomUI/graphs/contributors
 
@@ -38,28 +39,33 @@
 
 [github-issues-link]: https://github.com/AtomUI/AtomUI/issues
 
-[github-license-shield]: https://img.shields.io/github/license/AtomUI/AtomUI?color=white&labelColor=black&style=flat-square
+[github-license-shield]: https://img.shields.io/badge/license-LGPL--3.0-white?labelColor=black&style=flat-square
 
 [github-license-link]: https://github.com/AtomUI/AtomUI/blob/master/LICENSE
 
 Documentation Language: [English](README.md) | [简体中文](README.zh-CN.md)
 
-#### Introduce
+#### Overview
 
-AtomUI is an implementation of Ant Design based on .NET technology, dedicated to bringing the excellent and efficient
-design language and experience of Ant Design to the Avalonia/.NET cross-platform desktop software development field.
+AtomUI is an Ant Design 6 component system for Avalonia/.NET desktop applications. It brings Ant Design's enterprise
+interaction patterns, visual language, design tokens and theme customization model to native cross-platform apps on
+Windows, macOS and Linux.
 
-Welcome to communicate and give suggestions to AtomUI, thank you for giving the project a Star.
+The project includes production-oriented desktop controls, icon packages, font packages, native window integration,
+DataGrid, ColorPicker and source generators for custom controls, tokens and localization. Feedback, issues and pull
+requests are welcome.
 
 <img src="./resources/images/readme/Gallery.png"/>
 
 #### Features
 
-- Enterprise-class UI designed from Ant Design system for cross platform desktop applications.
-- A set of high-quality Avalonia Controls out of the box.
-- Use .NET development to achieve one-stop writing, seamless compilation on mainstream operating system platforms and
-  render a consistent UI experience.
-- Based on Avalonia's powerful style system, Ant Design's theme customization capabilities are fully implemented.
+- Ant Design 6 experience adapted for native Avalonia desktop applications.
+- A broad set of ready-to-use controls for enterprise software, including layout, navigation, data entry, feedback,
+  data display and optional advanced packages.
+- Token-driven theming built on Avalonia's style and resource system, with support for consistent customization across
+  controls.
+- Cross-platform desktop support for Windows, macOS and Linux with a shared .NET/XAML development model.
+- Source generators for custom controls, theme tokens and localization to reduce repetitive infrastructure code.
 
 #### Requirements
 
@@ -72,7 +78,7 @@ Windows, macOS and Linux<br>
 Thanks to Tongming Lake Center for their incubation support of AtomUI OSS
 
 <div style="margin-top: 50px">
-  <img src="./resources/images/readme/TLAIC.png" width="400"/>
+  <img src="./resources/images/readme/TLAIC.svg" width="400"/>
 </div>
 
 #### Community
@@ -82,7 +88,7 @@ Thanks to Tongming Lake Center for their incubation support of AtomUI OSS
       <tr>
         <th>Telegram</th>
         <th>WhatsApp</th>
-        <th>Wechat Group</th>
+        <th>WeChat Group</th>
         <th>QQ Group</th>
       </tr>
       <tr>
@@ -96,11 +102,10 @@ Thanks to Tongming Lake Center for their incubation support of AtomUI OSS
 
 #### Get Started
 
-##### Add nuget package:
+##### Add NuGet packages
 
-AtomUI is recommended to be installed as a nuget package. We have uploaded AtomUI OSS-related packages to nuget.org.
-Currently, AtomUI
-has not released a long-term support version, so it is recommended to install the latest version we have released
+AtomUI is distributed through NuGet. Install the main desktop controls package first, then add optional packages such as
+DataGrid and ColorPicker only when your application needs them. The examples below use the latest project version.
 
 The packages we have released are as follows:
 
@@ -109,6 +114,7 @@ The packages we have released are as follows:
 | AtomUI.Native                       | Native platform infrastructure                                             |
 | AtomUI.Core                         | Core infrastructure — theme system, token system and animations             |
 | AtomUI.Fonts.AlibabaSans            | Alibaba Sans font package                                                  |
+| AtomUI.Fonts.AlibabaPuHuiTi         | Alibaba PuHuiTi font package                                               |
 | AtomUI.Icons.Shared                 | Icon infrastructure                                                        |
 | AtomUI.Icons.AntDesign              | Ant Design icon package                                                    |
 | AtomUI.Controls.Shared              | Shared interfaces and enums for control development                        |
@@ -119,18 +125,19 @@ The packages we have released are as follows:
 | AtomUI.Generator                    | Source generators for custom controls, tokens and localization             |
 
 ```bash
-dotnet add package AtomUI.Desktop.Controls --version 6.0.0-build.1
-dotnet add package AtomUI.Desktop.Controls.DataGrid --version 6.0.0-build.1
-dotnet add package AtomUI.Desktop.Controls.ColorPicker --version 6.0.0-build.1
+dotnet add package AtomUI.Desktop.Controls --version 6.0.7
+dotnet add package AtomUI.Desktop.Controls.DataGrid --version 6.0.7
+dotnet add package AtomUI.Desktop.Controls.ColorPicker --version 6.0.7
 ```
 
-You can install nuget packages one by one directly. If the above command line fails to complete the installation, please go to the NuGet package manager. In Rider, you can click on the following steps:
+You can also install the packages from your IDE's NuGet package manager. In Rider, open:
 
-nuget -> packages
+NuGet -> Packages
 
-Searching for "AtomUI" will find available AtomUI packages. Then, install them one by one.
+Search for "AtomUI" and install the packages your project needs.
 
-> Before installation, please click on "Framework and Dependencies" on the right to ensure that the corresponding dependency packages are compatible.
+> Before installation, check "Frameworks" and "Dependencies" in the package details to confirm compatibility with your
+> target framework and Avalonia version.
 
 ##### Enable AtomUI library
 
@@ -148,9 +155,9 @@ Searching for "AtomUI" will find available AtomUI packages. Then, install them o
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AtomUI.Desktop.Controls" Version="6.0.0-build.1"/>
-        <PackageReference Include="AtomUI.Desktop.Controls.DataGrid" Version="6.0.0-build.1"/>
-        <PackageReference Include="AtomUI.Desktop.Controls.ColorPicker" Version="6.0.0-build.1"/>
+        <PackageReference Include="AtomUI.Desktop.Controls" Version="6.0.7"/>
+        <PackageReference Include="AtomUI.Desktop.Controls.DataGrid" Version="6.0.7"/>
+        <PackageReference Include="AtomUI.Desktop.Controls.ColorPicker" Version="6.0.7"/>
         <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1"/>
     </ItemGroup>
 </Project>
@@ -176,7 +183,7 @@ internal class Program
     {
         return AppBuilder.Configure<App>()
                          .UseReactiveUI()
-                         .UsePlatformDetect()
+                         .UseAtomUIPlatformDetect()
                          .WithAtomUIDefaultOptions()
                          .WithDeveloperTools()
                          .LogToTrace();
@@ -213,9 +220,21 @@ public partial class App : Application
 }
 ```
 
-###### Enjoy using AtomUI to create unlimited possibilities
+To make the first rendered frame use the dark theme, configure the initial theme algorithm in the builder:
 
-You can start using it in your own projects
+```csharp
+this.UseAtomUI(builder =>
+{
+    builder.WithDefaultTheme(IThemeManager.DEFAULT_THEME_ID, ThemeAlgorithm.Dark);
+    builder.UseDesktopControls();
+});
+```
+
+`SetDarkThemeMode(true)` is intended for runtime theme switching after AtomUI has been initialized.
+
+###### Start building with AtomUI
+
+After AtomUI is registered, you can use AtomUI controls and Ant Design icons directly in XAML.
 
 ```xml
 <atom:Window xmlns="https://github.com/avaloniaui"
@@ -232,7 +251,8 @@ You can start using it in your own projects
 
 #### All Control Gallery
 
-You can launch the `./controlgallery/AtomUIGallery.Desktop/AtomUIGallery.Desktop.csproj` project in your local development environment to experience all AtomUI controls.
+You can launch the gallery project locally to browse the available controls, usage patterns, design tokens and API
+tables.
 
 ```bash
 git clone https://github.com/AtomUI/AtomUI.git
@@ -244,11 +264,11 @@ dotnet run --project controlgallery/AtomUIGallery.Desktop/AtomUIGallery.Desktop.
 
 #### Simple Examples
 
-AtomUI's gallery project can be quite large and complex, and if you're new to AtomUI, you might feel overwhelmed. You can visit
+The gallery is intentionally comprehensive. If you prefer compact starter projects, visit:
 
 [AtomUI/AtomUI.Examples](https://github.com/AtomUI/AtomUI.Samples)
 
-to check out our simple and compact sample projects to help you get started with AtomUI.
+These samples show smaller application setups that are easier to copy into a new project.
 
 #### Acknowledgements
 
@@ -271,11 +291,10 @@ Avalonia is a cross-platform .NET UI framework that uses XAML language for inter
 
 #### License Description
 
-Projects using AtomUI OSS need to comply with the LGPL v3 agreement. <strong>Commercial applications (including but not
-limited to internal company projects, commercial projects developed by individuals using AtomUI OSS, and outsourced
-projects) are free when using binary links</strong>. If you want to customize AtomUI based on source code, you need to
-modify the open source code or purchase a commercial license. If you need a commercial license, please contact: Beijing
-Qinware Technology Co., Ltd.
+Projects using AtomUI OSS must comply with LGPL v3. <strong>Commercial applications, including internal company
+software, personal commercial products and outsourced projects, may use AtomUI for free when linking to the published
+binaries</strong>. If you customize AtomUI from source code, you must either open source the modified code under the
+license terms or purchase a commercial license. For commercial licensing, contact Beijing Qinware Technology Co., Ltd.
 
 #### Special thanks
 

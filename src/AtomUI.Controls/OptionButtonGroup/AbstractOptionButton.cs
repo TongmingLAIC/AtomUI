@@ -10,7 +10,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
-using Avalonia.Threading;
 
 namespace AtomUI.Controls.Commons;
 
@@ -28,8 +27,8 @@ public abstract class AbstractOptionButton : AvaloniaRadioButton
     
     #region 内部属性定义
 
-    internal static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractOptionButton>();
+    internal static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractOptionButton>();
 
     internal static readonly StyledProperty<OptionButtonStyle> ButtonStyleProperty =
         AvaloniaProperty.Register<AbstractOptionButton, OptionButtonStyle>(nameof(ButtonStyle));
@@ -47,7 +46,7 @@ public abstract class AbstractOptionButton : AvaloniaRadioButton
     internal static readonly StyledProperty<bool> IsWaveSpiritEnabledProperty =
         WaveSpiritAwareControlProperty.IsWaveSpiritEnabledProperty.AddOwner<AbstractOptionButton>();
 
-    internal SizeType SizeType
+    internal CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -90,7 +89,13 @@ public abstract class AbstractOptionButton : AvaloniaRadioButton
     static AbstractOptionButton()
     {
         AffectsMeasure<AbstractOptionButton>(SizeTypeProperty, ButtonStyleProperty);
-        AffectsRender<AbstractOptionButton>(IsCheckedProperty, CornerRadiusProperty, ForegroundProperty, BackgroundProperty);
+        AffectsRender<AbstractOptionButton>(IsCheckedProperty,
+            CornerRadiusProperty,
+            ForegroundProperty,
+            BackgroundProperty,
+            BorderBrushProperty,
+            BorderThicknessProperty,
+            UseLayoutRoundingProperty);
     }
 
     public AbstractOptionButton()
@@ -218,7 +223,7 @@ public abstract class AbstractOptionButton : AvaloniaRadioButton
     {
         _borderRenderHelper.Render(context,
             Bounds.Size,
-            BorderUtils.BuildRenderScaleAwareThickness(BorderThickness, TopLevel.GetTopLevel(this)?.RenderScaling ?? 1.0),
+            BorderUtils.BuildRenderScaleAwareThickness(this, BorderThickness),
             CornerRadius,
             BackgroundSizing.InnerBorderEdge,
             Background,

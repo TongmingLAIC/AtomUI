@@ -1,4 +1,3 @@
-using System.Collections.Specialized;
 using System.Reactive.Disposables;
 using AtomUI.Controls;
 using AtomUI.Theme;
@@ -44,7 +43,10 @@ public class Steps : SelectingItemsControl,
     #region 公共属性定义
     
     public static readonly StyledProperty<int> CurrentStepProperty =
-        AvaloniaProperty.Register<Steps, int>(nameof(CurrentStep), 0);
+        AvaloniaProperty.Register<Steps, int>(
+            nameof(CurrentStep),
+            0,
+            defaultBindingMode: BindingMode.TwoWay);
     
     public static readonly StyledProperty<int> InitialStepProperty =
         AvaloniaProperty.Register<Steps, int>(nameof(InitialStep), -1);
@@ -212,13 +214,12 @@ public class Steps : SelectingItemsControl,
         AffectsMeasure<Steps>(SizeTypeProperty);
         AutoScrollToSelectedItemProperty.OverrideDefaultValue<Steps>(false);
         OrientationProperty.OverrideDefaultValue<Steps>(Orientation.Horizontal);
+        SelectedIndexProperty.Changed.AddClassHandler<Steps>((x, e) => x.SyncSelectedIndexToCurrentStep());
         SelectedItemProperty.Changed.AddClassHandler<Steps>((x, e) => x.UpdateCurrentContent());
     }
     
     public Steps()
     {
-        this.RegisterTokenResourceScope(StepsToken.ScopeProvider);
-        LogicalChildren.CollectionChanged += HandleCollectionChanged;
         SelectionMode                     =  SelectionMode.Single;
     }
     
@@ -233,12 +234,6 @@ public class Steps : SelectingItemsControl,
             return 100.0;
         }
         return value;
-    }
-    
-    private void HandleCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        ConfigureItemsPanel();
-        ConfigureCurrentStepsItem();
     }
     
     protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
@@ -286,6 +281,12 @@ public class Steps : SelectingItemsControl,
             throw new ArgumentOutOfRangeException(nameof(container), "The container type is incorrect, it must be type StepsItem.");
         }
     }
+
+    protected override void ContainerForItemPreparedOverride(Control container, object? item, int index)
+    {
+        base.ContainerForItemPreparedOverride(container, item, index);
+        ConfigureItemsLayout();
+    }
     
     protected virtual void PrepareStepsItem(StepsItem stepsItem, object? item, int index)
     {
@@ -298,7 +299,7 @@ public class Steps : SelectingItemsControl,
         if (change.Property == OrientationProperty)
         {
             UpdatePseudoClasses();
-            ConfigureItemsPanel();
+            ConfigureItemsLayout();
         }
 
         if (this.IsAttachedToVisualTree())
@@ -354,7 +355,7 @@ public class Steps : SelectingItemsControl,
     {
         if (_grid != null)
         {
-            var count = _grid.Children.Count;
+            var count = ItemCount;
             _grid.RowDefinitions.Clear();
             _grid.ColumnDefinitions.Clear();
             if (Orientation == Orientation.Horizontal)
@@ -400,6 +401,12 @@ public class Steps : SelectingItemsControl,
                 _grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
             }
         }
+    }
+
+    private void ConfigureItemsLayout()
+    {
+        ConfigureItemsPanel();
+        ConfigureCurrentStepsItem();
     }
 
     private void ConfigureCurrentStepsItem()
@@ -462,6 +469,14 @@ public class Steps : SelectingItemsControl,
             SetCurrentValue(SelectedIndexProperty, -1);
         }
     }
+
+    private void SyncSelectedIndexToCurrentStep()
+    {
+        if (SelectedIndex >= 0 && SelectedIndex != CurrentStep)
+        {
+            SetCurrentValue(CurrentStepProperty, SelectedIndex);
+        }
+    }
     
     protected override void ContainerIndexChangedOverride(Control container, int oldIndex, int newIndex)
     {
@@ -473,12 +488,15 @@ public class Steps : SelectingItemsControl,
         {
             UpdateCurrentContent();
         }
+
+        ConfigureItemsLayout();
     }
-    
+
     protected override void ClearContainerForItemOverride(Control element)
     {
         base.ClearContainerForItemOverride(element);
         UpdateCurrentContent();
+        ConfigureItemsLayout();
     }
     
     private void UpdateCurrentContent(Control? container = null)

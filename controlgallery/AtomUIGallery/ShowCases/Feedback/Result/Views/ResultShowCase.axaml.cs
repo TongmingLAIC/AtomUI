@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Result;
 
 public partial class ResultShowCase : GalleryReactiveUserControl<ResultViewModel>
@@ -9,4 +8,5 @@ public partial class ResultShowCase : GalleryReactiveUserControl<ResultViewModel
     {
         InitializeComponent();
     }
+
 }

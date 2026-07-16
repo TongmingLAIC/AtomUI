@@ -1,25 +1,40 @@
 ## AtomUI
 
-#### Introduce
+AtomUI is an Ant Design 6 component system for Avalonia/.NET desktop applications. It brings Ant Design's enterprise
+interaction patterns, visual language, design tokens and theme customization model to native cross-platform apps on
+Windows, macOS and Linux.
 
-AtomUI is an implementation of Ant Design based on .NET technology, dedicated to bringing the excellent and efficient design language and experience of Ant Design to the Avalonia/.NET cross-platform desktop software development field.
+### Highlights
 
-Welcome to communicate and give suggestions to AtomUI, thank you for giving the project a Star.
+- Ant Design 6 style desktop controls for layout, navigation, data entry, feedback and data display.
+- Token-driven themes built on Avalonia styles, resources and design-token generation.
+- Native desktop integration for window chrome, popups, overlays and platform-specific interaction details.
+- A production Gallery application for exploring controls, examples and documentation.
+- Source generators for theme tokens, localization and control infrastructure.
 
-#### Features
+### Package Areas
 
-- Enterprise-class UI designed from Ant Design system for cross platform desktop applications.
-- A set of high-quality Avalonia Controls out of the box.
-- Use .NET development to achieve one-stop writing, seamless compilation on mainstream operating system platforms and render a consistent UI experience.
-- Based on Avalonia's powerful style system, Ant Design's theme customization capabilities are fully implemented.
+- `AtomUI.Desktop.Controls`: the main desktop control library.
+- `AtomUI.Desktop.Controls.DataGrid`: advanced table, filtering, sorting and row-detail scenarios.
+- `AtomUI.Desktop.Controls.ColorPicker`: desktop color picking controls and supporting primitives.
+- `AtomUI.Desktop.Controls.Extras`: stable supplemental controls beyond the Ant Design core set.
+- `AtomUI.Icons.AntDesign`: Ant Design icon assets for AtomUI controls and applications.
 
-#### License Description
-Projects using AtomUI need to comply with the LGPL v3 agreement. <strong>Commercial applications (including but not limited to internal company projects, commercial projects developed by individuals using AtomUI, and outsourced projects) are free when using binary links</strong>. If you want to customize AtomUI based on source code, you need to modify the open source code or purchase a commercial license. If you need a commercial license, please contact: Beijing Qinware Software Technology Co., Ltd.
+### Requirements
 
-### 🤝 Contributing
+- .NET 8 or later.
+- Avalonia 12.0.5 or compatible 12.0.x runtime.
+- Windows, macOS or Linux desktop applications.
 
-Contributions of all types are more than welcome, if you are interested in contributing code, feel free to check out our GitHub [Issues][github-issues-link] to get stuck in to show us what you’re made of.
+### Links
 
-#### About Qinware
+- Repository: https://github.com/AtomUI/AtomUI
+- Issues: https://github.com/AtomUI/AtomUI/issues
+- Samples: https://github.com/AtomUI/AtomUI.Samples
 
-Qinware Technology Co., Ltd. is a technology company dedicated to the development of productivity tool software. Since its inception, it has been determined to deepen its roots in the field of tool software, practice the spirit of continuous improvement in research and development, and strive to launch high-quality productivity tool software to serve developers at home and abroad, improve developers' work efficiency, and create commercial value and social value.
+### License
+
+Projects using AtomUI OSS must comply with LGPL v3. Commercial applications, including internal company software,
+personal commercial products and outsourced projects, may use AtomUI for free when linking to the published binaries.
+If you customize AtomUI from source code, you must either open source the modified code under the license terms or
+purchase a commercial license.

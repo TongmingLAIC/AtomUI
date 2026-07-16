@@ -1,0 +1,348 @@
+# NavMenu 桌面版架构设计
+
+本文档定义 `AtomUI.Desktop.Controls.NavMenu` 桌面版的最新设计定位、公共契约、导航状态模型、视觉主题关系和兼容边界。通用控件研发约束见 [控件研发标准](../../../../engineering/control-development-guidelines.md)，内部实现原理见 [NavMenu 桌面版实现原理](implementation.md)，NavMenu Token 的专项设计见 [NavMenu Token 设计](token.md)，设计和契约变化记录见 [NavMenu Changelog](changelog.md)。
+
+## 1. 控件定位
+
+| 项 | 值 |
+| --- | --- |
+| NuGet 包 | `AtomUI.Desktop.Controls` |
+| .NET 命名空间 | `AtomUI.Desktop.Controls` |
+| AXAML 命名空间 | `https://atomui.net` |
+| Gallery 页面 | 未独立 Gallery 页面；以 `docs/controls/desktop/navigation/nav-menu` 源文档为准 |
+| 控件状态 | Stable |
+
+NavMenu 是 AtomUI 桌面导航体系中的层级菜单导航控件，用于表达应用页面、模块、功能入口或命令集合之间的层级关系。它以树形节点为数据模型，以 `Inline`、`Vertical`、`Horizontal` 三种模式映射到不同导航场景。
+
+NavMenu 的职责是管理导航节点容器生成、层级展开、选中路径、弹出式子菜单、主题视觉和菜单交互。它不负责路由切换、页面生命周期、权限过滤、数据懒加载、业务命令编排或页面内容渲染。业务导航行为可以通过节点 `Command`、`NavMenuNodeSelected`、`NavMenuItemClick` 或外部 ViewModel 处理。
+
+NavMenu 支持两种节点提供方式：
+
+- 直接在 `NavMenu.Items` 中放置 `NavMenuNode`。
+- 通过 `ItemsSource` 绑定 `INavMenuNode` 集合。
+
+两种方式都必须使用 `INavMenuNode` 作为节点契约。NavMenu 不支持把任意 `Control` 作为菜单项直接加入。
+
+## 2. 设计语言
+
+NavMenu 表达的是“层级入口 + 当前路径”的导航语义。用户应能通过文字、图标、缩进、选中态、悬浮态和展开状态理解当前位置、可进入的下级路径以及不同层级之间的关系。
+
+三种模式对应不同产品语义：
+
+| 模式 | 语义 | 典型场景 |
+| --- | --- | --- |
+| `Inline` | 子菜单在当前导航面板内展开，强调完整层级结构。 | 侧边栏主导航、管理后台模块导航。 |
+| `Vertical` | 顶层项目垂直排列，子菜单通过 Popup 展开。 | 紧凑菜单、上下文导航、浮层式侧栏。 |
+| `Horizontal` | 顶层项目水平排列，子菜单通过 Popup 展开。 | 顶部导航栏、一级模块切换。 |
+
+Light 与 Dark 样式不是简单反色。Dark 样式有独立的根背景、Popup 背景、子菜单背景、选中背景和文字透明度规则，应保持与 参考 Menu 的层级背景语义一致。
+
+`IsItemBackgroundEnabled` 控制菜单项背景块模型。开启时，inline 子菜单背景块、选中背景和 hover 背景形成连续层级背景；关闭时，菜单项背景块保持透明，但 header 文本颜色、选中路径颜色和交互状态仍然保留。
+
+## 3. API 与契约模型
+
+NavMenu 的公共 API 分为控件 API、节点 API 和事件 API。
+
+控件 API：
+
+| API | 类型 | 语义 |
+| --- | --- | --- |
+| `Mode` | `NavMenuMode` | 菜单呈现模式，默认 `Inline`。 |
+| `IsInlineCollapsed` | `bool` | `Mode=Inline` 时是否进入内联折叠状态，默认 `false`。折叠不改变 public `Mode`，只改变内部有效呈现和交互模式。 |
+| `InlineCollapsedWidth` | `double` | 内联折叠状态下的菜单宽度。默认值来自 `NavMenuToken.InlineCollapsedWidth`，初始设计值为 `48`；开发者可通过本地值覆盖 token 默认宽度。 |
+| `SelectedItem` | `INavMenuNode?` | 当前选中节点，双向绑定入口。 |
+| `DefaultSelectedPath` | `TreeNodePath?` | 初始选中路径；`SelectedItem` 非空时优先级更高。 |
+| `DefaultOpenPaths` | `IList<TreeNodePath>?` | 初始展开路径集合。 |
+| `IsAccordionMode` | `bool` | 顶层 inline/vertical 子菜单互斥展开策略。 |
+| `IsDarkStyle` | `bool` | 使用 NavMenu dark style 视觉体系。 |
+| `IsItemBackgroundEnabled` | `bool` | 控制 item / inline submenu 背景块模型，默认 `true`。 |
+| `IsMotionEnabled` | `bool` | 控制 inline 展开收起和主题颜色过渡。 |
+| `ShouldUseOverlayPopup` | `bool` | 控制弹出式子菜单是否使用 overlay popup。 |
+| `Close()` | method | 关闭所有子菜单并清空 `SelectedItem`。 |
+
+节点 API：
+
+| API | 类型 | 语义 |
+| --- | --- | --- |
+| `Header` | `object?` | 菜单项显示内容。 |
+| `HeaderTemplate` | `IDataTemplate?` | 菜单项 header 模板。 |
+| `ItemKey` | `EntityKey?` | 路径和业务标识。 |
+| `Icon` | `PathIcon?` | 菜单项图标。 |
+| `IsEnabled` | `bool` | 节点可用状态，默认 `true`。 |
+| `Command` | `ICommand?` | 节点被有效触发时由当前 `NavMenuItem` 容器执行的业务命令。节点只承载命令配置，不负责订阅或执行。 |
+| `CommandParameter` | `object?` | 传递给 `Command` 的参数。默认 `null`，不隐式回退到 `ItemKey` 或节点自身。 |
+| `Children` | `IList<INavMenuNode>` | 子节点集合。 |
+
+事件 API：
+
+| 事件 | 参数 | 语义 |
+| --- | --- | --- |
+| `NavMenuItemClick` | `NavMenuItemClickEventArgs` | 菜单项点击事件，事件参数暴露 `INavMenuItem` 作为只读交互上下文。 |
+| `NavMenuNodeSelected` | `NavMenuNodeSelectedEventArgs` | 叶子节点选中事件，事件参数暴露 `INavMenuNode`。 |
+
+`DefaultSelectedPath` 和 `DefaultOpenPaths` 是默认值入口，不是持续受控展开状态。运行期受控选择应使用 `SelectedItem`。
+
+节点命令遵守 Avalonia 命令语义：`NavMenuNode` / `INavMenuNode` 只保存 `Command` 和 `CommandParameter`，实际执行、`CanExecute` 评估和 `CanExecuteChanged` 生命周期由生成出的 `NavMenuItem` 容器负责。`INavMenuNode` 为两个成员提供 `null` 默认实现，使既有自定义节点实现无需声明命令也能继续工作。`CommandParameter=null` 表示显式空参数，控件不能自动替换为 `ItemKey`；需要使用业务 key 时，应显式把 `ItemKey` 绑定或赋值给 `CommandParameter`。容器按 UI 周期合并连续的 `CanExecuteChanged` 通知：持续的 `false` 仍进入 disabled，同一同步执行周期内的 `false -> true` 瞬时变化只投影最终状态，避免多个共享命令节点触发无业务意义的禁用颜色闪动。
+
+`IsInlineCollapsed` 只对 `Mode=Inline` 生效。`Mode=Vertical` 或 `Mode=Horizontal` 时设置该属性不应改变当前模式的 popup、布局或键盘语义。`InlineCollapsedWidth` 参与布局测量，默认通过 theme setter 取得 `NavMenuToken.InlineCollapsedWidth`；collapsed 状态下由控件内部对 `Width` / `MinWidth` 做有效值 coercion，本地设置的属性值应按 Avalonia 属性优先级覆盖 token 默认值，展开后原始 `Width` 或绑定必须恢复。
+
+键盘漫游状态属于内部交互状态，不进入公共 API。NavMenu 保持与 参考 Menu 一致的分层：`SelectedItem` 表示已提交的导航选择，`DefaultOpenPaths` / `IsSubMenuOpen` 表示展开状态，键盘当前项只表示临时 active/focus 目标。业务代码不应通过公开属性控制键盘 active 项，也不应把 active 项误认为已选择节点。
+
+稳定 template part：
+
+| Template Part | 类型 | 职责 |
+| --- | --- | --- |
+| `PART_ItemsPresenter` | `ItemsPresenter` | 承载顶层 `NavMenuItem` 容器。 |
+| `PART_HorizontalLine` | `Rectangle` | Horizontal light style 下的底部分割线。 |
+| `PART_Header` | NavMenuItemHeader | 菜单项 header，承载文字、图标、箭头和交互视觉。 |
+| `PART_Popup` | `Popup` | `Vertical` / `Horizontal` 模式下的子菜单浮层。 |
+| `PART_PopupFrame` | `Border` | Popup 背景、圆角、尺寸和内容边距。 |
+| `PART_ChildItemsLayoutTransform` | `LayoutAwareMotionActor` | `Inline` 模式下的子菜单展开收起 motion 容器。 |
+| `PART_ChildItemsFrame` | `Border` | `Inline` 模式下的子菜单背景块。 |
+| `ChildItemsPresenter` | `ItemsPresenter` | `Inline` 模式下的子菜单内容承载。 |
+| `PART_ActiveIndicator` | `Rectangle` | `Horizontal` 顶层 light style 下的活动指示条。 |
+
+## 4. 行为与状态模型
+
+NavMenu 的交互行为由 mode 决定。
+
+`Inline` 模式：
+
+- 点击带子菜单的项目时切换 `IsSubMenuOpen`。
+- 子菜单在当前视觉树中展开，使用 `LayoutAwareMotionActor` 承载展开收起 motion。
+- 点击叶子节点时选中该节点，并更新所有祖先 `IsInSelectedPath`。
+- `IsAccordionMode=true` 时，顶层子菜单互斥展开。
+- `IsInlineCollapsed=true` 时，public `Mode` 仍保持 `Inline`，但内部有效模式切换为 vertical popup 语义：顶层只显示图标或无图标首字符，inline 子树不在主视觉树中展开，带子菜单的顶层项目通过 popup 打开。
+- 进入折叠时缓存当前 inline 打开路径并关闭主视觉树中的 inline 子菜单；退出折叠时恢复缓存路径。折叠和展开不得清空 `SelectedItem` 或 selected path。
+- 键盘 Up / Down 在当前可见层级内移动 active/focus 项。
+- Enter 在带子菜单项上切换展开状态，在叶子节点上提交选择。
+- Left / Right 可作为桌面增强支持折叠或展开当前 active 子菜单，并保持 keyboard active 在当前项；叶子项上为 no-op，不能改变 `SelectedItem`。
+
+`Vertical` 与 `Horizontal` 模式：
+
+- 带子菜单的项目通过 Popup 展开。
+- hover 可以延迟打开子菜单；pointer 离开后延迟关闭。
+- 点击叶子节点时选中节点；弹出层关闭由 pointer、窗口失焦、非客户端点击和同级打开状态共同控制。
+- `Horizontal` 顶层菜单 popup 位于下方；非顶层 popup 按右侧边缘对齐。
+- 键盘导航以当前打开的可见菜单层级为边界移动 active/focus 项，跳过禁用项、分割线和不可聚焦内容。
+- 键盘 active 初次移动时优先以当前可见且已生成的 `SelectedItem` 容器作为方向键锚点，并立即移动到前一个或后一个可导航节点；如果没有选中项，或选中项隐藏在未打开的子菜单中，则从第一个可导航节点开始。
+- `Horizontal` 顶层菜单使用 Left / Right 在顶层兄弟项之间移动，Down 或 Enter 打开当前 active 子菜单并进入子菜单第一项。
+- `Vertical` 根层和所有 popup 子菜单使用 Up / Down 在同层兄弟项之间移动，Right 或 Enter 打开当前 active 子菜单并进入子菜单第一项，Left 或 Esc 返回父级并关闭当前 popup 分支。
+- Enter 在叶子节点上提交选择并触发 `NavMenuNodeSelected` / `NavMenuItemClick`；方向键只改变 active/focus，不触发选择。
+- Esc 只关闭当前键盘导航所在的 popup 分支并返回父级 active 项，不调用 `Close()`，因此不能清空 `SelectedItem`。
+
+公共交互状态：
+
+- `Disabled` 由节点 `IsEnabled` 和 command can-execute 共同决定，禁用项不应触发有效点击。
+- 节点命令必须复用 `NavMenuItem` 的有效点击入口；pointer 与 keyboard 提交不能形成两条独立命令执行路径，也不能因选择事件再次执行命令。
+- `PointerOver` 改变 header 前景和背景，但不能改变选中路径。
+- `Pressed` 只作为点击过程状态，不应通过 ancestor selector 误作用到 header。
+- `KeyboardActive` 表示键盘漫游中的当前项，只影响 focus 和 active 视觉，不改变选中路径。
+- `Selected` 表示当前叶子节点被选中。
+- `IsInSelectedPath` 表示某个祖先位于当前选中路径中。
+- `Open` 表示当前项目子菜单打开。
+
+## 5. 视觉与主题模型
+
+NavMenu Theme 按 mode、dark style、header state 和 item background model 分层。
+
+```text
+NavMenuTheme
+  root template by Mode
+  root background / padding / scroll behavior
+  top-level ItemsPanel orientation
+
+NavMenuItemTheme
+  item template by Mode
+  popup frame
+  inline child frame
+  motion duration
+
+Header Themes
+  shared text/icon/background/selection
+  horizontal active bar
+  inline indentation and arrow rotation
+```
+
+Theme 映射规则：
+
+- Root 背景使用 `ItemBg`，Dark root 背景使用 `DarkMenuBg`。
+- Popup 背景使用 `MenuPopupBg`，Dark popup 使用 `DarkMenuPopupBg`。
+- Header 默认背景为 `Transparent`，hover / selected 背景由 header state 直接控制。
+- Keyboard active 背景使用 `ItemActiveBg`，其优先级低于 `Selected`，高于普通默认态；它可以叠加在 `IsInSelectedPath` 父节点上，使父节点保留 selected-path 文字色的同时显示临时 active 背景。dark style 下使用 dark 语义的 active 视觉，不复用 selected 背景表达临时漫游。
+- Inline collapsed 根宽度使用 `InlineCollapsedWidth`，默认来自 `NavMenuToken.InlineCollapsedWidth=48`。折叠视觉只作用于 `Mode=Inline && IsInlineCollapsed=true`：一级 icon 使用 `CollapsedIconSize` 居中，标题和箭头收起，未配置 icon 的一级项显示标题首字符，叶子项可用 tooltip 展示完整标题。
+- `IsItemBackgroundEnabled=true` 时，inline child frame 使用 `SubMenuItemBg` / `DarkSubMenuItemBg`，并应用背景块专用外距。
+- `IsItemBackgroundEnabled=false` 时，inline child frame 背景为 `Transparent`，不应用背景块专用外距；header 的文字色、hover、selected 和 selected path 仍然生效。
+- Horizontal 顶层 light style 通过 `PART_ActiveIndicator` 表达选中；dark style 可以使用 selected background。
+
+Header 背景与 NavMenuItem / inline submenu 背景块是不同职责，不应混为一个 selector 控制。
+
+## 6. 控件家族或集成关系
+
+NavMenu 位于 Desktop Navigation 分类，与 Breadcrumb、Pagination、Steps、TabControl 等控件同属导航体系，但不共享状态模型。
+
+集成关系：
+
+- `ItemsControl`：承载 `Items`、`ItemsSource`、`ItemTemplate` 和容器生成。
+- AtomUI Token：通过 `NavMenuToken.ScopeProvider` 注册控件级资源。
+- Popup/Overlay：`Vertical` 和 `Horizontal` 子菜单通过 `Popup` 展开，并由 `ShouldUseOverlayPopup` 控制 overlay 使用策略。
+- MotionScene：`Inline` 子菜单展开收起使用 slide motion。
+- Resource Host：`NavMenuNode` 使用 scoped resource-host generator 实现 `IResourceHost` / `IThemeVariantHost`，由当前 owner menu/container attach，并通过可释放 token 使节点动态资源跟随菜单资源域。
+- Gallery：展示 inline、vertical、horizontal、dark、items source、默认选中路径和默认展开路径。
+
+NavMenu 不实现 Form、CompactSpace 或 Button 家族接口。
+
+## 7. 兼容性不变量
+
+维护 NavMenu 时必须保持以下不变量：
+
+- `NavMenuMode.Vertical`、`Horizontal`、`Inline` 的名称、默认行为和模板模式不变。
+- `Mode` 默认值保持 `Inline`。
+- `IsInlineCollapsed` 不引入新的 `NavMenuMode`，也不直接改写 `Mode`；折叠只通过内部 effective mode、theme state 和 popup 交互表达。
+- `InlineCollapsedWidth` 默认由 `NavMenuToken.InlineCollapsedWidth` 提供，开发者本地设置必须能覆盖 token 默认值。
+- `SelectedItem` 优先级高于 `DefaultSelectedPath`。
+- `DefaultOpenPaths` 和 `DefaultSelectedPath` 不依赖固定时间延迟。
+- 进入或退出 inline collapsed 不得调用 `Close()`，不得清空 `SelectedItem`，不得丢失 selected path。
+- inline collapsed 期间打开的 popup 状态不得污染展开后恢复的 inline open path cache。
+- 键盘 active/focus 状态不得进入公共 API，不得改变 `SelectedItem`、`DefaultSelectedPath` 或 `DefaultOpenPaths` 的语义。
+- `NavMenuNode` / `INavMenuNode` 的 `Header`、`HeaderTemplate`、`ItemKey`、`Icon`、`IsEnabled`、`Command`、`CommandParameter`、`Children` 名称、类型和语义不变。
+- `NavMenuNode` 只承载命令配置，不实现 `ICommandSource`，不直接订阅 `CanExecuteChanged`，也不保存当前 `NavMenuItem` 容器。
+- `CommandParameter` 保持标准显式参数语义，不隐式回退到 `ItemKey`、`Header`、`SelectedItem` 或节点自身。
+- `NavMenuItemClick` 和 `NavMenuNodeSelected` 的事件语义不变。
+- 方向键移动 active 项不得触发 `NavMenuItemClick` 或 `NavMenuNodeSelected`。
+- Esc 关闭 popup 分支不得调用 `Close()`，不得清空已选中节点。
+- `IsAccordionMode=true` 只控制同层展开互斥，不改变选中节点。
+- `IsItemBackgroundEnabled=false` 不应关闭 header 前景色、hover、selected、selected path 或 disabled 视觉，只关闭 item / submenu 背景块。
+- inline 子菜单背景块外距只在 `IsItemBackgroundEnabled=true` 时生效。
+- popup frame 使用 `MenuPopupBg` / `DarkMenuPopupBg`，不回退为普通 shared elevated background。
+- root background、popup background、header background 和 inline submenu background 必须保持职责分离。
+- 点击子节点时，不应让父级 header 出现错误 hover 背景。
+- NavMenu 优化不得关闭 motion 来规避点击、打开或关闭问题。
+
+如果实现某项能力时无法保持这些不变量，应先停止实现，说明原因、影响范围、替代方案和迁移方式，并获得授权。
+
+## 8. 专项模型
+
+### 8.1 Mode 模型
+
+`Mode` 同时影响模板结构、交互 handler、popup 策略、ItemsPanel 方向和 header 主题。`IsInlineCollapsed` 是 `Inline` 模式的附加状态，不是第四种 mode。
+
+| Mode | 子菜单承载 | 顶层排列 |
+| --- | --- | --- |
+| `Inline` | 视觉树内 `LayoutAwareMotionActor` | Vertical StackPanel |
+| `Vertical` | Popup | Vertical StackPanel |
+| `Horizontal` | Popup | Horizontal StackPanel |
+
+有效模式按以下规则计算：
+
+| Public state | Effective mode | 子菜单承载 |
+| --- | --- | --- |
+| `Mode=Inline, IsInlineCollapsed=false` | `Inline` | inline child frame |
+| `Mode=Inline, IsInlineCollapsed=true` | `Vertical` | popup |
+| `Mode=Vertical` | `Vertical` | popup |
+| `Mode=Horizontal` | `Horizontal` | popup |
+
+### 8.2 Inline Collapsed 模型
+
+Inline collapsed 模型对齐 参考 Menu 的 `inlineCollapsed`：公开模式仍为 `Inline`，折叠状态只改变内部有效交互和视觉。折叠菜单宽度使用 `InlineCollapsedWidth`，默认来自 `NavMenuToken.InlineCollapsedWidth=48`；开发者可在控件实例上设置 `InlineCollapsedWidth` 获得更窄或更宽的折叠侧栏。
+
+进入折叠时，NavMenu 记录当前已经打开的 inline path，然后关闭主视觉树中的 inline 子菜单，使根菜单只保留顶层项。带子菜单的顶层项在折叠状态下按 popup 子菜单打开；popup 打开关闭只属于折叠期间的临时交互，不写回 inline path cache。
+
+退出折叠时，NavMenu 关闭折叠期间打开的 popup，并恢复折叠前缓存的 inline open path。`SelectedItem` 和 `IsInSelectedPath` 在折叠和展开之间保持稳定；如果初始加载时已经处于折叠状态，`DefaultOpenPaths` 应进入 inline path cache，等展开后再恢复到 inline 子树。
+
+折叠视觉只应用于顶层项：一级 icon 居中并使用 `CollapsedIconSize`，标题和展开箭头收起；没有 icon 的一级项显示标题首字符。非顶层项只出现在 popup 中，继续使用 vertical popup 的正常文字、icon、箭头和宽度语义。
+
+### 8.3 Selection 与 Path 模型
+
+`TreeNodePath` 通过 `ItemKey` 定位节点路径。路径 replay 先打开中间节点，再选中叶子节点。`SelectedItem` 是持续选择状态，`DefaultSelectedPath` 是默认选择入口。两者同时存在时，`SelectedItem` 生效。
+
+### 8.4 Keyboard Navigation 模型
+
+NavMenu 的键盘导航模型与选择模型分离：
+
+| 状态 | 职责 | 是否公开 |
+| --- | --- | --- |
+| Keyboard active item | 当前键盘漫游和 focus 目标。 | 否 |
+| Open item path | 当前已展开的 inline / popup 分支。 | 仅通过现有打开行为间接体现 |
+| Selected item | 已提交的导航节点。 | 是，`SelectedItem` |
+
+键盘导航只遍历当前可见且可交互的 `NavMenuItem`。禁用项、分割线、隐藏 popup 内容、尚未展开的 inline 子项和非菜单项内容不进入漫游序列。Vertical、Horizontal 和 inline collapsed 的 popup 层级中，打开子菜单时 active 项进入该子菜单的第一个可交互子项；关闭子菜单时，active 项回到父级触发项。Inline 展开态的 Left / Right 只控制当前 active 子菜单展开收起，不移动 active 项。
+
+当 keyboard active 尚未初始化时，NavMenu 先尝试把当前 `SelectedItem` 对应的可见容器作为方向键移动锚点；第一次 Up / Down 应直接移动到选中项前一个或后一个可导航节点，而不是把 active 停在选中项本身。如果当前没有选中项，或选中项所在分支尚未展开、容器不可见，则回退到第一个可导航节点。这个初始化不会触发新的选择事件，也不会自动打开隐藏分支。
+
+键盘提交遵循“浏览和提交分离”：Up / Down / Left / Right 只移动 active/focus 或打开/关闭层级，Enter 才能提交叶子节点选择。带子菜单项的 Enter 优先执行展开或进入子菜单，不直接选中父节点。
+
+在 inline collapsed 状态下，键盘导航使用 effective vertical 模型：根层 Up / Down 在顶层项之间移动，Right 或 Enter 打开 active 子菜单 popup 并进入第一项，Left 或 Esc 关闭当前 popup 分支并回到父项。方向键仍不得触发选择事件。
+
+### 8.5 Node Command 模型
+
+节点命令采用“节点配置、容器执行”的模型：
+
+```text
+NavMenuNode / INavMenuNode
+  Command + CommandParameter
+      ↓ scoped container binding
+NavMenuItem
+  ICommandSource
+  CanExecute / CanExecuteChanged
+      ↓ effective click or keyboard commit
+Command.Execute(CommandParameter)
+```
+
+该模型保持数据节点和交互容器职责分离：节点可以作为 Avalonia binding target 保存命令配置，但不能自行实现点击、焦点、键盘或有效禁用状态。`NavMenuItem` 是唯一命令执行入口，并把 `CanExecute=false` 投射为 effective disabled；该状态不能反向改写节点的 `IsEnabled`。
+
+命令能力必须与节点资源和容器生命周期同时成立：`NavMenuNode` 的动态资源由 generated scoped resource host 管理；节点到 `NavMenuItem` 的 `Command` / `CommandParameter` 同步进入当前容器 disposable；`NavMenuItem` 对 `ICommand.CanExecuteChanged` 的订阅在命令替换和 logical-tree detach 时解除。只实现其中一层不能视为完整生命周期。
+
+### 8.6 Item Background 模型
+
+`IsItemBackgroundEnabled` 控制背景块，不控制 header 文本状态。该模型要求 `NavMenuItem` 背景和 `NavMenuItemHeader` 背景分离，不能通过禁用 header selector 来实现无背景模式。
+
+### 8.7 Popup 模型
+
+`Vertical`、`Horizontal` 和 inline collapsed 子菜单使用同一 popup shell。顶层 horizontal popup 放置在底部，非顶层、vertical 和 inline collapsed popup 使用右侧对齐。Popup 内容宽度、最大高度、背景、圆角和内边距由 NavMenuToken 和 PopupHostToken 共同决定。
+
+## 9. 文档导航、LLMS 导出与验证策略
+
+关联文档：
+
+- [NavMenu 桌面版实现原理](implementation.md)
+- [NavMenu Token 设计](token.md)
+- [NavMenu Changelog](changelog.md)
+
+LLMS 语义区域：
+
+| Part | AtomUI 节点 | 职责 | 相关 API | 相关 Token | 稳定性 |
+| --- | --- | --- | --- | --- | --- |
+| `root` | `NavMenu` | 导航控件根语义区域，承载 public API、状态归一和主题入口。 | 见 API 与契约模型 | 见视觉与主题模型 | stable |
+| `trigger` | `触发区域` | 承载点击、键盘、打开关闭、跳转或提交入口。 | 见 API 与契约模型 | 见视觉与主题模型 | stable |
+| `item` | `导航项区域` | 承载当前项、选中项、禁用项、层级项或分页项状态。 | 见 API 与契约模型 | 见视觉与主题模型 | stable |
+| `popup` | `弹层或内容区域` | 承载 flyout、dropdown、tab content、submenu 或候选内容。 | 见 API 与契约模型 | 见视觉与主题模型 | stable |
+| `motion` | `动效区域` | 表达打开关闭、选中指示、切换和过渡反馈。 | 见 API 与契约模型 | 见视觉与主题模型 | stable |
+
+LLMS 导出来源：
+
+| LLMS 内容 | 来源 | 说明 |
+| --- | --- | --- |
+| 单控件完整文档 | `overview.md` + Gallery API / Token / ShowCase | 生成 `controls/nav-menu/index-cn.md` |
+| 单控件语义文档 | `overview.md` + `implementation.md` + theme/template 信息 | 生成 `controls/nav-menu/semantic-cn.md` |
+| API 表 | Gallery ApiDataGrid 或源码 public surface | 不在 `overview.md` 中复制完整 API 表 |
+| Design Token 表 | Gallery DesignTokenDataGrid、Token 类型或第 5 节主题模型 | 不在生成产物中手工维护第二份 Token 表 |
+| 示例 | Gallery ShowCase + source snippet catalog | 只引用稳定示例 |
+| 源码索引 | `implementation.md` | 用于定位控件源码、主题和测试 |
+
+验证策略：
+
+| 层次 | 验证内容 |
+| --- | --- |
+| 文档 | `overview.md`、`implementation.md`、`token.md`、`changelog.md` 链接有效。 |
+| Public API | `NavMenu`、`NavMenuNode`、`INavMenuNode`、`INavMenu`、事件参数与文档一致。 |
+| Mode 行为 | Inline、Vertical、Horizontal 的打开、关闭、选中、默认路径和 popup 逻辑稳定。 |
+| Inline collapsed | `IsInlineCollapsed` 切换、`InlineCollapsedWidth` 覆盖、open path cache、popup 临时打开、selected path 保持和初始 `DefaultOpenPaths` 恢复稳定。 |
+| Keyboard | Up、Down、Left、Right、Enter、Esc 在 Inline、Vertical、Horizontal 中的 active、focus、open、close 和 commit 语义稳定。 |
+| Selection | `SelectedItem`、`DefaultSelectedPath`、`DefaultOpenPaths`、stale replay 和 clear selection 测试覆盖。 |
+| Command | `Command` / `CommandParameter` 投影、pointer / keyboard 单次执行、`CanExecute` disabled、命令替换解绑、container recycle、re-template、Items reset 和页面释放测试覆盖。 |
+| Resource lifecycle | `NavMenuNode` generated scoped resource host、owner resource 优先级、repeated attach、attach token 释放和 WeakReference 测试覆盖。 |
+| AXAML | Template part 名称、header theme、popup frame、inline child frame、active indicator 和 item background selector 稳定。 |
+| Layout | root item margin、inline child gap、popup item inset、background-enabled true/false gap 与 参考设计体系 规则一致。 |
+| Token | `NavMenuToken` 默认值、`InlineCollapsedWidth`、dark token、popup token 和 spacing token 与测试一致。 |
+| Gallery | 运行 Navigation/Menu Showcase 相关测试，确认示例结构和 CaseNavigation 布局稳定。 |

@@ -7,13 +7,13 @@
               TargetType="atom:ListBox">
     <Setter Property="Template">
         <ControlTemplate TargetType="atom:ListBox">
-            <Border Name="Frame"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding EffectiveBorderThickness}"
-                    CornerRadius="{TemplateBinding CornerRadius}"
-                    Padding="{TemplateBinding Padding}"
-                    Margin="{TemplateBinding Margin}">
+            <atom:PixelAlignedBorder Name="Frame"
+                                     Background="{TemplateBinding Background}"
+                                     BorderBrush="{TemplateBinding BorderBrush}"
+                                     BorderThickness="{TemplateBinding EffectiveBorderThickness}"
+                                     CornerRadius="{TemplateBinding CornerRadius}"
+                                     Padding="{TemplateBinding Padding}"
+                                     Margin="{TemplateBinding Margin}">
                 <Panel>
                     <atom:ScrollViewer Name="PART_ScrollViewer"
                                        IsLiteMode="{TemplateBinding atom:ScrollViewer.IsLiteMode}"
@@ -36,7 +36,7 @@
                         Content="{TemplateBinding EmptyIndicator}"
                         ContentTemplate="{TemplateBinding EmptyIndicatorTemplate}" />
                 </Panel>
-            </Border>
+            </atom:PixelAlignedBorder>
         </ControlTemplate>
     </Setter>
 
@@ -48,9 +48,9 @@
         <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="False" />
         <Setter Property="ItemHoverBg" Value="{atom:ListBoxTokenResource ItemHoverBgColor}" />
         <Setter Property="ItemSelectedBg" Value="{atom:ListBoxTokenResource ItemSelectedBgColor}" />
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
-        <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorBorder}" />
-        <Setter Property="BorderThickness" Value="{atom:SharedTokenResource BorderThickness}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:ListBoxTokenSharedTokenResource EnableMotion}" />
+        <Setter Property="BorderBrush" Value="{atom:ListBoxTokenSharedTokenResource ColorBorder}" />
+        <Setter Property="BorderThickness" Value="{atom:ListBoxTokenSharedTokenResource BorderThickness}" />
         <Setter Property="Padding" Value="{atom:ListBoxTokenResource ContentPadding}" />
         <Setter Property="FilterHighlightForeground" Value="{atom:ListBoxTokenResource FilterHighlightColor}" />
         
@@ -61,18 +61,18 @@
         </Setter>
         
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusLG}" />
-            <Setter Property="EmptyIndicatorPadding" Value="{atom:SharedTokenResource PaddingXL}" />
+            <Setter Property="CornerRadius" Value="{atom:ListBoxTokenSharedTokenResource BorderRadiusLG}" />
+            <Setter Property="EmptyIndicatorPadding" Value="{atom:ListBoxTokenSharedTokenResource PaddingXL}" />
         </Style>
 
-        <Style Selector="^[SizeType=Middle]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadius}" />
-            <Setter Property="EmptyIndicatorPadding" Value="{atom:SharedTokenResource Padding}" />
+        <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
+            <Setter Property="CornerRadius" Value="{atom:ListBoxTokenSharedTokenResource BorderRadius}" />
+            <Setter Property="EmptyIndicatorPadding" Value="{atom:ListBoxTokenSharedTokenResource Padding}" />
         </Style>
 
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}" />
-            <Setter Property="EmptyIndicatorPadding" Value="{atom:SharedTokenResource Padding}" />
+            <Setter Property="CornerRadius" Value="{atom:ListBoxTokenSharedTokenResource BorderRadiusSM}" />
+            <Setter Property="EmptyIndicatorPadding" Value="{atom:ListBoxTokenSharedTokenResource Padding}" />
         </Style>
         
         <Setter Property="EmptyIndicatorTemplate">

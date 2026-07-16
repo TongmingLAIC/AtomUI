@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Statistic;
 
 public partial class StatisticShowCase : GalleryReactiveUserControl<StatisticViewModel>
@@ -7,6 +6,8 @@ public partial class StatisticShowCase : GalleryReactiveUserControl<StatisticVie
 
     public StatisticShowCase()
     {
+        InitializeComponent();
+
         this.WhenActivated(disposables =>
         {
             if (DataContext is StatisticViewModel viewModel)
@@ -16,6 +17,6 @@ public partial class StatisticShowCase : GalleryReactiveUserControl<StatisticVie
                 viewModel.TenSecondsLater = DateTime.Now.AddSeconds(10);
             }
         });
-        InitializeComponent();
     }
+
 }

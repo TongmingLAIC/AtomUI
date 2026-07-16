@@ -19,6 +19,8 @@
                     StyleVariant="{TemplateBinding StyleVariant}"
                     SizeType="{TemplateBinding SizeType}"
                     Status="{TemplateBinding Status}"
+                    DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
+                    IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                     CompactSpaceItemPosition="{TemplateBinding CompactSpaceItemPosition}"
                     CompactSpaceOrientation="{TemplateBinding CompactSpaceOrientation}"
                     IsUsedInCompactSpace="{TemplateBinding IsUsedInCompactSpace}"
@@ -26,7 +28,7 @@
                     ClipToBounds="{TemplateBinding ClipToBounds}">
                     <atom:AddOnDecoratedBox.ContentRightAddOn>
                         <StackPanel Orientation="Horizontal"
-                                    Spacing="{atom:SharedTokenResource UniformlyPaddingXXS}">
+                                    Spacing="{atom:LineEditTokenSharedTokenResource UniformlyPaddingXXS}">
                             <atom:InputClearIconButton
                                 Name="PART_ClearButton" />
                             <!-- 新增显示密码按钮 -->
@@ -45,7 +47,7 @@
                                 Focusable="False" />
                             <atom:TextBlock Name="TextCountIndicator"
                                             VerticalAlignment="Center"
-                                            Foreground="{atom:SharedTokenResource ColorTextPlaceholder}" />
+                                            Foreground="{atom:LineEditTokenSharedTokenResource ColorTextPlaceholder}" />
                         </StackPanel>
                     </atom:AddOnDecoratedBox.ContentRightAddOn>
 
@@ -66,7 +68,7 @@
                                 LineHeight="{TemplateBinding LineHeight}"
                                 TextAlignment="{TemplateBinding TextAlignment}"
                                 TextWrapping="{TemplateBinding TextWrapping}"
-                                IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                                IsVisible="{TemplateBinding IsPlaceholderTextVisible}" />
                             <atom:InputTextPresenter
                                 Name="PART_TextPresenter"
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -93,48 +95,105 @@
         <Setter Property="atom:ScrollViewer.IsLiteMode" Value="True" />
         <Setter Property="atom:ScrollViewer.AllowAutoHide" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorBorder}" />
-        <Setter Property="SelectionBrush" Value="{atom:SharedTokenResource SelectionBackground}" />
-        <Setter Property="CaretBrush" Value="{atom:SharedTokenResource ColorText}" />
+        <Setter Property="BorderBrush" Value="{atom:LineEditTokenSharedTokenResource ColorBorder}" />
+        <Setter Property="SelectionBrush" Value="{atom:LineEditTokenSharedTokenResource SelectionBackground}" />
+        <Setter Property="CaretBrush" Value="{atom:LineEditTokenSharedTokenResource ColorText}" />
         <Setter Property="SelectionForegroundBrush"
-                Value="{atom:SharedTokenResource SelectionForeground}" />
-        <Setter Property="PlaceholderForeground" Value="{atom:SharedTokenResource ColorTextPlaceholder}" />
+                Value="{atom:LineEditTokenSharedTokenResource SelectionForeground}" />
+        <Setter Property="PlaceholderForeground" Value="{atom:LineEditTokenSharedTokenResource ColorTextPlaceholder}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
 
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:LineEditTokenSharedTokenResource EnableMotion}" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
         <Setter Property="ClipToBounds" Value="False" />
 
         <Style Selector="^[StyleVariant=Borderless]">
+            <Style Selector="^[Status=Error]">
+                <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
+                    <Setter Property="Foreground"
+                            Value="{atom:LineEditTokenSharedTokenResource ColorErrorText}" />
+                </Style>
+            </Style>
             <Style Selector="^:error">
                 <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorErrorText}" />
+                            Value="{atom:LineEditTokenSharedTokenResource ColorErrorText}" />
                 </Style>
             </Style>
             <Style Selector="^:warning">
                 <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorWarningText}" />
+                            Value="{atom:LineEditTokenSharedTokenResource ColorWarningText}" />
                 </Style>
             </Style>
         </Style>
         <Style Selector="^[StyleVariant=Filled]">
+            <Style Selector="^[Status=Error]">
+                <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
+                    <Setter Property="Foreground"
+                            Value="{atom:LineEditTokenSharedTokenResource ColorErrorText}" />
+                </Style>
+            </Style>
             <Style Selector="^:error">
                 <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorErrorText}" />
+                            Value="{atom:LineEditTokenSharedTokenResource ColorErrorText}" />
                 </Style>
             </Style>
             <Style Selector="^:warning">
                 <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorWarningText}" />
+                            Value="{atom:LineEditTokenSharedTokenResource ColorWarningText}" />
                 </Style>
             </Style>
+        </Style>
+
+        <Style Selector="^:focus[StyleVariant=Outlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox,
+                         ^:focus[StyleVariant=Underlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox">
+            <Setter Property="BorderBrush"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveBorderColor}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveShadow}" />
+        </Style>
+        <Style Selector="^:focus[StyleVariant=Filled] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox">
+            <Setter Property="BorderBrush"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveBorderColor}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveShadow}" />
+        </Style>
+        <Style Selector="^:focus[StyleVariant=Outlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Error],
+                         ^:focus[StyleVariant=Underlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Error]">
+            <Setter Property="BorderBrush"
+                    Value="{atom:LineEditTokenSharedTokenResource ColorError}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ErrorActiveShadow}" />
+        </Style>
+        <Style Selector="^:focus[StyleVariant=Filled] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Error]">
+            <Setter Property="BorderBrush"
+                    Value="{atom:LineEditTokenSharedTokenResource ColorError}" />
+            <Setter Property="Background"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveBg}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ErrorActiveShadow}" />
+        </Style>
+        <Style Selector="^:focus[StyleVariant=Outlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Warning],
+                         ^:focus[StyleVariant=Underlined] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Warning]">
+            <Setter Property="BorderBrush"
+                    Value="{atom:LineEditTokenSharedTokenResource ColorWarning}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource WarningActiveShadow}" />
+        </Style>
+        <Style Selector="^:focus[StyleVariant=Filled] /template/ atom|AddOnDecoratedBox#PART_AddOnDecoratedBox[EffectiveStatus=Warning]">
+            <Setter Property="BorderBrush"
+                    Value="{atom:LineEditTokenSharedTokenResource ColorWarning}" />
+            <Setter Property="Background"
+                    Value="{atom:AddOnDecoratedBoxTokenResource ActiveBg}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:AddOnDecoratedBoxTokenResource WarningActiveShadow}" />
         </Style>
     </ControlTheme>
 </ResourceDictionary>

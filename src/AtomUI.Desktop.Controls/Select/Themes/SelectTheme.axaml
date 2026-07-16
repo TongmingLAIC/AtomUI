@@ -12,6 +12,7 @@
                         StyleVariant="{TemplateBinding StyleVariant}"
                         SizeType="{TemplateBinding SizeType}"
                         Status="{TemplateBinding Status}"
+                        DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
                         LeftAddOn="{TemplateBinding LeftAddOn}"
                         LeftAddOnTemplate="{TemplateBinding LeftAddOnTemplate}"
                         RightAddOn="{TemplateBinding RightAddOn}"
@@ -20,6 +21,7 @@
                         ContentLeftAddOn="{TemplateBinding ContentLeftAddOn}"
                         ContentLeftAddOnTemplate="{TemplateBinding ContentLeftAddOnTemplate}"
                         Mode="{TemplateBinding Mode}"
+                        CustomControlHeight="{TemplateBinding Height}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         IsSelectionEmpty="{TemplateBinding IsSelectionEmpty}"
@@ -29,10 +31,31 @@
                         IsUsedInCompactSpace="{TemplateBinding IsUsedInCompactSpace}">
                         <atom:AddOnDecoratedBox.ContentRightAddOn>
                             <StackPanel Orientation="Horizontal"
-                                        Spacing="{atom:SharedTokenResource SpacingXS}">
-                                <atom:SelectMaxCountIndicator Name="PART_SelectMaxCountIndicator" />
-                                <ContentPresenter Name="PART_ContentRightAddOnPresenter" />
-                                <atom:SelectHandle Name="PART_SelectHandle" />
+                                        Spacing="{atom:SelectTokenSharedTokenResource SpacingXS}">
+                                <atom:SelectMaxCountIndicator
+                                    Name="PART_SelectMaxCountIndicator"
+                                    MaxCount="{CompiledBinding $parent[atom:Select].MaxCount}"
+                                    SelectedCount="{CompiledBinding $parent[atom:Select].SelectedCount}"
+                                    IsVisible="{CompiledBinding $parent[atom:Select].IsShowMaxCountIndicator}" />
+                                <ContentPresenter
+                                    Name="PART_ContentRightAddOnPresenter"
+                                    Content="{CompiledBinding $parent[atom:Select].ContentRightAddOn}"
+                                    ContentTemplate="{CompiledBinding $parent[atom:Select].ContentRightAddOnTemplate}"
+                                    IsVisible="{CompiledBinding $parent[atom:Select].ContentRightAddOn, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                <atom:SelectHandle
+                                    Name="PART_SelectHandle"
+                                    FormFeedback="{CompiledBinding $parent[atom:Select].FormFeedback}"
+                                    LoadingIcon="{CompiledBinding $parent[atom:Select].SuffixLoadingIcon}"
+                                    OpenIndicator="{CompiledBinding $parent[atom:Select].SuffixIcon}"
+                                    IsFilterEnabled="{CompiledBinding $parent[atom:Select].IsEffectiveFilterEnabled}"
+                                    IsEnabled="{CompiledBinding $parent[atom:Select].IsEnabled}"
+                                    IsMotionEnabled="{CompiledBinding $parent[atom:Select].IsMotionEnabled}"
+                                    IsLoading="{CompiledBinding $parent[atom:Select].IsLoading}"
+                                    IsAllowClear="{CompiledBinding $parent[atom:Select].IsAllowClear}"
+                                    IsSelectionEmpty="{CompiledBinding $parent[atom:Select].IsSelectionEmpty}"
+                                    IsInputHover="{CompiledBinding $parent[atom:SelectAddOnDecoratedBox].IsInnerBoxHover}"
+                                    IsInputPressed="{CompiledBinding $parent[atom:SelectAddOnDecoratedBox].IsInnerBoxPressed}"
+                                    IsDropDownOpen="{CompiledBinding $parent[atom:Select].IsDropDownOpen}" />
                             </StackPanel>
                         </atom:AddOnDecoratedBox.ContentRightAddOn>
                         <Panel>
@@ -46,8 +69,17 @@
                                 Foreground="{TemplateBinding PlaceholderForeground}" />
                             <atom:SelectFilterTextBox Name="PART_SingleFilterInput"
                                                       IsVisible="False"
-                                                      SizeType="{TemplateBinding SizeType}"
-                                                      PlaceholderForeground="{TemplateBinding PlaceholderForeground}" />
+                                                      VerticalAlignment="Stretch"
+                                                      FontSize="{TemplateBinding FontSize}"
+                                                      FontFamily="{TemplateBinding FontFamily}"
+                                                      FontStyle="{TemplateBinding FontStyle}"
+                                                      FontWeight="{TemplateBinding FontWeight}"
+                                                      PlaceholderForeground="{TemplateBinding PlaceholderForeground}"
+                                                      atom:OverflowTip.IsEnabled="{TemplateBinding IsShowOverflowTip}"
+                                                      atom:OverflowTip.Text="{Binding Text, RelativeSource={RelativeSource Self}}"
+                                                      atom:OverflowTip.ShowDelay="{TemplateBinding OverflowTipDelay}"
+                                                      atom:OverflowTip.Placement="{TemplateBinding OverflowTipPlacement}"
+                                                      atom:OverflowTip.PlacementTarget="{Binding $parent[atom:SelectAddOnDecoratedBox]}" />
                             <atom:SelectResultOptionsBox
                                 Name="SelectedOptionsBox"
                                 HorizontalAlignment="Stretch"
@@ -56,9 +88,16 @@
                                 SizeType="{TemplateBinding SizeType}"
                                 SelectedOptions="{TemplateBinding SelectedOptions}"
                                 IsFilterEnabled="{TemplateBinding IsEffectiveFilterEnabled}"
+                                IsShowOverflowTip="{TemplateBinding IsShowOverflowTip}"
+                                OverflowTipDelay="{TemplateBinding OverflowTipDelay}"
+                                OverflowTipPlacement="{TemplateBinding OverflowTipPlacement}"
                                 IsDropDownOpen="{TemplateBinding IsDropDownOpen}"
                                 MaxTagCount="{TemplateBinding MaxTagCount}"
                                 IsResponsiveTagMode="{TemplateBinding IsResponsiveTagMode}"
+                                CustomControlHeight="{TemplateBinding Height}"
+                                ContentFramePadding="{CompiledBinding $parent[atom:SelectAddOnDecoratedBox].ContentFramePadding}"
+                                ContentMinHeight="{CompiledBinding $parent[atom:SelectAddOnDecoratedBox].ContentMinHeight}"
+                                InputBorderThickness="{CompiledBinding $parent[atom:SelectAddOnDecoratedBox].InnerBoxBorderThickness}"
                                 IsVisible="False"
                                 Focusable="True" />
                         </Panel>
@@ -77,22 +116,22 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:SelectTokenSharedTokenResource EnableMotion}" />
         <Setter Property="PopupContentPadding"
                 Value="{atom:SelectTokenResource PopupContentPadding}" />
-        <Setter Property="OptionFontSize" Value="{atom:SharedTokenResource FontSize}" />
-        <Setter Property="ItemHeight" Value="{atom:SharedTokenResource ControlHeight}" />
+        <Setter Property="OptionFontSize" Value="{atom:SelectTokenSharedTokenResource FontSize}" />
+        <Setter Property="ItemHeight" Value="{atom:SelectTokenSharedTokenResource ControlHeight}" />
         <Setter Property="PlaceholderForeground"
-                Value="{atom:SharedTokenResource ColorTextPlaceholder}" />
+                Value="{atom:SelectTokenSharedTokenResource ColorTextPlaceholder}" />
 
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeLG}" />
+            <Setter Property="FontSize" Value="{atom:SelectTokenSharedTokenResource FontSizeLG}" />
         </Style>
-        <Style Selector="^[SizeType=Middle]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+        <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
+            <Setter Property="FontSize" Value="{atom:SelectTokenSharedTokenResource FontSize}" />
         </Style>
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+            <Setter Property="FontSize" Value="{atom:SelectTokenSharedTokenResource FontSize}" />
         </Style>
 
         <Style Selector="^ /template/ atom|Popup#PART_Popup">
@@ -101,7 +140,7 @@
             <Setter Property="PopupRootShadow" Value="{atom:PopupHostTokenResource PopupRootShadow}" />
         </Style>
         <Style Selector="^ /template/ Border#PopupFrame">
-            <Setter Property="Background" Value="{atom:SharedTokenResource ColorBgElevated}" />
+            <Setter Property="Background" Value="{atom:SelectTokenSharedTokenResource ColorBgElevated}" />
             <Setter Property="CornerRadius"
                     Value="{atom:PopupHostTokenResource BorderRadius}" />
         </Style>
@@ -158,7 +197,7 @@
         </Setter>
 
         <Style Selector="^:disabled">
-            <Setter Property="Foreground" Value="{atom:SharedTokenResource ColorTextDisabled}" />
+            <Setter Property="Foreground" Value="{atom:SelectTokenSharedTokenResource ColorTextDisabled}" />
         </Style>
 
     </ControlTheme>

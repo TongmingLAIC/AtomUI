@@ -10,15 +10,18 @@
                         CornerRadius="{TemplateBinding CornerRadius}"
                         Padding="{TemplateBinding Padding}"
                         ClipToBounds="True">
-                    <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                    <ScrollViewer MaxHeight="{TemplateBinding ListMaxHeight}"
+                                  VerticalScrollBarVisibility="{TemplateBinding ListScrollBarVisibility}">
+                        <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                    </ScrollViewer>
                 </Border>
             </ControlTemplate>
         </Setter>
         
         <Setter Property="ItemsPanel">
             <ItemsPanelTemplate>
-                <WrapPanel LineSpacing="{atom:SharedTokenResource SpacingXS}"
-                           ItemSpacing="{atom:SharedTokenResource SpacingXS}"/>
+                <WrapPanel LineSpacing="{atom:UploadTokenSharedTokenResource SpacingXS}"
+                           ItemSpacing="{atom:UploadTokenSharedTokenResource SpacingXS}"/>
             </ItemsPanelTemplate>
         </Setter>
     </ControlTheme>

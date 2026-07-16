@@ -1,5 +1,4 @@
 using AtomUI.Animations;
-using Avalonia.Threading;
 using AtomUI.Controls;
 using AtomUI.Controls.Utils;
 using AtomUI.Icons.AntDesign;
@@ -86,6 +85,9 @@ public class TabItem : HeaderedContentControl, ISelectable
     internal static readonly StyledProperty<SizeType> SizeTypeProperty =
         SizeTypeControlProperty.SizeTypeProperty.AddOwner<TabItem>();
 
+    internal static readonly StyledProperty<bool> IsTabReorderDraggingProperty =
+        AvaloniaProperty.Register<TabItem, bool>(nameof(IsTabReorderDragging));
+
     internal static readonly StyledProperty<TabSharp> ShapeProperty =
         AvaloniaProperty.Register<TabItem, TabSharp>(nameof(Shape));
 
@@ -98,6 +100,9 @@ public class TabItem : HeaderedContentControl, ISelectable
     internal static readonly StyledProperty<bool> HasIconProperty =
         AvaloniaProperty.Register<TabItem, bool>(nameof(HasIcon));
 
+    internal static readonly StyledProperty<bool> IsIconSlotReservedProperty =
+        AvaloniaProperty.Register<TabItem, bool>(nameof(IsIconSlotReserved));
+
     internal static readonly DirectProperty<TabItem, Thickness> LineMaskMarginProperty =
         AvaloniaProperty.RegisterDirect<TabItem, Thickness>(
             nameof(LineMaskMargin),
@@ -108,6 +113,12 @@ public class TabItem : HeaderedContentControl, ISelectable
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
+    }
+
+    internal bool IsTabReorderDragging
+    {
+        get => GetValue(IsTabReorderDraggingProperty);
+        set => SetValue(IsTabReorderDraggingProperty, value);
     }
 
     internal TabSharp Shape
@@ -132,6 +143,12 @@ public class TabItem : HeaderedContentControl, ISelectable
     {
         get => GetValue(HasIconProperty);
         set => SetValue(HasIconProperty, value);
+    }
+
+    internal bool IsIconSlotReserved
+    {
+        get => GetValue(IsIconSlotReservedProperty);
+        set => SetValue(IsIconSlotReservedProperty, value);
     }
 
     // Card only
@@ -159,7 +176,21 @@ public class TabItem : HeaderedContentControl, ISelectable
 
     private void ConfigureHasIcon()
     {
-        HasIcon = Icon is not null;
+        var hasIcon = Icon is not null;
+        if (HasIcon == hasIcon)
+        {
+            return;
+        }
+
+        HasIcon = hasIcon;
+        NotifyIconSlotOwner();
+    }
+
+    private void NotifyIconSlotOwner()
+    {
+        var tabControl = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabControl ??
+                         Parent as BaseTabControl;
+        tabControl?.NotifyTabItemIconStateChanged();
     }
 
     private void SetupDefaultCloseIcon()
@@ -190,6 +221,8 @@ public class TabItem : HeaderedContentControl, ISelectable
     {
         base.OnAttachedToLogicalTree(e);
         SetupShapeThemeBindings(false);
+        ConfigureHasIcon();
+        NotifyIconSlotOwner();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -278,14 +311,39 @@ public class TabItem : HeaderedContentControl, ISelectable
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
+        var tabControl = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabControl;
+        tabControl?.NotifyTabActivationPointerPressed(this, e);
+        tabControl?.NotifyTabReorderPointerPressed(this, e);
+
         base.OnPointerPressed(e);
         UpdateSelectionFromEvent(e);
+
+        tabControl?.NotifyTabReorderPointerPressCompleted(this, e);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (ItemsControl.ItemsControlFromItemContainer(this) is BaseTabControl tabControl &&
+            tabControl.NotifyTabReorderPointerMoved(this, e))
+        {
+            PseudoClasses.Set(StdPseudoClass.Pressed, true);
+            e.Handled = true;
+        }
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
-        base.OnPointerReleased(e);
+        var tabControl = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabControl;
+        if (tabControl is not null && tabControl.NotifyTabReorderPointerReleased(this, e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         UpdateSelectionFromEvent(e);
+        base.OnPointerReleased(e);
+        tabControl?.NotifyTabActivationPointerReleased(this, e);
     }
 
     protected bool UpdateSelectionFromEvent(RoutedEventArgs e) =>
@@ -296,6 +354,12 @@ public class TabItem : HeaderedContentControl, ISelectable
         Focus();
         SetCurrentValue(IsSelectedProperty, true);
         e.Handled = true;
+    }
+
+    internal void SetTabReorderDragging(bool isDragging)
+    {
+        IsTabReorderDragging = isDragging;
+        PseudoClasses.Set(StdPseudoClass.Pressed, isDragging);
     }
 
     private void UpdateHeader(AvaloniaPropertyChangedEventArgs obj)

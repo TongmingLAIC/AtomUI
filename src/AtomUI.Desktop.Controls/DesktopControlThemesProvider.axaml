@@ -9,6 +9,7 @@
         <ResourceInclude Source="Alert/Themes/AlertTheme.axaml" />
         <ResourceInclude Source="Avatar/Themes/AvatarThemes.axaml" />
         <ResourceInclude Source="Badge/Themes/BadgeThemes.axaml" />
+        <ResourceInclude Source="BorderBeam/Themes/BorderBeamTheme.axaml" />
         <ResourceInclude Source="Breadcrumb/Themes/BreadcrumbThemes.axaml" />
         <ResourceInclude Source="Buttons/Themes/ButtonThemes.axaml" />
         <ResourceInclude Source="ButtonSpinner/Themes/ButtonSpinnerThemes.axaml" />
@@ -35,6 +36,7 @@
         <ResourceInclude Source="Input/Themes/InputThemes.axaml" />
         <ResourceInclude Source="ListView/Themes/ListViewThemes.axaml" />
         <ResourceInclude Source="ListBox/Themes/ListBoxThemes.axaml" />
+        <ResourceInclude Source="Masonry/Themes/MasonryThemes.axaml" />
         <ResourceInclude Source="Mentions/Themes/MentionsThemes.axaml" />
         <ResourceInclude Source="Menu/Themes/MenuThemes.axaml" />
         <ResourceInclude Source="Message/Themes/MessageThemes.axaml" />

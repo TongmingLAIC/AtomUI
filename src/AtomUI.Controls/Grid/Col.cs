@@ -10,6 +10,9 @@ public class Col : ContentControl
     public static readonly StyledProperty<GridColSpanInfo> SpanProperty =
         AvaloniaProperty.Register<Col, GridColSpanInfo>(nameof(Span));
 
+    public static readonly StyledProperty<GridColFlex?> FlexProperty =
+        AvaloniaProperty.Register<Col, GridColFlex?>(nameof(Flex));
+
     public static readonly StyledProperty<int> OffsetProperty =
         AvaloniaProperty.Register<Col, int>(nameof(Offset), validate: v => v >= 0 && v <= 24);
 
@@ -40,10 +43,19 @@ public class Col : ContentControl
     public static readonly StyledProperty<GridColSize?> XxlProperty =
         AvaloniaProperty.Register<Col, GridColSize?>(nameof(Xxl));
 
+    public static readonly StyledProperty<GridColSize?> XxxlProperty =
+        AvaloniaProperty.Register<Col, GridColSize?>(nameof(Xxxl));
+
     public GridColSpanInfo Span
     {
         get => GetValue(SpanProperty);
         set => SetValue(SpanProperty, value);
+    }
+
+    public GridColFlex? Flex
+    {
+        get => GetValue(FlexProperty);
+        set => SetValue(FlexProperty, value);
     }
 
     public int Offset
@@ -106,10 +118,17 @@ public class Col : ContentControl
         set => SetValue(XxlProperty, value);
     }
 
+    public GridColSize? Xxxl
+    {
+        get => GetValue(XxxlProperty);
+        set => SetValue(XxxlProperty, value);
+    }
+
     static Col()
     {
         AffectsMeasure<Col>(
             SpanProperty,
+            FlexProperty,
             OffsetProperty,
             OrderProperty,
             PushProperty,
@@ -119,13 +138,15 @@ public class Col : ContentControl
             MdProperty,
             LgProperty,
             XlProperty,
-            XxlProperty);
+            XxlProperty,
+            XxxlProperty);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
         if (change.Property == SpanProperty ||
+            change.Property == FlexProperty ||
             change.Property == OffsetProperty ||
             change.Property == OrderProperty ||
             change.Property == PushProperty ||
@@ -135,7 +156,8 @@ public class Col : ContentControl
             change.Property == MdProperty ||
             change.Property == LgProperty ||
             change.Property == XlProperty ||
-            change.Property == XxlProperty)
+            change.Property == XxlProperty ||
+            change.Property == XxxlProperty)
         {
             if (this.GetVisualParent() is Row row)
             {
@@ -150,7 +172,7 @@ public class Col : ContentControl
 
     internal GridColLayout ResolveLayout(MediaBreakPoint breakPoint)
     {
-        var layout = new GridColLayout(Span.GetValue(breakPoint), Offset, Order, Push, Pull);
+        var layout = new GridColLayout(Flex, Span.GetValue(breakPoint), IsSet(SpanProperty), Offset, Order, Push, Pull);
 
         if (Xs is not null)
         {
@@ -180,6 +202,11 @@ public class Col : ContentControl
         if (breakPoint >= MediaBreakPoint.ExtraExtraLarge && Xxl is not null)
         {
             layout = Xxl.ApplyTo(layout);
+        }
+
+        if (breakPoint >= MediaBreakPoint.ExtraExtraExtraLarge && Xxxl is not null)
+        {
+            layout = Xxxl.ApplyTo(layout);
         }
 
         return layout;

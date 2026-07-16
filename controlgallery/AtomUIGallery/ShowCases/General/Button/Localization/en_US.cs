@@ -1,19 +1,66 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Button;
 
 [LanguageProvider(LanguageCode.en_US, ButtonShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ComponentCategory = "General";
+    public const string ComponentStatusStable = "Stable";
+    public const string PageSubtitle = "Trigger actions and express intent with clear visual priority.";
+    public const string PageDescription = "Button is the primary action control in AtomUI. Use type, shape, size, icon and loading states to build predictable workflows without losing the Ant Design interaction model.";
+    public const string ExampleGroupBasicTitle = "Button type";
+    public const string ExampleGroupBasicDescription = "Use button type to express action priority in the current region.";
+    public const string ExampleGroupShapeTitle = "Shape and icon";
+    public const string ExampleGroupShapeDescription = "Round, circle and icon buttons keep compact actions easy to recognize.";
+    public const string ExampleGroupSizeTitle = "Size";
+    public const string ExampleGroupSizeDescription = "Switch between large, middle and small sizes to match density requirements.";
+    public const string ExampleGroupStateTitle = "State";
+    public const string ExampleGroupStateDescription = "Loading, disabled, danger and ghost states communicate availability and risk.";
+    public const string ApiTitle = "API";
+    public const string ApiDescription = "Common Button properties used by the gallery examples. Full inherited control members remain available from AtomUI button controls.";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyButtonType = "Sets the visual button type, such as primary, default, dashed, text, or link.";
+    public const string ApiPropertySizeType = "Controls button height and padding density.";
+    public const string ApiPropertyShape = "Changes button shape between default, round, and circle.";
+    public const string ApiPropertyIcon = "Displays an icon before or after the content, or as an icon-only button.";
+    public const string ApiPropertyIconPlacement = "Sets whether the icon appears at the start or end of the content.";
+    public const string ApiPropertyLoading = "Shows a loading indicator and communicates that the action is in progress.";
+    public const string ApiPropertyDanger = "Applies danger styling for destructive or high-risk actions.";
+    public const string ApiPropertyColor = "Sets the semantic color used by the Color and Variant model.";
+    public const string ApiPropertyVariant = "Sets the visual variant, such as solid, outlined, dashed, filled, text, or link.";
+    public const string ApiPropertyCustomBackground = "Sets a controlled custom normal-state background overlay for solid non-danger buttons.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenNameColorPrimary = "Primary color used by primary buttons and focused interaction states.";
+    public const string TokenNameControlHeight = "Shared control height scale used by large, middle and small buttons.";
+    public const string TokenNameButtonToken = "Component token mapping that derives Button visual values from shared tokens.";
+    public const string TokenScopeShared = "Shared";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
+    public const string TokenStatusMapped = "Mapped";
     public const string TypeTitle = "Type";
     public const string TypeDescription = "There are primary button, default button, dashed button, text button and link button in antd.";
+    public const string ColorVariantTitle = "Color and variant";
+    public const string ColorVariantDescription = "Combine semantic color with visual variant to create primary, danger and preset-color buttons.";
+    public const string GradientButtonTitle = "Gradient Button";
+    public const string GradientButtonDescription = "Customize solid buttons with gradient backgrounds through CustomBackground.";
     public const string ButtonShapeTitle = "Button Shape";
     public const string ButtonShapeDescription = "Supported button shape display, such as primary, default, dashed and text, etc.";
     public const string SizeTitle = "Size";
     public const string SizeDescription = "AtomUI supports three sizes of buttons: small, default and large. If a large or small button is desired, set the size property to either large or small respectively. Omit the size property for a button with the default size.";
     public const string IconTitle = "Icon";
-    public const string IconDescription = "You can add an icon through the icon property and adjust the position of the icon using iconPosition.";
+    public const string IconDescription = "You can add an icon through the Icon property and adjust the position of the icon using IconPlacement.";
+    public const string IconPlacementTitle = "Button icon placement";
+    public const string IconPlacementDescription = "Set IconPlacement to Start or End to place the button icon before or after the content.";
     public const string LoadingTitle = "Loading";
     public const string LoadingDescription = "A loading indicator can be added to a button by setting the loading property on the Button.";
     public const string BlockButtonTitle = "Block Button";
@@ -31,12 +78,27 @@ internal partial class en_US : LanguageProvider
     public const string P2ContentLinkButton = "Link Button";
     public const string P2ContentPrimary = "Primary";
     public const string P2ContentDefault = "Default";
+    public const string P2ContentSolid = "Solid";
+    public const string P2ContentOutlined = "Outlined";
+    public const string P2ContentFilled = "Filled";
     public const string P2ContentText = "Text";
     public const string P2ContentLink = "Link";
+    public const string P2ContentGradient = "Gradient Button";
+    public const string P2ContentWarmGradient = "Warm Gradient";
+    public const string P2ColorDefault = "Default";
+    public const string P2ColorPrimary = "Primary";
+    public const string P2ColorDanger = "Danger";
+    public const string P2ColorPink = "Pink";
+    public const string P2ColorPurple = "Purple";
+    public const string P2ColorCyan = "Cyan";
     public const string P2ContentAa = "AA";
     public const string P2TextExpandDirection = "Button size:";
+    public const string P2TextIconPlacement = "Icon placement:";
     public const string P2ContentLarge = "Large";
     public const string P2ContentSmall = "Small";
+    public const string P2ContentCustom = "Custom";
+    public const string P2ContentStart = "start";
+    public const string P2ContentEnd = "end";
     public const string P2ContentDownload = "Download";
     public const string P2ContentSearch = "Search";
     public const string P2ContentLoading = "Loading";
@@ -58,5 +120,4 @@ internal partial class en_US : LanguageProvider
     public const string P2ContentGhost = "Ghost";
     public const string P2ContentGhostDisabled = "Ghost(disabled)";
 
-    protected override Type GetResourceKindType() => typeof(ButtonShowCaseLangResourceKind);
 }

@@ -6,38 +6,25 @@
               TargetType="atom:TextBox">
     <Setter Property="Template">
         <ControlTemplate TargetType="atom:TextBox">
-            <Border
+            <atom:PixelAlignedBorder
                 Name="InnerBoxDecorator"
                 Padding="{TemplateBinding Padding}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding EffectiveCornerRadius}"
                 BorderBrush="{TemplateBinding BorderBrush}"
-                Background="{TemplateBinding Background}">
+                Background="{TemplateBinding Background}"
+                BackgroundSizing="InnerBorderEdge">
                 <DockPanel Name="ContentLayout" LastChildFill="True">
                     <StackPanel
-                        Name="{x:Static atom:AddOnDecoratedBoxThemeConstants.LeftAddOnLayoutPart}"
                         Orientation="Horizontal"
-                        DockPanel.Dock="Left">
-                        <ContentPresenter
-                            Name="{x:Static atom:AddOnDecoratedBoxThemeConstants.LeftAddOnPart}"
-                            VerticalAlignment="Stretch"
-                            VerticalContentAlignment="Center"
-                            HorizontalAlignment="Left"
-                            Focusable="False"
-                            Content="{TemplateBinding InnerLeftContent}"/>
-                    </StackPanel>
-            
-                    <StackPanel
-                        Name="{x:Static atom:AddOnDecoratedBoxThemeConstants.RightAddOnLayoutPart}"
-                        Orientation="Horizontal"
-                        DockPanel.Dock="Right">
+                        DockPanel.Dock="Right"
+                        Spacing="{atom:TextBoxTokenSharedTokenResource UniformlyPaddingXXS}">
                         <atom:InputClearIconButton
                             Name="PART_ClearButton"
                             IsVisible="{TemplateBinding IsEffectiveShowClearButton}" 
                             IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                             Icon="{TemplateBinding ClearIcon}"
                             VerticalAlignment="Center"/>
-                        <!-- 新增显示密码按钮 -->
                         <atom:RevealButton
                             Name="PART_RevealButton"
                             IsChecked="{TemplateBinding RevealPassword, Mode=TwoWay}"
@@ -51,13 +38,6 @@
                             HorizontalAlignment="Right"
                             IsVisible="{TemplateBinding IsFormFeedbackVisible}"
                             Content="{TemplateBinding FormFeedback}"/>
-                        <ContentPresenter
-                            Name="{x:Static atom:AddOnDecoratedBoxThemeConstants.RightAddOnPart}"
-                            VerticalAlignment="Stretch"
-                            VerticalContentAlignment="Center"
-                            HorizontalAlignment="Right"
-                            IsVisible="{TemplateBinding InnerRightContent, Converter={x:Static ObjectConverters.IsNotNull}}"
-                            Content="{TemplateBinding InnerRightContent}"/>
                         <atom:TextBlock Name="TextCountIndicator" 
                                         VerticalAlignment="Center"
                                         Text="{TemplateBinding CountText}"
@@ -81,8 +61,9 @@
                                 Foreground="{TemplateBinding PlaceholderForeground}"
                                 LineHeight="{TemplateBinding LineHeight}"
                                 TextAlignment="{TemplateBinding TextAlignment}"
+                                TextTrimming="CharacterEllipsis"
                                 TextWrapping="{TemplateBinding TextWrapping}"
-                                IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+                                IsVisible="{TemplateBinding IsPlaceholderTextVisible}" />
                             <atom:InputTextPresenter
                                 Name="PART_TextPresenter"
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -103,7 +84,7 @@
                         </Panel>
                     </atom:ScrollViewer>
                 </DockPanel>
-            </Border>
+            </atom:PixelAlignedBorder>
         </ControlTemplate>
     </Setter>
 
@@ -111,63 +92,95 @@
         <Setter Property="atom:ScrollViewer.IsLiteMode" Value="True" />
         <Setter Property="atom:ScrollViewer.AllowAutoHide" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorBorder}" />
-        <Setter Property="SelectionBrush" Value="{atom:SharedTokenResource SelectionBackground}" />
-        <Setter Property="CaretBrush" Value="{atom:SharedTokenResource ColorText}" />
+        <Setter Property="BorderBrush" Value="{atom:TextBoxTokenResource BorderColor}" />
+        <Setter Property="BorderThickness" Value="{atom:TextBoxTokenResource BorderThickness}" />
+        <Setter Property="SelectionBrush" Value="{atom:TextBoxTokenSharedTokenResource SelectionBackground}" />
+        <Setter Property="CaretBrush" Value="{atom:TextBoxTokenSharedTokenResource ColorText}" />
         <Setter Property="SelectionForegroundBrush"
-                Value="{atom:SharedTokenResource SelectionForeground}" />
+                Value="{atom:TextBoxTokenSharedTokenResource SelectionForeground}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ScrollViewer.IsScrollChainingEnabled" Value="True" />
+        <Setter Property="IsMotionEnabled" Value="{atom:TextBoxTokenSharedTokenResource EnableMotion}" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
+        <Setter Property="ClipToBounds" Value="False" />
     
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="LineHeight" Value="{atom:SharedTokenResource FontHeightLG}" />
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusLG}" />
+            <Setter Property="LineHeight" Value="{atom:TextBoxTokenSharedTokenResource FontHeightLG}" />
+            <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadiusLG}" />
+            <Setter Property="Padding" Value="{atom:TextBoxTokenResource PaddingLG}" />
         </Style>
         <Style Selector="^[SizeType=Middle]">
-            <Setter Property="LineHeight" Value="{atom:SharedTokenResource FontHeight}" />
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadius}" />
+            <Setter Property="LineHeight" Value="{atom:TextBoxTokenSharedTokenResource FontHeight}" />
+            <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadius}" />
+            <Setter Property="Padding" Value="{atom:TextBoxTokenResource Padding}" />
         </Style>
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="LineHeight" Value="{atom:SharedTokenResource FontHeightSM}" />
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}" />
+            <Setter Property="LineHeight" Value="{atom:TextBoxTokenSharedTokenResource FontHeightSM}" />
+            <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadiusSM}" />
+            <Setter Property="Padding" Value="{atom:TextBoxTokenResource PaddingSM}" />
+        </Style>
+        <Style Selector="^[SizeType=Custom]">
+            <Setter Property="LineHeight" Value="{atom:TextBoxTokenSharedTokenResource FontHeight}" />
+            <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadius}" />
         </Style>
     
         <Style Selector="^[IsCustomFontSize=False]">
             <Style Selector="^[SizeType=Large]">
-                <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSizeLG}" />
-                <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusLG}" />
+                <Setter Property="FontSize" Value="{atom:TextBoxTokenSharedTokenResource FontSizeLG}" />
+                <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadiusLG}" />
             </Style>
-            <Style Selector="^[SizeType=Middle]">
-                <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSize}" />
-                <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadius}" />
+            <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
+                <Setter Property="FontSize" Value="{atom:TextBoxTokenSharedTokenResource FontSize}" />
+                <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadius}" />
             </Style>
             <Style Selector="^[SizeType=Small]">
-                <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSizeSM}" />
-                <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}" />
+                <Setter Property="FontSize" Value="{atom:TextBoxTokenSharedTokenResource FontSizeSM}" />
+                <Setter Property="CornerRadius" Value="{atom:TextBoxTokenResource BorderRadiusSM}" />
             </Style>
         </Style>
     
-        <Setter Property="PlaceholderForeground" Value="{atom:SharedTokenResource ColorTextPlaceholder}" />
+        <Setter Property="PlaceholderForeground" Value="{atom:TextBoxTokenSharedTokenResource ColorTextPlaceholder}" />
 
         <Style Selector="^ /template/ TextPresenter#PART_TextPresenter">
             <Setter Property="Margin"
                     Value="2 0 2 0" />
         </Style>
     
-        <Style Selector="^ /template/ StackPanel#PART_LeftAddOnLayout, ^ /template/ StackPanel#PART_RightAddOnLayout">
-            <Setter Property="Spacing"
-                    Value="{atom:SharedTokenResource UniformlyPaddingXXS}" />
-        </Style>
-        
         <Style Selector="^ /template/ atom|TextBlock#TextCountIndicator">
-            <Setter Property="Foreground" Value="{atom:SharedTokenResource ColorTextPlaceholder}" />
+            <Setter Property="Foreground" Value="{atom:TextBoxTokenSharedTokenResource ColorTextPlaceholder}" />
+        </Style>
+
+        <Style Selector="^:pointerover /template/ atom|PixelAlignedBorder#InnerBoxDecorator">
+            <Setter Property="BorderBrush"
+                    Value="{atom:TextBoxTokenResource HoverBorderColor}" />
+        </Style>
+
+        <Style Selector="^:focus /template/ atom|PixelAlignedBorder#InnerBoxDecorator">
+            <Setter Property="BorderBrush"
+                    Value="{atom:TextBoxTokenResource ActiveBorderColor}" />
+            <Setter Property="BoxShadow"
+                    Value="{atom:TextBoxTokenResource ActiveShadow}" />
+        </Style>
+
+        <Style Selector="^[IsMotionEnabled=True] /template/ atom|PixelAlignedBorder#InnerBoxDecorator">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <atom:SolidColorBrushTransition Property="BorderBrush" Duration="{atom:SharedTokenResourceValue Kind=MotionDurationMid}" />
+                    <atom:SolidColorBrushTransition Property="Background" Duration="{atom:SharedTokenResourceValue Kind=MotionDurationMid}" />
+                    <atom:BoxShadowsTransition Property="BoxShadow" Duration="{atom:SharedTokenResourceValue Kind=MotionDurationMid}" />
+                </Transitions>
+            </Setter>
         </Style>
         
         <Style Selector="^:disabled">
-            <Style Selector="^ /template/ ScrollViewer#PART_ScrollViewer">
-                <Setter Property="Foreground" Value="{atom:SharedTokenResource ColorTextDisabled}" />
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#InnerBoxDecorator">
+                <Setter Property="Background" Value="{atom:TextBoxTokenSharedTokenResource ColorBgContainerDisabled}" />
+                <Setter Property="BorderBrush" Value="{atom:TextBoxTokenSharedTokenResource ColorBorder}" />
+            </Style>
+            <Style Selector="^ /template/ atom|ScrollViewer#ScrollViewer">
+                <Setter Property="Foreground" Value="{atom:TextBoxTokenSharedTokenResource ColorTextDisabled}" />
             </Style>
         </Style>
     </Style>

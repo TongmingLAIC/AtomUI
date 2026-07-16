@@ -7,7 +7,6 @@ public class RibbonBadge : AbstractRibbonBadge
 {
     public RibbonBadge()
     {
-        this.RegisterTokenResourceScope(BadgeToken.ScopeProvider);
     }
     
     private protected override AbstractRibbonBadgeAdorner CreateBadgeAdorner()
@@ -16,7 +15,6 @@ public class RibbonBadge : AbstractRibbonBadge
         {
             _ribbonBadgeAdorner = new RibbonBadgeAdorner();
             SetupTokenBindings();
-            HandleDecoratedTargetChanged();
             if (RibbonColor is not null)
             {
                 SetupRibbonColor(RibbonColor);

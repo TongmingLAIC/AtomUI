@@ -1,0 +1,127 @@
+name: AtomUI NuGet Packages Release
+on:
+   workflow_dispatch:
+      inputs:
+         TargetRef:
+            description: 'Branch, tag, or commit SHA to build'
+            type: string
+            required: true
+            default: 'release/6.0'
+         BuildType:
+            description: 'Build type'
+            type: choice
+            required: true
+            default: 'Release'
+            options:
+               - Release
+               - Debug
+         PublishToNuget:
+            description: 'Publish to nuget.org'
+            type: boolean
+            required: false
+            default: false
+env:
+   SOURCE_DIR: ${{ github.workspace }}
+   BASE_OUTPUT_DIR: ${{ github.workspace }}/output
+   LOCAL_NUGET_DIR: ${{ github.workspace }}/nuget
+jobs:
+   BuildAtomUINuget:
+      name: Build AtomUI NuGet packages
+      runs-on: windows-latest
+      steps:
+         -  name: Checkout code
+            uses: actions/checkout@v6
+            with:
+               ref: ${{ inputs.TargetRef }}
+         - name: Setup .NET 10
+           uses: actions/setup-dotnet@v5
+           with:
+              dotnet-version: '10.0.x'
+         -  name: Create local NuGet feed
+            run: |
+               $localFeedPath = $env:LOCAL_NUGET_DIR
+               New-Item -Path $localFeedPath -ItemType Directory -Force | Out-Null
+               Write-Output "Local NuGet feed created at: $localFeedPath"
+               dotnet nuget add source $localFeedPath --name local-feed
+               $sources = dotnet nuget list source
+               if ($sources -match "local-feed") {
+                  Write-Output "Local feed added successfully"
+               } else {
+                  Write-Error "Failed to add local feed"
+                  exit 1
+               }
+         -  name: Build AtomUI projects
+            shell: pwsh
+            run: |
+               # Build AtomUI project
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Native/AtomUI.Native.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Core/AtomUI.Core.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Fonts.AlibabaSans/AtomUI.Fonts.AlibabaSans.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Controls.Shared/AtomUI.Controls.Shared.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Controls/AtomUI.Controls.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Desktop.Controls/AtomUI.Desktop.Controls.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Toolkits.GalleryBase/AtomUI.Toolkits.GalleryBase.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Generator/AtomUI.Generator.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Icons.Shared/AtomUI.Icons.Shared.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Icons.AntDesign/AtomUI.Icons.AntDesign.csproj
+         -  name: Create AtomUI NuGet packages
+            shell: pwsh
+            run: |
+               $projects = @(
+                  "./src/AtomUI.Native/AtomUI.Native.csproj",
+                  "./src/AtomUI.Core/AtomUI.Core.csproj",
+                  "./src/AtomUI.Fonts.AlibabaSans/AtomUI.Fonts.AlibabaSans.csproj",
+                  "./src/AtomUI.Controls/AtomUI.Controls.csproj",
+                  "./src/AtomUI.Controls.Shared/AtomUI.Controls.Shared.csproj",
+                  "./src/AtomUI.Desktop.Controls/AtomUI.Desktop.Controls.csproj",
+                  "./src/AtomUI.Toolkits.GalleryBase/AtomUI.Toolkits.GalleryBase.csproj",
+                  "./src/AtomUI.Generator/AtomUI.Generator.csproj",
+                  "./src/AtomUI.Icons.Shared/AtomUI.Icons.Shared.csproj",
+                  "./src/AtomUI.Icons.AntDesign/AtomUI.Icons.AntDesign.csproj"
+               )
+               foreach ($project in $projects) {
+                  dotnet pack --no-build --output $env:BASE_OUTPUT_DIR --configuration ${{ inputs.BuildType }} $project
+               }
+               $packages = Get-ChildItem -Path $env:BASE_OUTPUT_DIR -Filter *.nupkg -Recurse -File
+               foreach ($pkg in $packages) {
+                  try {
+                     dotnet nuget push $pkg.FullName --source $env:LOCAL_NUGET_DIR
+                     if ($LASTEXITCODE -ne 0) {
+                        Write-Warning "pushed nuget package: $($pkg.Name)"
+                     }
+                  }
+                  catch {
+                      Write-Error "push $($pkg.Name) error: $_"
+                  }
+               }
+         -  name: Build AtomUI Extensions projects
+            shell: pwsh
+            run: |
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Desktop.Controls.DataGrid/AtomUI.Desktop.Controls.DataGrid.csproj
+               dotnet build --configuration ${{ inputs.BuildType }} ./src/AtomUI.Desktop.Controls.ColorPicker/AtomUI.Desktop.Controls.ColorPicker.csproj
+         -  name: Create AtomUI Extensions NuGet packages
+            shell: pwsh
+            run: |
+               dotnet pack --no-build --output $env:BASE_OUTPUT_DIR --configuration ${{ inputs.BuildType }} ./src/AtomUI.Desktop.Controls.DataGrid/AtomUI.Desktop.Controls.DataGrid.csproj
+               dotnet pack --no-build --output $env:BASE_OUTPUT_DIR --configuration ${{ inputs.BuildType }} ./src/AtomUI.Desktop.Controls.ColorPicker/AtomUI.Desktop.Controls.ColorPicker.csproj
+         -  name: Upload NuGet artifacts
+            uses: actions/upload-artifact@v7
+            with:
+               name: NuGetPackages
+               path: ${{ env.BASE_OUTPUT_DIR }}/*.nupkg
+         -  name: Publish to nuget.org
+            if: ${{ inputs.PublishToNuget == true }}
+            shell: pwsh
+            run: |
+               $packages = Get-ChildItem -Path $env:BASE_OUTPUT_DIR -Filter *.nupkg -Recurse -File
+               foreach ($pkg in $packages) {
+                  try {
+                     dotnet nuget push $pkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+                     if ($LASTEXITCODE -ne 0) {
+                        Write-Warning "pushed nuget package: $($pkg.Name)"
+                     }
+                  }
+                  catch {
+                      Write-Error "push $($pkg.Name) error: $_"
+                  }
+               }

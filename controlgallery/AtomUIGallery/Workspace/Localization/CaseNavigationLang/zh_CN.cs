@@ -1,12 +1,15 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 using AtomUIGallery.Workspace.Views;
 
 namespace AtomUIGallery.Workspace.Localization.CaseNavigationLang;
 
 [LanguageProvider(LanguageCode.zh_CN, CaseNavigation.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
+    public const string Overview = "概览";
+    public const string Community = "社区";
+    public const string Components = "组件";
+
     public const string General = "通用";
     public const string General_AboutUs = "关于我们";
     public const string General_Palette = "调色板";
@@ -22,6 +25,7 @@ internal partial class zh_CN : LanguageProvider
     public const string Layout_Grid = "Grid 栅格布局";
     public const string Layout_Space = "Space 间距";
     public const string Layout_Splitter = "Splitter 分隔面板";
+    public const string Layout_Masonry = "Masonry 瀑布流";
 
     public const string Navigation = "导航";
     public const string Navigation_Breadcrumb = "Breadcrumb 面包屑";
@@ -84,12 +88,15 @@ internal partial class zh_CN : LanguageProvider
     public const string Feedback_Message = "Message 全局提示";
     public const string Feedback_Modal = "Modal 对话框";
     public const string Feedback_Notification = "Notification 通知提醒框";
-    public const string Feedback_PopupConfirm = "PopupConfirm 气泡确定框";
+    public const string Feedback_PopupConfirm = "PopupConfirm 气泡确认框";
     public const string Feedback_ProgressBar = "ProgressBar 进度条";
     public const string Feedback_Result = "Result 结果";
     public const string Feedback_Skeleton = "Skeleton 骨架屏";
     public const string Feedback_Spin = "Spin 加载提示";
     public const string Feedback_Watermark = "Watermark 水印";
 
-    protected override Type GetResourceKindType() => typeof(CaseNavigationLangResourceKind);
+    public const string Other = "其他";
+    public const string Other_BorderBeam = "BorderBeam 流光边框";
+    public const string Other_Splash = "Splash 启动页";
+
 }

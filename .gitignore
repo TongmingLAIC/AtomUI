@@ -159,6 +159,8 @@ $RECYCLE.BIN/
 #################
 tools/*
 !tools/packages.config
+!tools/AtomUI.Docs.LLMsGenerator/
+!tools/AtomUI.Docs.LLMsGenerator/**
 !tools/performances/
 !tools/performances/**
 .nuget
@@ -201,5 +203,10 @@ outputs/
 cmake-build-*/
 
 controlgallery/AtomUIGallery/GeneratedFiles/Avalonia.Generators/
+controlgallery/AtomUIGallery/GeneratedFiles/AtomUI.Toolkits.GalleryBase.Generator/
+src/AtomUI.Toolkits.GalleryBase/GeneratedFiles/Avalonia.Generators/
 .referenceprojects/
 .claude/settings.local.json
+.superpowers/
+.worktrees/
+docs/superpowers/plans

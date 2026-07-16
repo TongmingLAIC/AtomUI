@@ -1,5 +1,3 @@
-using System.Reactive.Disposables.Fluent;
-
 namespace AtomUIGallery.ShowCases.Avatar;
 
 public partial class AvatarShowCase : GalleryReactiveUserControl<AvatarViewModel>
@@ -9,13 +7,6 @@ public partial class AvatarShowCase : GalleryReactiveUserControl<AvatarViewModel
     public AvatarShowCase()
     {
         InitializeComponent();
-        this.WhenActivated(disposables =>
-        {
-            if (DataContext is AvatarViewModel viewModel)
-            {
-                GalleryBindingUtils.BindCommand(ChangeUserButton, viewModel.ChangeUserCommand).DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(ChangeGapButton, viewModel.ChangeGapCommand).DisposeWith(disposables);
-            }
-        });
     }
+
 }

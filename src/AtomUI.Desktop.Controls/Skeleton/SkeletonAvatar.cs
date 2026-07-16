@@ -58,7 +58,6 @@ public class SkeletonAvatar : AbstractSkeleton, ICustomizableSizeTypeAware
     
     public SkeletonAvatar()
     {
-        this.RegisterTokenResourceScope(SkeletonToken.ScopeProvider);
     }
     
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -100,12 +99,5 @@ public class SkeletonAvatar : AbstractSkeleton, ICustomizableSizeTypeAware
         base.OnApplyTemplate(e);
         ConfigureShape();
         ConfigureSize();
-        if (!IsFollowMode)
-        {
-            if (IsActive)
-            {
-                StartActiveAnimation();
-            }
-        }
     }
 }

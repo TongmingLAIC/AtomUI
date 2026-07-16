@@ -11,76 +11,19 @@
                     Padding="{TemplateBinding Padding}"
                     Margin="{TemplateBinding Margin}">
                 <StackPanel Orientation="Horizontal">
+                    <atom:IconPresenter Name="ItemIconPresenter"
+                                        Icon="{TemplateBinding Icon}" />
                     <ContentPresenter Name="ContentPresenter"
                                       Content="{TemplateBinding Header}"
                                       ContentTemplate="{TemplateBinding HeaderTemplate, Converter={x:Static atom:BaseTabItemTheme.StringToTextBlockConverter}}" />
+                    <atom:IconButton Name="PART_ItemCloseButton"
+                                     Icon="{TemplateBinding CloseIcon}"
+                                     Opacity="{TemplateBinding CloseButtonOpacity}"
+                                     VerticalAlignment="Center" />
                 </StackPanel>
             </Border>
         </ControlTemplate>
     </Setter>
-
-    <Style Selector="^[HasIcon=True][IsClosable=False]">
-        <Setter Property="Template">
-            <ControlTemplate TargetType="atom:TabItem">
-                <Border Name="Frame"
-                        Background="{TemplateBinding Background}"
-                        Padding="{TemplateBinding Padding}"
-                        Margin="{TemplateBinding Margin}">
-                    <StackPanel Orientation="Horizontal">
-                        <atom:IconPresenter Name="ItemIconPresenter"
-                                            Icon="{TemplateBinding Icon}" />
-                        <ContentPresenter Name="ContentPresenter"
-                                          Content="{TemplateBinding Header}"
-                                          ContentTemplate="{TemplateBinding HeaderTemplate, Converter={x:Static atom:BaseTabItemTheme.StringToTextBlockConverter}}" />
-                    </StackPanel>
-                </Border>
-            </ControlTemplate>
-        </Setter>
-    </Style>
-
-    <Style Selector="^[HasIcon=False][IsClosable=True]">
-        <Setter Property="Template">
-            <ControlTemplate TargetType="atom:TabItem">
-                <Border Name="Frame"
-                        Background="{TemplateBinding Background}"
-                        Padding="{TemplateBinding Padding}"
-                        Margin="{TemplateBinding Margin}">
-                    <StackPanel Orientation="Horizontal">
-                        <ContentPresenter Name="ContentPresenter"
-                                          Content="{TemplateBinding Header}"
-                                          ContentTemplate="{TemplateBinding HeaderTemplate, Converter={x:Static atom:BaseTabItemTheme.StringToTextBlockConverter}}" />
-                        <atom:IconButton Name="PART_ItemCloseButton"
-                                         Icon="{TemplateBinding CloseIcon}"
-                                         Opacity="{TemplateBinding CloseButtonOpacity}"
-                                         VerticalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-            </ControlTemplate>
-        </Setter>
-    </Style>
-
-    <Style Selector="^[HasIcon=True][IsClosable=True]">
-        <Setter Property="Template">
-            <ControlTemplate TargetType="atom:TabItem">
-                <Border Name="Frame"
-                        Background="{TemplateBinding Background}"
-                        Padding="{TemplateBinding Padding}"
-                        Margin="{TemplateBinding Margin}">
-                    <StackPanel Orientation="Horizontal">
-                        <atom:IconPresenter Name="ItemIconPresenter"
-                                            Icon="{TemplateBinding Icon}" />
-                        <ContentPresenter Name="ContentPresenter"
-                                          Content="{TemplateBinding Header}"
-                                          ContentTemplate="{TemplateBinding HeaderTemplate, Converter={x:Static atom:BaseTabItemTheme.StringToTextBlockConverter}}" />
-                        <atom:IconButton Name="PART_ItemCloseButton"
-                                         Icon="{TemplateBinding CloseIcon}"
-                                         Opacity="{TemplateBinding CloseButtonOpacity}"
-                                         VerticalAlignment="Center" />
-                    </StackPanel>
-                </Border>
-            </ControlTemplate>
-        </Setter>
-    </Style>
 
     <Style Selector="^:is(atom|TabItem)">
         <Setter Property="Cursor" Value="Hand" />
@@ -89,17 +32,38 @@
 
         <Style Selector="^ /template/ atom|IconButton#PART_ItemCloseButton">
             <Setter Property="Margin" Value="{atom:TabControlTokenResource CloseIconMargin}" />
-            <Setter Property="IconWidth" Value="{atom:SharedTokenResource IconSizeSM}" />
-            <Setter Property="IconHeight" Value="{atom:SharedTokenResource IconSizeSM}" />
+            <Setter Property="IconWidth" Value="{atom:TabControlTokenSharedTokenResource IconSizeSM}" />
+            <Setter Property="IconHeight" Value="{atom:TabControlTokenSharedTokenResource IconSizeSM}" />
         </Style>
 
         <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
+            <Setter Property="IsVisible" Value="False" />
             <Setter Property="Margin" Value="{atom:TabControlTokenResource ItemIconMargin}" />
             <Setter Property="IconBrush" Value="{TemplateBinding Foreground}" />
         </Style>
 
+        <Style Selector="^[HasIcon=True]">
+            <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+        </Style>
+
+        <Style Selector="^[IsIconSlotReserved=True]">
+            <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
+                <Setter Property="IsVisible" Value="True" />
+            </Style>
+        </Style>
+
         <Style Selector="^:pointerover">
             <Setter Property="Foreground" Value="{atom:TabControlTokenResource ItemHoverColor}" />
+        </Style>
+
+        <Style Selector="^:pressed">
+            <Setter Property="Foreground" Value="{atom:TabControlTokenSharedTokenResource ColorPrimaryActive}" />
+        </Style>
+
+        <Style Selector="^[IsTabReorderDragging=True]">
+            <Setter Property="Background" Value="{atom:TabControlTokenSharedTokenResource ColorBgContainer}" />
         </Style>
 
         <Style Selector="^:selected">
@@ -110,9 +74,9 @@
             <Setter Property="FontSize" Value="{atom:TabControlTokenResource TitleFontSizeLG}" />
             <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
                 <Setter Property="Width"
-                        Value="{atom:SharedTokenResource IconSize}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSize}" />
                 <Setter Property="Height"
-                        Value="{atom:SharedTokenResource IconSize}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSize}" />
             </Style>
         </Style>
 
@@ -120,9 +84,9 @@
             <Setter Property="FontSize" Value="{atom:TabControlTokenResource TitleFontSize}" />
             <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
                 <Setter Property="Width"
-                        Value="{atom:SharedTokenResource IconSize}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSize}" />
                 <Setter Property="Height"
-                        Value="{atom:SharedTokenResource IconSize}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSize}" />
             </Style>
         </Style>
 
@@ -130,9 +94,9 @@
             <Setter Property="FontSize" Value="{atom:TabControlTokenResource TitleFontSizeSM}" />
             <Style Selector="^ /template/ atom|IconPresenter#ItemIconPresenter">
                 <Setter Property="Width"
-                        Value="{atom:SharedTokenResource IconSizeSM}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSizeSM}" />
                 <Setter Property="Height"
-                        Value="{atom:SharedTokenResource IconSizeSM}" />
+                        Value="{atom:TabControlTokenSharedTokenResource IconSizeSM}" />
             </Style>
         </Style>
 
@@ -164,7 +128,7 @@
         </Style>
 
         <Style Selector="^:disabled">
-            <Setter Property="Foreground" Value="{atom:SharedTokenResource ColorTextDisabled}" />
+            <Setter Property="Foreground" Value="{atom:TabControlTokenSharedTokenResource ColorTextDisabled}" />
         </Style>
 
         <Style Selector="^ /template/ atom|IconButton#PART_ItemCloseButton">

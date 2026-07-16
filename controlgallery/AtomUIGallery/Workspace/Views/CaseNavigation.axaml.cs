@@ -1,12 +1,14 @@
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
+using AtomUI.Controls;
 using AtomUI.Desktop.Controls;
+using AtomUI.Theme.Language;
+using AtomUI.Toolkits.GalleryBase.Navigation;
 using AtomUIGallery.Workspace.ViewModels;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using ReactiveUI;
 using Window = Avalonia.Controls.Window;
 
 namespace AtomUIGallery.Workspace.Views;
@@ -14,17 +16,21 @@ namespace AtomUIGallery.Workspace.Views;
 public partial class CaseNavigation : GalleryReactiveUserControl<CaseNavigationViewModel>
 {
     public const string LanguageId = nameof(CaseNavigation);
+    private EventHandler<LanguageVariantChangedEventArgs>? _languageVariantChangedHandler;
 
     public CaseNavigation()
     {
         InitializeComponent();
+        ConfigureNavigationMenu();
 
         this.WhenActivated(disposables =>
         {
             void NavMenuItemClickHandler(object? sender, NavMenuItemClickEventArgs args)
             {
                 var key = args.NavMenuItem.ItemKey;
-                if (key.HasValue && ViewModel is not null)
+                if (key.HasValue &&
+                    ViewModel is not null &&
+                    ViewModel.CanNavigateTo(key.Value))
                 {
                     ViewModel.NavigateToCommand.Execute(key.Value)
                              .Subscribe()
@@ -38,9 +44,24 @@ public partial class CaseNavigation : GalleryReactiveUserControl<CaseNavigationV
         });
     }
 
+    private void ConfigureNavigationMenu()
+    {
+        var configuration = AtomUIGalleryModule.GetConfiguration();
+        var adapter       = new GalleryNavigationMenuAdapter();
+
+        ShowCaseNavMenu.Items.Clear();
+        foreach (var node in adapter.BuildNodes(configuration.NavigationNodes))
+        {
+            ShowCaseNavMenu.Items.Add(node);
+        }
+
+        ShowCaseNavMenu.DefaultOpenPaths = adapter.BuildDefaultOpenPaths(configuration.DefaultOpenKeys);
+    }
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        SubscribeLanguageChanged();
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is Window window)
         {
@@ -50,6 +71,7 @@ public partial class CaseNavigation : GalleryReactiveUserControl<CaseNavigationV
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        UnsubscribeLanguageChanged();
         var topLevel = TopLevel.GetTopLevel(this);
         if (topLevel is Window window)
         {
@@ -57,6 +79,39 @@ public partial class CaseNavigation : GalleryReactiveUserControl<CaseNavigationV
         }
 
         base.OnDetachedFromVisualTree(e);
+    }
+
+    private void SubscribeLanguageChanged()
+    {
+        if (_languageVariantChangedHandler is not null)
+        {
+            return;
+        }
+
+        var themeManager = Application.Current?.GetThemeManager();
+        if (themeManager is null)
+        {
+            return;
+        }
+
+        _languageVariantChangedHandler = (_, _) => ConfigureNavigationMenu();
+        themeManager.LanguageVariantChanged += _languageVariantChangedHandler;
+    }
+
+    private void UnsubscribeLanguageChanged()
+    {
+        if (_languageVariantChangedHandler is null)
+        {
+            return;
+        }
+
+        var themeManager = Application.Current?.GetThemeManager();
+        if (themeManager is not null)
+        {
+            themeManager.LanguageVariantChanged -= _languageVariantChangedHandler;
+        }
+
+        _languageVariantChangedHandler = null;
     }
 
     private void OnGlobalKeyDown(object? sender, KeyEventArgs e)

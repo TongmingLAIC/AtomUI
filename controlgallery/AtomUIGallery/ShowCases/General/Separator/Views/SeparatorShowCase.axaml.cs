@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Separator;
 
 public partial class SeparatorShowCase : GalleryReactiveUserControl<SeparatorViewModel>
@@ -9,4 +8,5 @@ public partial class SeparatorShowCase : GalleryReactiveUserControl<SeparatorVie
     {
         InitializeComponent();
     }
+
 }

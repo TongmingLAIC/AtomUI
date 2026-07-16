@@ -1,15 +1,16 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.FloatButton;
 
 [LanguageProvider(LanguageCode.en_US, FloatButtonShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string BasicTitle = "Basic";
     public const string BasicDescription = "The most basic usage.";
     public const string TypeTitle = "Type";
     public const string TypeDescription = "Change the type of the FloatButton with the type property.";
+    public const string CommandTitle = "Command";
+    public const string CommandDescription = "FloatButtonHost forwards commands to the hosted button, and FloatButton items inside a group inherit the host data context for command binding.";
     public const string ShapeTitle = "Shape";
     public const string ShapeDescription = "Change the shape of the FloatButton with the shape property.";
     public const string TooltipTitle = "FloatButton with tooltip";
@@ -21,7 +22,7 @@ internal partial class en_US : LanguageProvider
     public const string MenuModeTitle = "Menu mode";
     public const string MenuModeDescription = "Open menu mode with trigger, which could be hover or click.";
     public const string ControlledModeTitle = "Controlled mode";
-    public const string ControlledModeDescription = "Set the component to controlled mode through open, which needs to be used together with trigger.";
+    public const string ControlledModeDescription = "Set the component to controlled mode through open. IsOpen binds two-way by default and works together with trigger.";
     public const string PlacementTitle = "Placement";
     public const string PlacementDescription = "Customize animation placement. Four preset placements are provided: top, right, bottom, and left. The default placement is top.";
     public const string BadgeTitle = "Badge";
@@ -32,6 +33,58 @@ internal partial class en_US : LanguageProvider
     public const string P2TooltipDocuments = "Documents";
     public const string P2DescriptionHelpInfo = "HELP INFO";
     public const string P2TextScrollToBottom = "Scroll to bottom";
+    public const string P2CommandCount = "Executed";
+    public const string P2CommandSource = "Source";
+    public const string P2CommandHost = "Host";
+    public const string P2CommandGroupChild = "Group child";
+    public const string PageSubtitle = "Floating actions that stay available inside a scrollable region.";
+    public const string PageDescription = "FloatButton provides quick access to important actions, grouped menus, badges, and back-to-top behavior while keeping controls anchored to the active content area.";
+    public const string ComponentCategory = "General";
+    public const string ComponentStatusStable = ".NET 10";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyPlacement = "Anchoring position of the floating button or group within its host.";
+    public const string ApiPropertyFloatOffsetX = "Horizontal offset applied after placement is calculated.";
+    public const string ApiPropertyFloatOffsetY = "Vertical offset applied after placement is calculated.";
+    public const string ApiPropertyIcon = "Icon displayed inside the button.";
+    public const string ApiPropertyTooltip = "Tooltip text displayed when hovering the button.";
+    public const string ApiPropertyTooltipColor = "Optional color for the tooltip.";
+    public const string ApiPropertyDescription = "Text or content displayed in a square FloatButton.";
+    public const string ApiPropertyButtonType = "Visual button type.";
+    public const string ApiPropertyShape = "Button shape.";
+    public const string ApiPropertyHref = "Optional URI associated with the button.";
+    public const string ApiPropertyCommand = "Command executed when the hosted FloatButton is clicked.";
+    public const string ApiPropertyCommandParameter = "Parameter passed to the command.";
+    public const string ApiPropertyIsMotionEnabled = "Controls whether open, close, and visibility animations are enabled.";
+    public const string ApiPropertyIsBadgeEnabled = "Shows a badge on the floating button.";
+    public const string ApiPropertyIsDotBadge = "Uses a dot badge instead of a count badge.";
+    public const string ApiPropertyBadgeCount = "Count displayed in the badge.";
+    public const string ApiPropertyBadgeColor = "Badge color token or color name.";
+    public const string ApiPropertyBadgeOverflowCount = "Maximum count before the badge shows overflow text.";
+    public const string ApiPropertyTrigger = "Interaction that opens a FloatButton group menu.";
+    public const string ApiPropertyMenuPlacement = "Direction where group menu items are placed.";
+    public const string ApiPropertyIsOpen = "Controlled open state for a FloatButton group. Two-way binding is enabled by default.";
+    public const string ApiPropertyToTopDuration = "Duration of the back-to-top scroll animation.";
+    public const string ApiPropertyTarget = "ScrollViewer controlled by BackTopFloatButton.";
+    public const string ApiPropertyVisibilityHeight = "Scroll offset required before BackTopFloatButton becomes visible.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenNameFloatButtonSize = "Base FloatButton width and height.";
+    public const string TokenNameFloatButtonIconSize = "Icon size inside FloatButton.";
+    public const string TokenNameSquareBadgeOffset = "Badge offset used by square FloatButton.";
+    public const string TokenNameCircleBadgeOffset = "Badge offset used by circular FloatButton.";
+    public const string TokenNamePrimaryColor = "Foreground color for primary FloatButton content.";
+    public const string TokenNameDescriptionLineHeight = "Line height for description text.";
+    public const string TokenNameFloatOffsetX = "Default horizontal floating offset.";
+    public const string TokenNameFloatOffsetY = "Default vertical floating offset.";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
 
-    protected override Type GetResourceKindType() => typeof(FloatButtonShowCaseLangResourceKind);
 }

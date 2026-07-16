@@ -17,10 +17,13 @@
                                                            HasSubMenu="{TemplateBinding HasSubMenu}"
                                                            IsSubMenuOpen="{TemplateBinding IsSubMenuOpen}"
                                                            IsDarkStyle="{TemplateBinding IsDarkStyle}"
+                                                           IsItemBackgroundEnabled="{TemplateBinding IsItemBackgroundEnabled}"
                                                            IsEnabled="{TemplateBinding IsEnabled}"
                                                            IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                                            IsSelected="{TemplateBinding SelectingItemsControl.IsSelected}"
                                                            IsInSelectedPath="{TemplateBinding IsInSelectedPath}"
+                                                           IsKeyboardActive="{TemplateBinding IsKeyboardActive}"
+                                                           IsInlineCollapsed="{TemplateBinding IsInlineCollapsed}"
                                                            IsTopLevel="{TemplateBinding IsTopLevel}" />
                         <atom:Popup Name="PART_Popup"
                                     WindowManagerAddShadowHint="False"
@@ -33,8 +36,8 @@
                                     <Binding Path="HasSubMenu" RelativeSource="{RelativeSource TemplatedParent}" />
                                 </MultiBinding>
                             </atom:Popup.IsOpen>
-                            <Border Name="PART_PopupFrame"
-                                    MinWidth="{TemplateBinding EffectivePopupMinWidth}">
+                            <atom:NavMenuPopupFrame Name="PART_PopupFrame"
+                                                     MinWidth="{TemplateBinding EffectivePopupMinWidth}">
                                 <atom:ScrollViewer IsScrollChainingEnabled="False"
                                                    IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                                    IsLiteMode="{TemplateBinding atom:ScrollViewer.IsLiteMode}"
@@ -45,7 +48,7 @@
                                         Grid.IsSharedSizeScope="True"
                                         KeyboardNavigation.TabNavigation="Continue" />
                                 </atom:ScrollViewer>
-                            </Border>
+                            </atom:NavMenuPopupFrame>
                         </atom:Popup>
                     </Panel>
                 </ControlTemplate>
@@ -63,10 +66,13 @@
                                                          HasSubMenu="{TemplateBinding HasSubMenu}"
                                                          IsSubMenuOpen="{TemplateBinding IsSubMenuOpen}"
                                                          IsDarkStyle="{TemplateBinding IsDarkStyle}"
+                                                         IsItemBackgroundEnabled="{TemplateBinding IsItemBackgroundEnabled}"
                                                          IsEnabled="{TemplateBinding IsEnabled}"
                                                          IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                                          IsSelected="{TemplateBinding SelectingItemsControl.IsSelected}"
-                                                         IsInSelectedPath="{TemplateBinding IsInSelectedPath}" />
+                                                         IsInSelectedPath="{TemplateBinding IsInSelectedPath}"
+                                                         IsKeyboardActive="{TemplateBinding IsKeyboardActive}"
+                                                         IsInlineCollapsed="{TemplateBinding IsInlineCollapsed}" />
                         <atom:Popup Name="PART_Popup"
                                     WindowManagerAddShadowHint="False"
                                     IsLightDismissEnabled="False"
@@ -79,7 +85,7 @@
                                 </MultiBinding>
                             </atom:Popup.IsOpen>
 
-                            <Border Name="PART_PopupFrame">
+                            <atom:NavMenuPopupFrame Name="PART_PopupFrame">
                                 <atom:ScrollViewer IsScrollChainingEnabled="False"
                                                    IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                                    IsLiteMode="{TemplateBinding atom:ScrollViewer.IsLiteMode}"
@@ -88,7 +94,7 @@
                                                     ItemsPanel="{TemplateBinding ItemsPanel}"
                                                     Grid.IsSharedSizeScope="True" />
                                 </atom:ScrollViewer>
-                            </Border>
+                            </atom:NavMenuPopupFrame>
                         </atom:Popup>
                     </Panel>
                 </ControlTemplate>
@@ -108,17 +114,22 @@
                             HasSubMenu="{TemplateBinding HasSubMenu}"
                             IsSubMenuOpen="{TemplateBinding IsSubMenuOpen}"
                             IsDarkStyle="{TemplateBinding IsDarkStyle}"
+                            IsItemBackgroundEnabled="{TemplateBinding IsItemBackgroundEnabled}"
                             IsEnabled="{TemplateBinding IsEnabled}"
                             IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                             IsSelected="{TemplateBinding SelectingItemsControl.IsSelected}"
                             Focusable="{TemplateBinding Focusable}"
-                            IsInSelectedPath="{TemplateBinding IsInSelectedPath}" />
+                            IsInSelectedPath="{TemplateBinding IsInSelectedPath}"
+                            IsKeyboardActive="{TemplateBinding IsKeyboardActive}"
+                            IsInlineCollapsed="{TemplateBinding IsInlineCollapsed}" />
 
                         <atom:LayoutAwareMotionActor
                             Name="PART_ChildItemsLayoutTransform">
-                            <ItemsPresenter Name="ChildItemsPresenter"
-                                            Focusable="False"
-                                            ItemsPanel="{TemplateBinding ItemsPanel}" />
+                            <Border Name="PART_ChildItemsFrame">
+                                <ItemsPresenter Name="ChildItemsPresenter"
+                                                Focusable="False"
+                                                ItemsPanel="{TemplateBinding ItemsPanel}" />
+                            </Border>
                         </atom:LayoutAwareMotionActor>
                     </StackPanel>
                 </ControlTemplate>
@@ -132,16 +143,16 @@
             <Setter Property="PopupMinWidth"
                     Value="{atom:NavMenuTokenResource MenuPopupMinWidth}" />
 
-            <Style Selector="^ /template/ Border#PART_PopupFrame">
+            <Style Selector="^ /template/ atom|NavMenuPopupFrame#PART_PopupFrame">
                 <Setter Property="Background"
-                        Value="{atom:SharedTokenResource ColorBgElevated}" />
+                        Value="{atom:NavMenuTokenResource MenuPopupBg}" />
                 <Setter Property="CornerRadius"
                         Value="{atom:PopupHostTokenResource BorderRadius}" />
                 <Setter Property="MinWidth"
                         Value="{atom:NavMenuTokenResource MenuPopupMinWidth}" />
-                <Setter Property="MaxWidth"
+                <Setter Property="PopupMaxWidth"
                         Value="{atom:NavMenuTokenResource MenuPopupMaxWidth}" />
-                <Setter Property="MaxHeight"
+                <Setter Property="PopupMaxHeight"
                         Value="{atom:NavMenuTokenResource MenuPopupMaxHeight}" />
                 <Setter Property="Padding"
                         Value="{atom:NavMenuTokenResource MenuPopupContentPadding}" />
@@ -149,7 +160,7 @@
         </Style>
 
         <Style Selector="^[IsDarkStyle=True]">
-            <Style Selector="^ /template/ Border#PART_PopupFrame">
+            <Style Selector="^ /template/ atom|NavMenuPopupFrame#PART_PopupFrame">
                 <Setter Property="Background"
                         Value="{atom:NavMenuTokenResource DarkMenuPopupBg}" />
             </Style>
@@ -158,23 +169,23 @@
         <Style Selector="^[Mode=Horizontal],^[Mode=Vertical]">
             <Style Selector="^ /template/ atom|Popup#PART_Popup">
                 <Setter Property="RequestedPlacement" Value="RightEdgeAlignedTop" />
-                <Setter Property="HorizontalOffset" Value="{atom:SharedTokenResource SpacingXS}" />
-                <Setter Property="VerticalOffset" Value="{atom:SharedTokenResource SpacingXXS}" />
+                <Setter Property="HorizontalOffset" Value="{atom:NavMenuTokenSharedTokenResource SpacingXS}" />
+                <Setter Property="VerticalOffset" Value="{atom:NavMenuTokenSharedTokenResource SpacingXXS}" />
             </Style>
         </Style>
 
         <Style Selector="^[Mode=Horizontal]:toplevel">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+            <Setter Property="FontSize" Value="{atom:NavMenuTokenSharedTokenResource FontSize}" />
             <Style Selector="^ /template/ atom|Popup#PART_Popup">
                 <Setter Property="RequestedPlacement" Value="Bottom" />
-                <Setter Property="VerticalOffset" Value="{atom:SharedTokenResource SpacingXXS}" />
+                <Setter Property="VerticalOffset" Value="{atom:NavMenuTokenSharedTokenResource SpacingXXS}" />
                 <Setter Property="HorizontalOffset" Value="0" />
             </Style>
         </Style>
 
         <Style Selector="^[Mode=Inline]">
             <Setter Property="OpenCloseMotionDuration"
-                    Value="{atom:SharedTokenResource MotionDurationSlow}" />
+                    Value="{atom:NavMenuTokenSharedTokenResource MotionDurationSlow}" />
 
             <Setter Property="Focusable" Value="False" />
             <Style Selector="^ /template/ ItemsPresenter#ChildItemsPresenter StackPanel">
@@ -182,9 +193,29 @@
                         Value="{atom:NavMenuTokenResource VerticalItemsPanelSpacing}" />
             </Style>
 
-            <Style Selector="^ /template/ atom|LayoutAwareMotionActor#PART_ChildItemsLayoutTransform">
-                <Setter Property="Margin"
-                        Value="{atom:NavMenuTokenResource VerticalChildItemsMargin}" />
+            <Style Selector="^[IsItemBackgroundEnabled=True]">
+                <Style Selector="^ /template/ atom|LayoutAwareMotionActor#PART_ChildItemsLayoutTransform">
+                    <Setter Property="Margin"
+                            Value="{atom:NavMenuTokenResource VerticalChildItemsMargin}" />
+                </Style>
+
+                <Style Selector="^ /template/ Border#PART_ChildItemsFrame">
+                    <Setter Property="Background"
+                            Value="{atom:NavMenuTokenResource SubMenuItemBg}" />
+                </Style>
+
+                <Style Selector="^[IsDarkStyle=True]">
+                    <Style Selector="^ /template/ Border#PART_ChildItemsFrame">
+                        <Setter Property="Background"
+                                Value="{atom:NavMenuTokenResource DarkSubMenuItemBg}" />
+                    </Style>
+                </Style>
+            </Style>
+
+            <Style Selector="^[IsItemBackgroundEnabled=False]">
+                <Style Selector="^ /template/ Border#PART_ChildItemsFrame">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
             </Style>
         </Style>
 

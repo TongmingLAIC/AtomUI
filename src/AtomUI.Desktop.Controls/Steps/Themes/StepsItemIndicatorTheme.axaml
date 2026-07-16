@@ -12,12 +12,12 @@
                     <ControlTemplate>
                         <Panel>
                             <Border Name="ProgressFrame">
-                                <Border Name="Frame"
-                                        IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNull}}"
-                                        BorderThickness="1"
-                                        BorderBrush="{TemplateBinding BorderBrush}"
-                                        Background="{TemplateBinding Background}"
-                                        CornerRadius="{TemplateBinding CornerRadius}">
+                                <atom:PixelAlignedBorder Name="Frame"
+                                                         IsVisible="{TemplateBinding Icon, Converter={x:Static ObjectConverters.IsNull}}"
+                                                         BorderThickness="1"
+                                                         BorderBrush="{TemplateBinding BorderBrush}"
+                                                         Background="{TemplateBinding Background}"
+                                                         CornerRadius="{TemplateBinding CornerRadius}">
                                     <Panel>
                                         <TextBlock Name="PositionText"
                                                    Text="{TemplateBinding Position}"
@@ -34,7 +34,7 @@
                                                                  HorizontalAlignment="Center"
                                                                  IsVisible="False" />
                                     </Panel>
-                                </Border>
+                                </atom:PixelAlignedBorder>
                             </Border>
 
                             <atom:IconPresenter
@@ -51,7 +51,7 @@
                     <Setter Property="ProgressColor"
                             Value="{atom:StepsTokenResource ProgressColor}" />
                     <Setter Property="ProgressLineThickness"
-                            Value="{atom:SharedTokenResource LineWidthBold}" />
+                            Value="{atom:StepsTokenSharedTokenResource LineWidthBold}" />
                     <Style Selector="^ /template/ Border#ProgressFrame">
                         <Setter Property="Padding"
                                 Value="{atom:StepsTokenResource ProgressFramePadding}" />
@@ -59,7 +59,7 @@
 
                     <Style Selector="^[SizeType=Small]">
                         <Setter Property="ProgressLineThickness"
-                                Value="{atom:SharedTokenResource LineWidth}" />
+                                Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
                         <Style Selector="^ /template/ Border#ProgressFrame">
                             <Setter Property="Padding"
                                     Value="{atom:StepsTokenResource ProgressFramePaddingSM}" />
@@ -86,7 +86,7 @@
                 </Style>
 
                 <Style Selector="^[IsCustom=False]">
-                    <Style Selector="^ /template/ Border#Frame">
+                    <Style Selector="^ /template/ atom|PixelAlignedBorder#Frame">
                         <Setter Property="Width" Value="{atom:StepsTokenResource IconSize}" />
                         <Setter Property="Height" Value="{atom:StepsTokenResource IconSize}" />
                     </Style>
@@ -99,17 +99,17 @@
                     </Style>
 
                     <Style Selector="^[SizeType=Small]">
-                        <Style Selector="^ /template/ Border#Frame">
+                        <Style Selector="^ /template/ atom|PixelAlignedBorder#Frame">
                             <Setter Property="Width" Value="{atom:StepsTokenResource IconSizeSM}" />
                             <Setter Property="Height"
                                     Value="{atom:StepsTokenResource IconSizeSM}" />
                         </Style>
-                        <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeSM}" />
+                        <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSizeSM}" />
                         <Style Selector="^ /template/ atom|Icon">
                             <Setter Property="Width"
-                                    Value="{atom:SharedTokenResource FontSizeSM}" />
+                                    Value="{atom:StepsTokenSharedTokenResource FontSizeSM}" />
                             <Setter Property="Height"
-                                    Value="{atom:SharedTokenResource FontSizeSM}" />
+                                    Value="{atom:StepsTokenSharedTokenResource FontSizeSM}" />
                         </Style>
 
                     </Style>
@@ -259,13 +259,13 @@
         <Style Selector="^[Style=Inline]">
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border Name="Frame"
-                            Background="{TemplateBinding Background}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            CornerRadius="{TemplateBinding CornerRadius}"
-                            Width="{TemplateBinding Width}"
-                            Height="{TemplateBinding Height}" />
+                    <atom:PixelAlignedBorder Name="Frame"
+                                             Background="{TemplateBinding Background}"
+                                             BorderThickness="{TemplateBinding BorderThickness}"
+                                             BorderBrush="{TemplateBinding BorderBrush}"
+                                             CornerRadius="{TemplateBinding CornerRadius}"
+                                             Width="{TemplateBinding Width}"
+                                             Height="{TemplateBinding Height}" />
                 </ControlTemplate>
             </Setter>
 
@@ -276,7 +276,7 @@
 
             </Style>
             <Style Selector="^[Status=Wait]">
-                <Setter Property="Background" Value="{atom:SharedTokenResource ColorBorderBg}" />
+                <Setter Property="Background" Value="{atom:StepsTokenSharedTokenResource ColorBorderBg}" />
                 <Setter Property="BorderBrush" Value="{atom:StepsTokenResource InlineTailColor}" />
                 <Setter Property="BorderThickness" Value="1" />
             </Style>

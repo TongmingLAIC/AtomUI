@@ -10,19 +10,19 @@
         </ControlTheme.BasedOn>
         <Setter Property="Template">
             <ControlTemplate>
-                <Border Name="Frame"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding CornerRadius}"
-                        Padding="{TemplateBinding Padding}">
+                <atom:PixelAlignedBorder Name="Frame"
+                                         Background="{TemplateBinding Background}"
+                                         BorderBrush="{TemplateBinding BorderBrush}"
+                                         BorderThickness="{TemplateBinding BorderThickness}"
+                                         CornerRadius="{TemplateBinding CornerRadius}"
+                                         Padding="{TemplateBinding Padding}">
                     <Border Name="ContentFrame" ClipToBounds="True">
                         <Panel>
                             <atom:UploadImagePreviewer Name="PART_ImagePreviewer"
                                                        IsShowCoverMask="False"
                                                        HorizontalAlignment="Stretch"
                                                        VerticalAlignment="Stretch"
-                                                       ItemsSource="{TemplateBinding Sources}" />
+                                                       Sources="{TemplateBinding Sources}" />
                             <Border Name="Mask" Opacity="{TemplateBinding MaskOpacity}">
                                 <StackPanel Name="ActionsLayout" Orientation="Horizontal" HorizontalAlignment="Center"
                                             VerticalAlignment="Center">
@@ -38,12 +38,12 @@
                             </Border>
                         </Panel>
                     </Border>
-                </Border>
+                </atom:PixelAlignedBorder>
             </ControlTemplate>
         </Setter>
 
         <Style Selector="^ /template/ StackPanel#ActionsLayout">
-            <Setter Property="Spacing" Value="{atom:SharedTokenResource SpacingXXS}" />
+            <Setter Property="Spacing" Value="{atom:UploadTokenSharedTokenResource SpacingXXS}" />
         </Style>
         
         <Style Selector="^[ListType=PictureCircle]">

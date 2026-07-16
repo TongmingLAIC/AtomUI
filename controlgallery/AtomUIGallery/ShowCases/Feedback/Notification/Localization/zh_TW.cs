@@ -1,10 +1,9 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Notification;
 
 [LanguageProvider(LanguageCode.zh_TW, NotificationShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
     public const string BasicTitle = "基礎用法";
     public const string BasicDescription = "Notification 的最簡單用法。";
@@ -13,11 +12,53 @@ internal partial class zh_TW : LanguageProvider
     public const string WithIconTitle = "帶圖標通知";
     public const string WithIconDescription = "左側帶圖標的通知框。";
     public const string PlacementTitle = "彈出位置";
-    public const string PlacementDescription = "通知框可通過 placement 從視口的 top、bottom、topLeft、topRight、bottomLeft 或 bottomRight 出現。";
+    public const string PlacementDescription = "通知框可通過 placement 從視口頂部、底部、左上、右上、左下或右下出現。";
     public const string CustomizedIconTitle = "自定義圖標";
     public const string CustomizedIconDescription = "圖標可以自定義為任意圖標節點。";
     public const string ProgressTitle = "顯示進度";
     public const string ProgressDescription = "為自動關閉的通知顯示進度條。";
+    public const string ComponentCategory = "反饋";
+    public const string ComponentStatusStable = "穩定";
+    public const string PageSubtitle = "用於較長反饋和非阻塞更新的桌面通知。";
+    public const string PageDescription = "Notification 在窗口邊緣顯示信息更豐富的反饋卡片，支持語義類型、自定義圖標、彈出位置、手動時長、懸停暫停和自動關閉進度。";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變量";
+    public const string ApiColumnMember = "成員";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "類型";
+    public const string ApiColumnDefault = "默認值";
+    public const string ApiPropertyNotificationTitle = "顯示在通知卡片頭部的標題文本。";
+    public const string ApiPropertyNotificationContent = "顯示在標題下方的正文內容。";
+    public const string ApiPropertyNotificationType = "通知語義類型，用於控制默認圖標和狀態顏色。";
+    public const string ApiPropertyNotificationIcon = "可選自定義圖標；未設置時根據通知類型選擇圖標。";
+    public const string ApiPropertyNotificationExpiration = "自動關閉延遲；使用 TimeSpan.Zero 可保持通知打開。";
+    public const string ApiPropertyNotificationShowProgress = "在通知底部顯示自動關閉進度條。";
+    public const string ApiPropertyNotificationOnClick = "點擊通知卡片時調用的回調。";
+    public const string ApiPropertyNotificationOnClose = "通知卡片關閉後調用的回調。";
+    public const string ApiPropertyManagerPosition = "通知管理器使用的窗口邊緣位置。";
+    public const string ApiPropertyManagerMaxItems = "可見通知最大數量；超過限制時較舊通知會關閉。";
+    public const string ApiPropertyManagerIsPauseOnHover = "指針懸停在通知上時暫停過期倒計時。";
+    public const string ApiPropertyManagerIsMotionEnabled = "啓用通知進入和退出動效。";
+    public const string ApiMethodManagerShow = "顯示 INotification 實例並應用可選樣式類。";
+    public const string TokenColumnToken = "變量";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "範圍";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenScopeComponent = "組件";
+    public const string TokenStatusStable = "穩定";
+    public const string TokenNameNotificationBg = "通知卡片背景色。";
+    public const string TokenNameNotificationPadding = "通知卡片內邊距。";
+    public const string TokenNameNotificationIconSize = "通知語義圖標尺寸。";
+    public const string TokenNameNotificationIconMargin = "通知圖標外邊距。";
+    public const string TokenNameNotificationCloseButtonSize = "通知關閉按鈕尺寸。";
+    public const string TokenNameNotificationCloseButtonPadding = "通知關閉按鈕內邊距。";
+    public const string TokenNameNotificationProgressHeight = "自動關閉進度條高度。";
+    public const string TokenNameNotificationProgressBg = "自動關閉進度條使用的畫刷。";
+    public const string TokenNameNotificationProgressMargin = "通知進度條外邊距。";
+    public const string TokenNameNotificationWidth = "通知卡片默認寬度。";
+    public const string TokenNameNotificationTopMargin = "頂部位置通知卡片使用的外邊距。";
+    public const string TokenNameNotificationBottomMargin = "底部位置通知卡片使用的外邊距。";
     public const string P2ContentShowNotification = "顯示通知";
     public const string P2ContentOpenTheNotificationBox = "打開通知框";
     public const string P2ContentSuccess = "成功";
@@ -43,6 +84,4 @@ internal partial class zh_TW : LanguageProvider
     public const string P2NotificationContent = "這是通知內容。這是通知內容。這是通知內容。";
     public const string P2NotificationNeverCloseContent = "我不會自動關閉。這是一段特意寫得很長的描述，包含很多字符和詞語。";
 
-    protected override Type GetResourceKindType() => typeof(NotificationShowCaseLangResourceKind);
 }
-

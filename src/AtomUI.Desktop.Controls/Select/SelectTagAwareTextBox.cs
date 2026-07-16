@@ -21,11 +21,32 @@ internal class SelectTagAwareTextBox : TemplatedControl
     public static readonly StyledProperty<bool> IsFilterEnabledProperty =
         Select.IsFilterEnabledProperty.AddOwner<SelectTagAwareTextBox>();
 
+    public static readonly StyledProperty<bool> IsShowOverflowTipProperty =
+        AbstractSelect.IsShowOverflowTipProperty.AddOwner<SelectTagAwareTextBox>();
+
+    public static readonly StyledProperty<int> OverflowTipDelayProperty =
+        AbstractSelect.OverflowTipDelayProperty.AddOwner<SelectTagAwareTextBox>();
+
+    public static readonly StyledProperty<PlacementMode> OverflowTipPlacementProperty =
+        AbstractSelect.OverflowTipPlacementProperty.AddOwner<SelectTagAwareTextBox>();
+
     public static readonly StyledProperty<bool> IsDropDownOpenProperty =
         AvaloniaProperty.Register<SelectTagAwareTextBox, bool>(nameof(IsDropDownOpen));
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<SelectTagAwareTextBox>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<SelectTagAwareTextBox>();
+
+    internal static readonly StyledProperty<double> CustomControlHeightProperty =
+        AddOnDecoratedBox.CustomControlHeightProperty.AddOwner<SelectTagAwareTextBox>();
+
+    internal static readonly StyledProperty<Thickness> ContentFramePaddingProperty =
+        AddOnDecoratedBox.ContentFramePaddingProperty.AddOwner<SelectTagAwareTextBox>();
+
+    internal static readonly StyledProperty<double> ContentMinHeightProperty =
+        AddOnDecoratedBox.ContentMinHeightProperty.AddOwner<SelectTagAwareTextBox>();
+
+    internal static readonly StyledProperty<Thickness> InputBorderThicknessProperty =
+        AvaloniaProperty.Register<SelectTagAwareTextBox, Thickness>(nameof(InputBorderThickness));
 
     public static readonly StyledProperty<int?> MaxTagCountProperty =
         Select.MaxTagCountProperty.AddOwner<SelectTagAwareTextBox>();
@@ -47,16 +68,58 @@ internal class SelectTagAwareTextBox : TemplatedControl
         set => SetValue(IsFilterEnabledProperty, value);
     }
 
+    public bool IsShowOverflowTip
+    {
+        get => GetValue(IsShowOverflowTipProperty);
+        set => SetValue(IsShowOverflowTipProperty, value);
+    }
+
+    public int OverflowTipDelay
+    {
+        get => GetValue(OverflowTipDelayProperty);
+        set => SetValue(OverflowTipDelayProperty, value);
+    }
+
+    public PlacementMode OverflowTipPlacement
+    {
+        get => GetValue(OverflowTipPlacementProperty);
+        set => SetValue(OverflowTipPlacementProperty, value);
+    }
+
     public bool IsDropDownOpen
     {
         get => GetValue(IsDropDownOpenProperty);
         set => SetValue(IsDropDownOpenProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
+    }
+
+    internal double CustomControlHeight
+    {
+        get => GetValue(CustomControlHeightProperty);
+        set => SetValue(CustomControlHeightProperty, value);
+    }
+
+    internal Thickness ContentFramePadding
+    {
+        get => GetValue(ContentFramePaddingProperty);
+        set => SetValue(ContentFramePaddingProperty, value);
+    }
+
+    internal double ContentMinHeight
+    {
+        get => GetValue(ContentMinHeightProperty);
+        set => SetValue(ContentMinHeightProperty, value);
+    }
+
+    internal Thickness InputBorderThickness
+    {
+        get => GetValue(InputBorderThicknessProperty);
+        set => SetValue(InputBorderThicknessProperty, value);
     }
 
     public int? MaxTagCount
@@ -72,6 +135,20 @@ internal class SelectTagAwareTextBox : TemplatedControl
     }
 
     #endregion
+
+    internal static readonly DirectProperty<SelectTagAwareTextBox, double> EffectiveTagHeightProperty =
+        AvaloniaProperty.RegisterDirect<SelectTagAwareTextBox, double>(
+            nameof(EffectiveTagHeight),
+            o => o.EffectiveTagHeight,
+            (o, v) => o.EffectiveTagHeight = v);
+
+    private double _effectiveTagHeight = double.NaN;
+
+    internal double EffectiveTagHeight
+    {
+        get => _effectiveTagHeight;
+        set => SetAndRaise(EffectiveTagHeightProperty, ref _effectiveTagHeight, value);
+    }
 
     private WrapPanel? _defaultPanel;
     private SelectMaxTagAwarePanel? _maxCountAwarePanel;
@@ -98,6 +175,15 @@ internal class SelectTagAwareTextBox : TemplatedControl
             _defaultPanel?.Children.Clear();
             _maxCountAwarePanel?.Children.Clear();
             HandleEffectiveSelectedItemsChanged();
+        }
+
+        if (change.Property == SizeTypeProperty ||
+            change.Property == CustomControlHeightProperty ||
+            change.Property == ContentFramePaddingProperty ||
+            change.Property == ContentMinHeightProperty ||
+            change.Property == InputBorderThicknessProperty)
+        {
+            ConfigureEffectiveTagHeight();
         }
 
         if (change.Property == MaxTagCountProperty ||
@@ -137,7 +223,11 @@ internal class SelectTagAwareTextBox : TemplatedControl
         {
             IsClosable = false
         };
-        _searchTextBox[!SizeTypeProperty] = this[!SizeTypeProperty];
+        BindTagMetrics(_collapsedInfoTag);
+        _searchTextBox[!FontSizeProperty]   = this[!FontSizeProperty];
+        _searchTextBox[!FontFamilyProperty] = this[!FontFamilyProperty];
+        _searchTextBox[!FontStyleProperty]  = this[!FontStyleProperty];
+        _searchTextBox[!FontWeightProperty] = this[!FontWeightProperty];
         if (IsFilterEnabled)
         {
             if (!IsResponsiveTagMode)
@@ -171,7 +261,7 @@ internal class SelectTagAwareTextBox : TemplatedControl
                                 Text = tagTextProvider.TagText,
                                 Item    = item
                             };
-                            tag[!SizeTypeProperty] = this[!SizeTypeProperty];
+                            BindTagMetrics(tag);
                             _defaultPanel.Children.Add(tag);
                         }
                     }
@@ -200,7 +290,7 @@ internal class SelectTagAwareTextBox : TemplatedControl
                                 Text = tagTextProvider.TagText,
                                 Item    = item
                             };
-                            tag[!SizeTypeProperty] = this[!SizeTypeProperty];
+                            BindTagMetrics(tag);
                             _maxCountAwarePanel.Children.Add(tag);
                         }
                     }
@@ -217,6 +307,36 @@ internal class SelectTagAwareTextBox : TemplatedControl
                 }
             }
         }
+    }
+
+    private void ConfigureEffectiveTagHeight()
+    {
+        var effectiveHeight = double.NaN;
+        if (CustomizableSizeLayoutHelper.TryCalculateCustomContentHeight(
+                SizeType,
+                CustomControlHeight,
+                ContentFramePadding,
+                InputBorderThickness,
+                ContentMinHeight,
+                out var customHeight))
+        {
+            effectiveHeight = customHeight;
+        }
+
+        if (!DoubleEquals(EffectiveTagHeight, effectiveHeight))
+        {
+            EffectiveTagHeight = effectiveHeight;
+        }
+    }
+
+    private void BindTagMetrics(SelectTag tag)
+    {
+        tag[!SizeTypeProperty]                  = this[!SizeTypeProperty];
+        tag[!SelectTag.CustomTagHeightProperty] = this[!EffectiveTagHeightProperty];
+        tag[!OverflowTip.IsEnabledProperty]     = this[!IsShowOverflowTipProperty];
+        tag[!OverflowTip.TextProperty]          = tag[!SelectTag.TextProperty];
+        tag[!OverflowTip.ShowDelayProperty]     = this[!OverflowTipDelayProperty];
+        tag[!OverflowTip.PlacementProperty]     = this[!OverflowTipPlacementProperty];
     }
 
     private void ConfigureSearchTextControl()
@@ -264,5 +384,11 @@ internal class SelectTagAwareTextBox : TemplatedControl
                 _collapsedInfoTag.IsVisible = SelectedItems != null && SelectedItems.Count > 0;
             }
         }
+    }
+
+    private static bool DoubleEquals(double lhs, double rhs)
+    {
+        return double.IsNaN(lhs) && double.IsNaN(rhs) ||
+               Math.Abs(lhs - rhs) < 0.001;
     }
 }

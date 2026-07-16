@@ -85,6 +85,7 @@ public partial class TreeView
         AffectsRender<TreeView>(DragIndicatorRenderInfoProperty,
             DragIndicatorBrushProperty,
             DragIndicatorLineWidthProperty,
+            UseLayoutRoundingProperty,
             NodeHoverModeProperty);
 
         NodeSwitcherButton.NodeLoadRequestEvent.AddClassHandler<TreeView>((tree, args) =>
@@ -498,6 +499,26 @@ public partial class TreeView
         {
             return;
         }
+
+        if (ItemsSource is not null)
+        {
+            if (_treeDataController.TryMove(_beingDraggedTreeItem, _dropTargetInfo, out var dropResult))
+            {
+                ItemDropped?.Invoke(this, new TreeViewDroppedEventArgs(
+                    dropResult.DraggedViewItem,
+                    dropResult.DroppedItem,
+                    dropResult.DropIndex));
+            }
+            return;
+        }
+
+        PerformContainerDropOperation();
+    }
+
+    private void PerformContainerDropOperation()
+    {
+        Debug.Assert(_dropTargetInfo is not null);
+        Debug.Assert(_beingDraggedTreeItem is not null);
         
         object? sourceItem                 = default;
         var     beingDraggedTreeItemParent = _beingDraggedTreeItem.Parent;
@@ -605,13 +626,14 @@ public partial class TreeView
 
     private Pen GetDragIndicatorPen()
     {
+        var dragIndicatorLineWidth = BorderUtils.BuildRenderScaleAwareThickness(this, DragIndicatorLineWidth);
         if (_dragIndicatorPen is null ||
             !ReferenceEquals(_dragIndicatorPenBrush, DragIndicatorBrush) ||
-            !MathUtils.AreClose(_dragIndicatorPenLineWidth, DragIndicatorLineWidth))
+            !MathUtils.AreClose(_dragIndicatorPenLineWidth, dragIndicatorLineWidth))
         {
             _dragIndicatorPenBrush     = DragIndicatorBrush;
-            _dragIndicatorPenLineWidth = DragIndicatorLineWidth;
-            _dragIndicatorPen          = new Pen(DragIndicatorBrush, DragIndicatorLineWidth);
+            _dragIndicatorPenLineWidth = dragIndicatorLineWidth;
+            _dragIndicatorPen          = new Pen(DragIndicatorBrush, dragIndicatorLineWidth);
         }
 
         return _dragIndicatorPen;

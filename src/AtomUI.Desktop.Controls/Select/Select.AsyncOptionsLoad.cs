@@ -1,12 +1,12 @@
 using AtomUI.Controls;
 using AtomUI.Controls.AsyncLoad;
-using Avalonia.Threading;
 
 namespace AtomUI.Desktop.Controls;
 
 public partial class Select
 {
     private readonly AsyncSearchLoadCoordinator<object?, SelectOptionsLoadResult> _asyncLoadCoordinator = new();
+    private long _optionsLoadRequestId;
     private bool _asyncOptionsLoaded;
 
     private void LoadOptionsAsync()
@@ -23,38 +23,22 @@ public partial class Select
         }
     }
 
-    protected virtual void NotifyOptionsLoading(SelectOptionsLoadingEventArgs e)
-    {
-        IsLoading = true;
-        OptionsLoading?.Invoke(this, e);
-    }
-
-    protected virtual void NotifyOptionsLoaded(SelectOptionsLoadedEventArgs e)
-    {
-        IsLoading = false;
-        OptionsLoaded?.Invoke(this, e);
-    }
-
     private bool TryLoadOptionsAsync(object? context)
-    {
-        if (OptionsLoader == null)
-        {
-            return false;
-        }
-
-        _asyncLoadCoordinator.Timeout = AsyncLoadTimeout;
-        _ = LoadOptionAsync(context);
-        return true;
-    }
-
-    private async Task LoadOptionAsync(object? context)
     {
         var loader = OptionsLoader;
         if (loader == null)
         {
-            return;
+            return false;
         }
 
+        var requestId = Interlocked.Increment(ref _optionsLoadRequestId);
+        _asyncLoadCoordinator.Timeout = AsyncLoadTimeout;
+        _ = LoadOptionAsync(context, loader, requestId);
+        return true;
+    }
+
+    private async Task LoadOptionAsync(object? context, ISelectOptionsAsyncLoader loader, long requestId)
+    {
         IsLoading = true;
 
         var outcome = await _asyncLoadCoordinator.LoadAsync(
@@ -66,16 +50,28 @@ public partial class Select
             return;
         }
 
+        await Dispatcher.InvokeAsync(() => CompleteAsyncOptionsLoad(context, loader, requestId, outcome));
+    }
+
+    private void CompleteAsyncOptionsLoad(
+        object? context,
+        ISelectOptionsAsyncLoader loader,
+        long requestId,
+        AsyncLoadOutcome<SelectOptionsLoadResult> outcome)
+    {
+        if (Interlocked.Read(ref _optionsLoadRequestId) != requestId ||
+            !ReferenceEquals(OptionsLoader, loader))
+        {
+            return;
+        }
+
         if (outcome.IsSuccess && outcome.Result != null)
         {
             var result = outcome.Result;
-            await Dispatcher.InvokeAsync(() =>
-            {
-                SetCurrentValue(OptionsSourceProperty, result.Data);
-                OptionsLoadComplete(context, result);
-                _asyncOptionsLoaded = true;
-                IsLoading = false;
-            });
+            SetCurrentValue(OptionsSourceProperty, result.Data);
+            OptionsLoadComplete(context, result);
+            _asyncOptionsLoaded = true;
+            IsLoading = false;
             return;
         }
 
@@ -94,6 +90,13 @@ public partial class Select
         }));
     }
 
+    private void CancelPendingOptionsLoad()
+    {
+        Interlocked.Increment(ref _optionsLoadRequestId);
+        _asyncLoadCoordinator.Cancel();
+        IsLoading = false;
+    }
+
     private void OptionsLoadComplete(object? context, SelectOptionsLoadResult? loadResult = null)
     {
         // Fire the Populated event containing the read-only view data.
@@ -103,8 +106,7 @@ public partial class Select
         bool isDropDownOpen = loadResult?.Data?.Count > 0;
         if (isDropDownOpen != IsDropDownOpen)
         {
-            IgnorePropertyChange = true;
-            SetCurrentValue(IsDropDownOpenProperty, isDropDownOpen);
+            SetDropDownOpenWithoutPropertyHandling(isDropDownOpen);
         }
         if (IsDropDownOpen)
         {

@@ -1,5 +1,7 @@
 ﻿using AtomUI.Theme.TokenSystem;
 using AtomUI.Theme;
+using AtomUI.Theme.Resources;
+using AtomUI.Theme.Styling;
 
 namespace AtomUI.Theme.Styling
 {
@@ -208,7 +210,10 @@ namespace AtomUI.Theme.Styling
         ScreenXSMax,
         ScreenXSMin,
         ScreenXXL,
+        ScreenXXLMax,
         ScreenXXLMin,
+        ScreenXXXL,
+        ScreenXXXLMin,
         SelectionBackground,
         SelectionForeground,
         Size,

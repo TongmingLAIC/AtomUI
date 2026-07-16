@@ -6,20 +6,29 @@
     <ControlTheme x:Key="{x:Type atom:SplitButton}" TargetType="atom:SplitButton">
         <Setter Property="Template">
             <ControlTemplate>
-                <DockPanel Name="PART_MainLayout">
-                    <atom:Button Name="PART_PrimaryButton"
-                                 Content="{TemplateBinding Content}"
-                                 ContentTemplate="{TemplateBinding ContentTemplate}"
+                <DockPanel Name="PART_MainLayout"
+                           LastChildFill="True">
+                    <atom:Button Name="PART_SecondaryButton"
+                                 DockPanel.Dock="Right"
+                                 Height="{TemplateBinding Height}"
+                                 FontSize="{TemplateBinding FontSize}"
+                                 Padding="{TemplateBinding Padding}"
                                  SizeType="{TemplateBinding SizeType}"
-                                 Icon="{TemplateBinding Icon}"
+                                 Icon="{TemplateBinding OpenIndicator}"
                                  IsEnabled="{TemplateBinding IsEnabled}"
                                  IsDanger="{TemplateBinding IsDanger}"
                                  ButtonType="{TemplateBinding EffectiveButtonType}"
                                  IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                  IsWaveSpiritEnabled="{TemplateBinding IsWaveSpiritEnabled}"/>
-                    <atom:Button Name="PART_SecondaryButton"
+                    <atom:Button Name="PART_PrimaryButton"
+                                 Content="{TemplateBinding Content}"
+                                 ContentTemplate="{TemplateBinding ContentTemplate}"
+                                 HorizontalAlignment="Stretch"
+                                 Height="{TemplateBinding Height}"
+                                 FontSize="{TemplateBinding FontSize}"
+                                 Padding="{TemplateBinding Padding}"
                                  SizeType="{TemplateBinding SizeType}"
-                                 Icon="{TemplateBinding OpenIndicator}"
+                                 Icon="{TemplateBinding Icon}"
                                  IsEnabled="{TemplateBinding IsEnabled}"
                                  IsDanger="{TemplateBinding IsDanger}"
                                  ButtonType="{TemplateBinding EffectiveButtonType}"
@@ -33,27 +42,34 @@
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="ShouldUseOverlayPopup" Value="True" />
         <Setter Property="GutterToFlyout" Value="{atom:ButtonTokenResource GutterToFlyout}"/>
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
-        <Setter Property="IsWaveSpiritEnabled" Value="{atom:SharedTokenResource EnableWaveSpirit}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:ButtonTokenSharedTokenResource EnableMotion}" />
+        <Setter Property="IsWaveSpiritEnabled" Value="{atom:ButtonTokenSharedTokenResource EnableWaveSpirit}" />
         <Setter Property="ClipToBounds" Value="False" />
-        <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorBorder}"/>
-        <Setter Property="BorderThickness" Value="{atom:SharedTokenResource BorderThickness}"/>
-        <Setter Property="SplitSeparatorBrush" Value="{atom:SharedTokenResource ColorBorder}"/>
+        <Setter Property="BorderBrush" Value="{atom:ButtonTokenSharedTokenResource ColorBorder}"/>
+        <Setter Property="BorderThickness" Value="{atom:ButtonTokenSharedTokenResource BorderThickness}"/>
+        <Setter Property="SplitSeparatorBrush" Value="{atom:ButtonTokenSharedTokenResource ColorBorder}"/>
 
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusLG}"/>
+            <Setter Property="CornerRadius" Value="{atom:ButtonTokenSharedTokenResource BorderRadiusLG}"/>
         </Style>
 
         <Style Selector="^[SizeType=Middle]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadius}"/>
+            <Setter Property="CornerRadius" Value="{atom:ButtonTokenSharedTokenResource BorderRadius}"/>
+        </Style>
+
+        <Style Selector="^[SizeType=Custom]">
+            <Setter Property="CornerRadius" Value="{atom:ButtonTokenSharedTokenResource BorderRadius}"/>
         </Style>
 
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}"/>
+            <Setter Property="CornerRadius" Value="{atom:ButtonTokenSharedTokenResource BorderRadiusSM}"/>
         </Style>
 
         <Style Selector="^ /template/ #PART_MainLayout > atom|Button">
             <Setter Property="ZIndex" Value="1000"/>
+        </Style>
+        <Style Selector="^ /template/ #PART_MainLayout > atom|Button#PART_SecondaryButton">
+            <Setter Property="ZIndex" Value="1001"/>
         </Style>
         <Style Selector="^ /template/ #PART_MainLayout > atom|Button:pointerover">
             <Setter Property="ZIndex" Value="2000"/>

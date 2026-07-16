@@ -1,10 +1,9 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.LineEdit;
 
 [LanguageProvider(LanguageCode.en_US, LineEditShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string ScenarioBasic = "Basic";
     public const string ScenarioState = "State";
@@ -13,6 +12,8 @@ internal partial class en_US : LanguageProvider
 
     public const string BasicUsageTitle = "Basic usage";
     public const string BasicUsageDescription = "Basic usage example.";
+    public const string TextBoxTitle = "TextBox";
+    public const string TextBoxDescription = "AtomUI TextBox keeps the native TextBox API while using the LineEdit border, hover, and focus visuals.";
     public const string InputSizesTitle = "Three sizes of Input";
     public const string InputSizesDescription = "There are three sizes of an Input box: large (40px), default (32px) and small (24px).";
     public const string VariantsTitle = "Variants";
@@ -25,12 +26,26 @@ internal partial class en_US : LanguageProvider
     public const string WithClearIconDescription = "Input box with the remove icon, click the icon to delete everything.";
     public const string PasswordBoxTitle = "Password box";
     public const string PasswordBoxDescription = "Input type of password.";
+    public const string OtpLineEditTwoWayBindingTitle = "OTP two-way binding";
+    public const string OtpLineEditTwoWayBindingDescription = "OtpLineEdit.Text uses one bindable value source and can be set or cleared from the ViewModel.";
+    public const string OtpLineEditFormTitle = "OTP form validation";
+    public const string OtpLineEditFormDescription = "Form validators write errors through Avalonia DataValidationErrors.";
+    public const string OtpLineEditAntDesignTitle = "One-time password";
+    public const string OtpLineEditAntDesignDescription = "One time password input.";
+    public const string OtpLineEditSetValueButtonText = "Set 654321";
+    public const string OtpLineEditClearButtonText = "Clear";
+    public const string OtpLineEditCurrentValueFormat = "Current value: {0}";
+    public const string OtpLineEditEmptyValueText = "(empty)";
+    public const string OtpLineEditFormLabelCode = "Code";
+    public const string OtpLineEditFormValidationMessage = "Please enter the code";
     public const string PrefixAndSuffixTitle = "prefix and suffix";
     public const string PrefixAndSuffixDescription = "Add a prefix or suffix icons inside input.";
     public const string InputStatusTitle = "Status";
     public const string InputStatusDescription = "Add status to Input with status, which could be error or warning.";
     public const string SearchBoxTitle = "Search box";
     public const string SearchBoxDescription = "Example of creating a search box by grouping a standard input with a search button.";
+    public const string SearchEditSizeTypeTitle = "SearchEdit size";
+    public const string SearchEditSizeTypeDescription = "SearchEdit supports large, middle, small, and Custom sizes with local height and font overrides.";
     public const string DisabledSearchBoxTitle = "Disabled search box";
     public const string DisabledSearchBoxDescription = "Example of creating a search box by grouping a standard input with a search button.";
     public const string SearchBoxWithLoadingTitle = "Search box with loading";
@@ -44,9 +59,11 @@ internal partial class en_US : LanguageProvider
     public const string TextAreaStatusTitle = "Status";
     public const string TextAreaStatusDescription = "Add status to TextArea with status, which could be error or warning.";
     public const string P2PlaceholderTextBasicUsage = "Basic usage";
+    public const string P2PlaceholderTextTextBox = "AtomUI TextBox";
     public const string P2PlaceholderTextLarge = "Large";
     public const string P2PlaceholderTextMiddle = "Middle";
     public const string P2PlaceholderTextSmall = "Small";
+    public const string P2PlaceholderTextCustom = "Custom";
     public const string P2TitleNormal = "Normal";
     public const string P2PlaceholderTextOutlined = "Outlined";
     public const string P2PlaceholderTextFilled = "Filled";
@@ -79,6 +96,51 @@ internal partial class en_US : LanguageProvider
     public const string P2SearchButtonTextSearch = "Search";
 
     public const string P2SearchButtonTextText = "Search now";
+    public const string PageSubtitle = "Capture single-line text, search input, passwords, and multi-line text.";
+    public const string PageDescription = "LineEdit covers standard inputs, add-ons, clear actions, password reveal, prefixes and suffixes, validation status, SearchEdit, and TextArea scenarios.";
+    public const string ComponentCategory = "Data Entry";
+    public const string ComponentStatusStable = "Stable";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyPlaceholderText = "Watermark text displayed when the input is empty.";
+    public const string ApiPropertyText = "Current editable text value.";
+    public const string ApiPropertyIsAllowClear = "Shows a clear button when text can be cleared.";
+    public const string ApiPropertySizeType = "Sets the input size.";
+    public const string ApiPropertyStyleVariant = "Chooses outlined, filled, borderless, or underlined presentation.";
+    public const string ApiPropertyStatus = "Applies validation status styling such as error or warning.";
+    public const string ApiPropertyLeftAddOn = "Content attached before the input frame.";
+    public const string ApiPropertyRightAddOn = "Content attached after the input frame.";
+    public const string ApiPropertyInnerLeftContent = "Content rendered inside the input before the text area.";
+    public const string ApiPropertyInnerRightContent = "Content rendered inside the input after the text area.";
+    public const string ApiPropertyRevealPassword = "Controls password reveal state.";
+    public const string ApiPropertySearchButtonStyle = "Sets SearchEdit button style.";
+    public const string ApiPropertySearchButtonText = "Text displayed by the SearchEdit button.";
+    public const string ApiPropertyIsOperating = "Shows the SearchEdit loading state and prevents duplicate search clicks.";
+    public const string ApiPropertyLines = "Initial visible line count for TextArea.";
+    public const string ApiPropertyIsAutoSize = "Allows TextArea height to grow with content.";
+    public const string ApiPropertyIsShowCount = "Shows current character count.";
+    public const string ApiPropertyIsResizable = "Allows TextArea manual resizing.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
+    public const string TokenNameInputFontSize = "Default font size of LineEdit.";
+    public const string TokenNameInputFontSizeLG = "Large font size of LineEdit.";
+    public const string TokenNameInputFontSizeSM = "Small font size of LineEdit.";
+    public const string TokenNameFontSize = "Default font size of TextArea.";
+    public const string TokenNameFontSizeLG = "Large font size of TextArea.";
+    public const string TokenNameFontSizeSM = "Small font size of TextArea.";
+    public const string TokenNameResizeHandleSize = "Size of the TextArea resize handle.";
+    public const string TokenNameResizeIndicatorLineColor = "Color of the TextArea resize indicator line.";
+    public const string TokenNameRightAddOnPadding = "Default right add-on padding for TextArea.";
+    public const string TokenNameRightAddOnPaddingSM = "Small right add-on padding for TextArea.";
+    public const string TokenNameRightAddOnPaddingLG = "Large right add-on padding for TextArea.";
 
-    protected override Type GetResourceKindType() => typeof(LineEditShowCaseLangResourceKind);
 }

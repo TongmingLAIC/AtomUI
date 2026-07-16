@@ -1,11 +1,6 @@
-﻿using System.Globalization;
-using AtomUI.Controls.Utils;
-using AtomUI.Data;
-using AtomUI.Desktop.Controls.CalendarView;
-using AtomUI.Desktop.Controls.Localization;
+﻿using AtomUI.Desktop.Controls.CalendarView;
 using AtomUI.Desktop.Controls.Primitives;
 using AtomUI.Icons.AntDesign;
-using AtomUI.Media;
 using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
@@ -15,20 +10,36 @@ using Avalonia.Layout;
 
 namespace AtomUI.Desktop.Controls;
 
+public enum DatePickerMode
+{
+    Date,
+    Week,
+    Month,
+    Quarter,
+    Year
+}
+
 public class DatePicker : InfoPickerInput
 {
     #region 公共属性定义
 
     public static readonly StyledProperty<DateTime?> SelectedDateTimeProperty =
         AvaloniaProperty.Register<DatePicker, DateTime?>(nameof(SelectedDateTime),
+            defaultBindingMode: BindingMode.TwoWay,
             enableDataValidation: true);
 
     public static readonly StyledProperty<DateTime?> DefaultDateTimeProperty =
         AvaloniaProperty.Register<DatePicker, DateTime?>(nameof(DefaultDateTime),
             enableDataValidation: true);
 
+    public static readonly StyledProperty<DateTime?> PickerDisplayDateProperty =
+        AvaloniaProperty.Register<DatePicker, DateTime?>(nameof(PickerDisplayDate));
+
     public static readonly StyledProperty<string?> FormatProperty =
         AvaloniaProperty.Register<DatePicker, string?>(nameof(Format));
+
+    public static readonly StyledProperty<DatePickerMode> PickerModeProperty =
+        AvaloniaProperty.Register<DatePicker, DatePickerMode>(nameof(PickerMode));
 
     public static readonly StyledProperty<bool> IsShowTimeProperty =
         AvaloniaProperty.Register<DatePicker, bool>(nameof(IsShowTime), false);
@@ -54,10 +65,22 @@ public class DatePicker : InfoPickerInput
         set => SetValue(DefaultDateTimeProperty, value);
     }
 
+    public DateTime? PickerDisplayDate
+    {
+        get => GetValue(PickerDisplayDateProperty);
+        set => SetValue(PickerDisplayDateProperty, value);
+    }
+
     public string? Format
     {
         get => GetValue(FormatProperty);
         set => SetValue(FormatProperty, value);
+    }
+
+    public DatePickerMode PickerMode
+    {
+        get => GetValue(PickerModeProperty);
+        set => SetValue(PickerModeProperty, value);
     }
 
     public bool IsShowTime
@@ -118,7 +141,6 @@ public class DatePicker : InfoPickerInput
 
     public DatePicker()
     {
-        this.RegisterTokenResourceScope(DatePickerToken.ScopeProvider);
     }
 
     static DatePicker()
@@ -145,29 +167,6 @@ public class DatePicker : InfoPickerInput
         SelectedDateTime = DefaultDateTime;
     }
 
-    private string GetEffectiveFormat()
-    {
-        if (Format is not null)
-        {
-            return Format;
-        }
-
-        var format = "yyyy-MM-dd";
-        if (IsShowTime)
-        {
-            if (ClockIdentifier == ClockIdentifierType.HourClock12)
-            {
-                format = $"{format} hh:mm:ss tt";
-            }
-            else
-            {
-                format = $"{format} HH:mm:ss";
-            }
-        }
-
-        return format;
-    }
-
     protected string FormatDateTime(DateTime? dateTime)
     {
         if (dateTime is null)
@@ -175,25 +174,8 @@ public class DatePicker : InfoPickerInput
             return string.Empty;
         }
 
-        var format = GetEffectiveFormat();
-        if (ClockIdentifier == ClockIdentifierType.HourClock12)
-        {
-            var amDesignator = AmText ??
-                               LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.AMText);
-            var pmDesignator = PmText ??
-                               LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.PMText);
-            if (amDesignator is not null && pmDesignator is not null)
-            {
-                var formatInfo = new DateTimeFormatInfo
-                {
-                    AMDesignator = amDesignator,
-                    PMDesignator = pmDesignator
-                };
-                return dateTime.Value.ToString(format, formatInfo);
-            }
-        }
-
-        return dateTime.Value.ToString(format);
+        var formatInfo = DatePickerFormattingHelper.CreateFormatInfo(ClockIdentifier, AmText, PmText);
+        return DatePickerFormattingHelper.FormatDateTime(dateTime.Value, Format, PickerMode, IsShowTime, ClockIdentifier, formatInfo);
     }
 
     protected override Control CreatePickerPresenter()
@@ -201,10 +183,12 @@ public class DatePicker : InfoPickerInput
         var presenter = new DatePickerPresenter();
         presenter[!DatePickerPresenter.IsMotionEnabledProperty]  = this[!IsMotionEnabledProperty];
         presenter[!DatePickerPresenter.SelectedDateTimeProperty] = this[!SelectedDateTimeProperty];
+        presenter[!DatePickerPresenter.PickerDisplayDateProperty] = this[!PickerDisplayDateProperty];
         presenter[!DatePickerPresenter.IsNeedConfirmProperty]    = this[!IsNeedConfirmProperty];
         presenter[!DatePickerPresenter.IsShowNowProperty]        = this[!IsShowNowProperty];
         presenter[!DatePickerPresenter.IsShowTimeProperty]       = this[!IsShowTimeProperty];
         presenter[!DatePickerPresenter.ClockIdentifierProperty]  = this[!ClockIdentifierProperty];
+        presenter[!DatePickerPresenter.PickerModeProperty]       = this[!PickerModeProperty];
 
         return presenter;
     }
@@ -229,6 +213,7 @@ public class DatePicker : InfoPickerInput
             _pickerPresenter.ChoosingStatusChanged += HandleChoosingStatusChanged;
             _pickerPresenter.HoverDateTimeChanged  += HandleHoverDateTimeChanged;
             _pickerPresenter.Confirmed             += HandleConfirmed;
+            _pickerPresenter.ResetOpenPanelState();
         }
     }
 
@@ -263,6 +248,7 @@ public class DatePicker : InfoPickerInput
         {
             Text = null;
         }
+        CalculatePreferredWidth();
     }
 
     private void HandleConfirmed(object? sender, EventArgs args)
@@ -274,6 +260,7 @@ public class DatePicker : InfoPickerInput
     private void ClearHoverSelectedInfo()
     {
         Text = FormatDateTime(_pickerPresenter?.SelectedDateTime ?? SelectedDateTime);
+        CalculatePreferredWidth();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -299,25 +286,44 @@ public class DatePicker : InfoPickerInput
         if (change.Property == SelectedDateTimeProperty)
         {
             Text = FormatDateTime(SelectedDateTime);
+            CalculatePreferredWidth();
         }
-        else if (change.Property == AmTextProperty ||
-                 change.Property == PmTextProperty)
+        else if (IsFormattedTextAffectingProperty(change.Property))
         {
             Text = FormatDateTime(SelectedDateTime);
             CalculatePreferredWidth();
         }
-        else if (change.Property == FontSizeProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontStyleProperty ||
-                 change.Property == ClockIdentifierProperty ||
-                 change.Property == MinWidthProperty ||
-                 change.Property == WidthProperty ||
-                 change.Property == MaxWidthProperty ||
-                 change.Property == HorizontalAlignmentProperty)
+        else if (IsPreferredWidthAffectingProperty(change.Property))
         {
             CalculatePreferredWidth();
         }
+    }
+
+    private static bool IsFormattedTextAffectingProperty(AvaloniaProperty property)
+    {
+        return DatePickerFormattingHelper.IsFormattedTextAffectingProperty(
+            property,
+            IsShowTimeProperty,
+            FormatProperty,
+            PickerModeProperty,
+            ClockIdentifierProperty,
+            AmTextProperty,
+            PmTextProperty);
+    }
+
+    private static bool IsPreferredWidthAffectingProperty(AvaloniaProperty property)
+    {
+        return DatePickerFormattingHelper.IsPreferredWidthAffectingProperty(
+            property,
+            FontSizeProperty,
+            FontFamilyProperty,
+            FontStyleProperty,
+            FontWeightProperty,
+            SizeTypeProperty,
+            MinWidthProperty,
+            WidthProperty,
+            MaxWidthProperty,
+            HorizontalAlignmentProperty);
     }
 
     private void CalculatePreferredWidth()
@@ -328,43 +334,19 @@ public class DatePicker : InfoPickerInput
         }
         else
         {
-            var format = GetEffectiveFormat();
-            DateTimeFormatInfo? formatInfo = null;
-            if (ClockIdentifier == ClockIdentifierType.HourClock12)
-            {
-                var amDesignator = AmText ??
-                                   LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.AMText);
-                var pmDesignator = PmText ??
-                                   LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.PMText);
-                if (amDesignator is not null && pmDesignator is not null)
-                {
-                    formatInfo = new DateTimeFormatInfo
-                    {
-                        AMDesignator = amDesignator,
-                        PMDesignator = pmDesignator
-                    };
-                }
-            }
-            var preferredInputWidth = DateTimeUtils.CalculateWidestFormattedDateTimeSize(
-                format, FontSize, FontFamily, FontStyle, FontWeight, formatInfo).Width;
-            if (PlaceholderText != null)
-            {
-                preferredInputWidth = Math.Max(preferredInputWidth,
-                    TextUtils.CalculateTextSize(PlaceholderText, FontSize, FontFamily, FontStyle, FontWeight).Width);
-            }
-
-            preferredInputWidth *= 1.1;
-
-            if (!double.IsNaN(MinWidth))
-            {
-                preferredInputWidth = Math.Max(MinWidth, preferredInputWidth);
-            }
-
-            if (!double.IsNaN(MaxWidth))
-            {
-                preferredInputWidth = Math.Min(MaxWidth, preferredInputWidth);
-            }
-            PreferredInputWidth = preferredInputWidth;
+            var formatInfo = DatePickerFormattingHelper.CreateFormatInfo(ClockIdentifier, AmText, PmText);
+            PreferredInputWidth = DatePickerFormattingHelper.CalculateBoundedPreferredInputWidth(
+                Format,
+                PickerMode,
+                IsShowTime,
+                ClockIdentifier,
+                FontSize,
+                FontFamily,
+                FontStyle,
+                FontWeight,
+                MinWidth,
+                MaxWidth,
+                formatInfo);
         }
     }
 

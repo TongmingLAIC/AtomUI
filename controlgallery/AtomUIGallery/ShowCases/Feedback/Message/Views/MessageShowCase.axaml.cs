@@ -1,6 +1,5 @@
 using AtomUI.Desktop.Controls;
 using AtomUI.Data;
-using AtomUI.Theme.Language;
 using AtomUIGallery.Localization;
 using Avalonia;
 using Avalonia.Controls;
@@ -24,6 +23,12 @@ public partial class MessageShowCase : GalleryReactiveUserControl<MessageViewMod
         base.OnDetachedFromVisualTree(e);
         _messageManager?.Dispose();
         _messageManager = null;
+    }
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
     }
 
     private void ShowSimpleMessage(object? sender, RoutedEventArgs e)

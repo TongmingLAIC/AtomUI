@@ -21,11 +21,14 @@
 
     <ItemGroup>
         <AvaloniaResource Include="Assets/**/*.*"/>
+        <EmbeddedResource Include="../../docs/modules/core/schemas/atomui-theme-v1.xsd"
+                          LogicalName="AtomUI.Theme.Definitions.Schemas.atomui-theme-v1.xsd" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia.X11" />
         <PackageReference Include="Avalonia.Native" />
+        <PackageReference Include="Avalonia.Win32" />
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="ReactiveUI.Avalonia"/>
         <PackageReference Include="System.Reactive"/>
@@ -37,6 +40,9 @@
         <InternalsVisibleTo Include="AtomUI.Desktop.Controls"/>
         <InternalsVisibleTo Include="AtomUI.Desktop.Controls.DataGrid"/>
         <InternalsVisibleTo Include="AtomUI.Desktop.Controls.ColorPicker"/>
+        <InternalsVisibleTo Include="AtomUI.Desktop.Controls.Extras"/>
+        <InternalsVisibleTo Include="AtomUI.Desktop.Controls.Tests"/>
+        <InternalsVisibleTo Include="AtomUI.Core.Tests"/>
     </ItemGroup>
 
     <ItemGroup>

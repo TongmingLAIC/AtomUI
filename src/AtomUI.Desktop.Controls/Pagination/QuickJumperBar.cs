@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using Avalonia.VisualTree;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -18,7 +17,7 @@ internal class QuickJumpArgs
 
 internal class QuickJumperBar : TemplatedControl
 {
-    public event EventHandler<QuickJumpArgs>? JumpRequest;
+    #region 公共属性定义
     
     public static readonly DirectProperty<QuickJumperBar, string?> JumpToTextProperty =
         AvaloniaProperty.RegisterDirect<QuickJumperBar,  string?>(nameof(JumpToText),
@@ -30,10 +29,11 @@ internal class QuickJumperBar : TemplatedControl
             o => o.PageText,
             (o, v) => o.PageText = v);
     
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<QuickJumperBar>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<QuickJumperBar>();
     
     private string? _jumpToText;
+
     public string? JumpToText
     {
         get => _jumpToText;
@@ -41,17 +41,26 @@ internal class QuickJumperBar : TemplatedControl
     }
     
     private string? _pageText;
+
     public string? PageText
     {
         get => _pageText;
         set => SetAndRaise(PageTextProperty, ref _pageText, value);
     }
     
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
     }
+
+    #endregion
+
+    #region 公共事件定义
+
+    public event EventHandler<QuickJumpArgs>? JumpRequest;
+
+    #endregion
     
     private LineEdit? _lineEdit;
     

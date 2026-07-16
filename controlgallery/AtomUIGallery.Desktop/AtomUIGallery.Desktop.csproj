@@ -13,7 +13,8 @@
         <IsAotCompatible>true</IsAotCompatible>
         <IsTrimmable>true</IsTrimmable>
         <PublishTrimmed>true</PublishTrimmed>
-        <PublishAot>true</PublishAot>
+        <PublishAot Condition="'$(GalleryPublishAot)' == ''">true</PublishAot>
+        <PublishAot Condition="'$(GalleryPublishAot)' != ''">$(GalleryPublishAot)</PublishAot>
         <SelfContained>true</SelfContained>
         <UseAppHost>true</UseAppHost>
     </PropertyGroup>
@@ -30,10 +31,14 @@
 
     <ItemGroup Condition="'$(PublishAot)' == 'true' and $([MSBuild]::IsOSPlatform('OSX'))">
         <LinkerArg Include="-L/opt/homebrew/lib" Condition="Exists('/opt/homebrew/lib/libssl.dylib')"/>
+        <LinkerArg Include="-L/opt/homebrew/opt/openssl@3/lib" Condition="Exists('/opt/homebrew/opt/openssl@3/lib/libssl.dylib')"/>
+        <LinkerArg Include="-L/usr/local/lib" Condition="Exists('/usr/local/lib/libssl.dylib')"/>
+        <LinkerArg Include="-L/usr/local/opt/openssl@3/lib" Condition="Exists('/usr/local/opt/openssl@3/lib/libssl.dylib')"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../AtomUIGallery/AtomUIGallery.csproj"/>
+        <ProjectReference Include="../../src/AtomUI.Desktop.Controls.Extras/AtomUI.Desktop.Controls.Extras.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

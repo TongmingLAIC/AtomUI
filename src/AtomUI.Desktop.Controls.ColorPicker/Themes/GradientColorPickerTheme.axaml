@@ -12,15 +12,16 @@
         <Setter Property="Template">
             <ControlTemplate>
                 <Panel>
-                    <Border Name="PART_Frame"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            CornerRadius="{TemplateBinding EffectiveCornerRadius}"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}">
+                    <atom:PixelAlignedBorder Name="PART_Frame"
+                                             BorderThickness="{TemplateBinding BorderThickness}"
+                                             BorderBrush="{TemplateBinding BorderBrush}"
+                                             CornerRadius="{TemplateBinding EffectiveCornerRadius}"
+                                             Padding="{TemplateBinding TriggerPadding}"
+                                             Background="{TemplateBinding Background}">
                         <DockPanel LastChildFill="True">
                             <atom:ColorBlock Name="PART_ColorIndicator"
                                              SizeType="{TemplateBinding SizeType}"
+                                             Size="{TemplateBinding ColorBlockSize}"
                                              Background="{TemplateBinding ColorBlockBackground}"
                                              VerticalAlignment="Top"
                                              DockPanel.Dock="Left"/>
@@ -29,7 +30,7 @@
                                            IsVisible="{TemplateBinding IsTextVisible}" />
                             </Panel>
                         </DockPanel>
-                    </Border>
+                    </atom:PixelAlignedBorder>
                     <atom:Popup Name="PART_Popup"
                                 WindowManagerAddShadowHint="False"
                                 IsLightDismissEnabled="{TemplateBinding IsLightDismissEnabled}"
@@ -51,17 +52,17 @@
         </Setter>
 
         <Setter Property="InactiveStopTextColor"
-                Value="{atom:SharedTokenResource ColorTextDisabled}" />
+                Value="{atom:ColorPickerTokenSharedTokenResource ColorTextDisabled}" />
         <Style Selector="^ /template/ WrapPanel#PART_ColorTextPanel">
             <Setter Property="TextElement.Foreground"
-                    Value="{atom:SharedTokenResource ColorText}" />
+                    Value="{atom:ColorPickerTokenSharedTokenResource ColorText}" />
             <Setter Property="Margin" Value="{atom:ColorPickerTokenResource TriggerTextMargin}" />
         </Style>
 
         <Style Selector="^:disabled">
             <Style Selector="^ /template/ TextBlock#PART_ColorTextPanel">
                 <Setter Property="Foreground"
-                        Value="{atom:SharedTokenResource ColorTextDisabled}" />
+                        Value="{atom:ColorPickerTokenSharedTokenResource ColorTextDisabled}" />
             </Style>
         </Style>
     </ControlTheme>

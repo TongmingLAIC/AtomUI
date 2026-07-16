@@ -10,7 +10,6 @@ namespace AtomUI.Desktop.Controls;
 internal class UploadToken : AbstractControlDesignToken
 {
     public const string ID = "Upload";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
     
     public UploadToken()
         : this(ID)
@@ -43,6 +42,11 @@ internal class UploadToken : AbstractControlDesignToken
     /// 文本列表文件名的内间距
     /// </summary>
     public Thickness TextListNamePadding { get; set; }
+
+    /// <summary>
+    /// 文本列表上传进度的内间距
+    /// </summary>
+    public Thickness TextListProgressPadding { get; set; }
     
     /// <summary>
     /// 文件类型图标大小
@@ -81,6 +85,7 @@ internal class UploadToken : AbstractControlDesignToken
         PictureCardSize          = SharedToken.ControlHeightLG * 2.55;
         TextListItemMargin       = new Thickness(0, SharedToken.UniformlyMarginXS, 0, 0);
         TextListNamePadding      = new Thickness(SharedToken.UniformlyPaddingXS, 0);
+        TextListProgressPadding  = new Thickness(SharedToken.FontSize + SharedToken.UniformlyPaddingXS, 0, 0, 0);
         UploadThumbnailSize      = SharedToken.FontSizeHeading2;
         DragIconSize             = SharedToken.FontSizeHeading3 * 2;
         DragIconMargin           = new Thickness(0, 0, 0, SharedToken.UniformlyMargin);

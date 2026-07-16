@@ -34,13 +34,17 @@
                     </WindowDrawnDecorationsContent.Underlay>
 
                     <WindowDrawnDecorationsContent.Overlay>
-                        <Panel Name="PART_OverlayWrapper">
-                            <ContentPresenter Name="PART_TitleBarPresenter"
-                                              VerticalAlignment="Top"
-                                              Height="{TemplateBinding TitleBarHeight}"
-                                              IsVisible="{TemplateBinding HasTitleBar}"
-                                              Content="{Binding $parent[atom:Window].TitleBar}"
-                                              WindowDecorationProperties.ElementRole="User" />
+                        <Panel Name="PART_OverlayWrapper"
+                               IsVisible="{Binding $parent[atom:Window].IsDrawnTitleBarOverlayVisible}">
+                            <Border ClipToBounds="True"
+                                    CornerRadius="{Binding $parent[atom:Window].CornerRadius, Converter={StaticResource TitleBarCornerRadiusFilter}}">
+                                <ContentPresenter Name="PART_TitleBarPresenter"
+                                                  VerticalAlignment="Top"
+                                                  Height="{TemplateBinding TitleBarHeight}"
+                                                  IsVisible="{TemplateBinding HasTitleBar}"
+                                                  Content="{Binding $parent[atom:Window].TitleBar}"
+                                                  WindowDecorationProperties.ElementRole="User" />
+                            </Border>
                         </Panel>
 
                     </WindowDrawnDecorationsContent.Overlay>
@@ -61,7 +65,8 @@
                                                       HorizontalContentAlignment="Center"
                                                       VerticalContentAlignment="Center"
                                                       Content="{Binding $parent[atom:Window].Logo}"
-                                                      ContentTemplate="{Binding $parent[atom:Window].LogoTemplate}"/>
+                                                      ContentTemplate="{Binding $parent[atom:Window].LogoTemplate}"
+                                                      IsVisible="{Binding $parent[atom:Window].IsEffectiveFullscreenLogoVisible}"/>
                                     <TextBlock Name="FullscreenTitleText"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Center"
@@ -97,10 +102,13 @@
 
         <Setter Property="DefaultTitleBarHeight" Value="{atom:WindowTokenResource TitleBarHeight}" />
         <Setter Property="DefaultShadowThickness" Value="{Binding $parent[atom:Window].FrameShadowThickness}" />
-        <Setter Property="DefaultFrameThickness" Value="0" />
+        <Setter Property="DefaultFrameThickness" Value="1" />
 
         <Style Selector="^/template/ Border#PART_WindowFrame">
             <Setter Property="Background" Value="{atom:WindowTokenResource DefaultBackground}" />
+        </Style>
+
+        <Style Selector="^:has-shadow /template/ Border#PART_WindowFrame">
             <Setter Property="BoxShadow" Value="{atom:WindowTokenResource FrameShadows}" />
         </Style>
 
@@ -115,7 +123,7 @@
             <Setter Property="Margin" Value="1,1,1,0" />
         </Style>
 
-        <Style Selector="^:has-border /template/ Border#PART_TitleBar">
+        <Style Selector="^:has-border /template/ ContentPresenter#PART_TitleBar">
             <Setter Property="Margin" Value="1,1,1,0" />
         </Style>
 
@@ -126,7 +134,7 @@
         <Style Selector="^:fullscreen /template/ Panel#PART_TitleBarPresenter">
             <Setter Property="IsVisible" Value="False" />
         </Style>
-        <Style Selector="^:fullscreen /template/ Border#PART_TitleBar">
+        <Style Selector="^:fullscreen /template/ ContentPresenter#PART_TitleBar">
             <Setter Property="IsVisible" Value="False" />
         </Style>
         <Style Selector="^:fullscreen /template/ Border#FullscreenHeaderFrame">
@@ -147,7 +155,7 @@
         </Style>
         
         <Style Selector="^:fullscreen /template/ atom|CaptionButton">
-            <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
+            <Setter Property="IsMotionEnabled" Value="{atom:WindowTokenSharedTokenResource EnableMotion}" />
             <Setter Property="IsWindowActive" Value="True" />
             <Setter Property="IconWidth" Value="{atom:WindowTitleBarTokenResource CaptionButtonIconSize}" />
             <Setter Property="IconHeight" Value="{atom:WindowTitleBarTokenResource CaptionButtonIconSize}" />

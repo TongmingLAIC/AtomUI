@@ -1,12 +1,13 @@
-using System.Reactive.Disposables;
 using AtomUI;
 using AtomUI.Desktop.Controls;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using TextBlock = AtomUI.Desktop.Controls.TextBlock;
-using ToggleSwitch = AtomUI.Desktop.Controls.ToggleSwitch;
 
 namespace AtomUIGallery.ShowCases.Modal;
 
@@ -14,52 +15,137 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
 {
     public const string LanguageId = nameof(ModalShowCase);
 
+    private IDisposable? _delayedCloseDialogDisposal;
+
     public ModalShowCase()
     {
-        this.WhenActivated(disposables =>
-        {
-            BasicOpenModalButton.Click       += HandleBasicModalButtonClick;
-            BasicWindowOpenModalButton.Click += HandleBasicWindowModalButtonClick;
-
-            ConfirmMsgBoxBtn.Click                   += HandleConfirmMsgBoxBtnClick;
-            InformationMsgBoxBtn.Click               += HandleInformationMsgBoxBtnClick;
-            SuccessMsgBoxBtn.Click                   += HandleSuccessMsgBoxBtnClick;
-            ErrorMsgBoxBtn.Click                     += HandleErrorMsgBoxBtnClick;
-            WarningMsgBoxBtn.Click                   += HandleWarningMsgBoxBtnClick;
-            StyleCaseHostTypeSwitch.IsCheckedChanged += HandleStyleCaseHostTypeSwitchChanged;
-
-            LoadingDialogOpenModalButton.Click     += HandleLoadingDialogOpenModalButtonClick;
-            AsyncDialogOpenModalButton.Click       += HandleAsyncDialogOpenModalButtonClick;
-            CustomFooterDialogOpenButton.Click     += HandleCustomFooterDialogOpenButtonClick;
-            CustomFooterMsgBoxOpenButton.Click     += HandleCustomFooterMsgBoxOpenButtonClick;
-            DraggableDialogOpenButton.Click        += HandleDraggableMsgBoxOpenButtonClick;
-            DelayedCloseMsgBoxOpenButton.Click     += HandleDelayedCloseMsgBoxOpenButtonClick;
-            ConfigureButtonsDialogOpenButton.Click += HandleConfigureButtonsDialogButtonClick;
-
-            disposables.Add(Disposable.Create(() => BasicOpenModalButton.Click -= HandleBasicModalButtonClick));
-            disposables.Add(Disposable.Create(() => BasicWindowOpenModalButton.Click -= HandleBasicWindowModalButtonClick));
-            disposables.Add(Disposable.Create(() => ConfirmMsgBoxBtn.Click -= HandleConfirmMsgBoxBtnClick));
-            disposables.Add(Disposable.Create(() => InformationMsgBoxBtn.Click -= HandleInformationMsgBoxBtnClick));
-            disposables.Add(Disposable.Create(() => SuccessMsgBoxBtn.Click -= HandleSuccessMsgBoxBtnClick));
-            disposables.Add(Disposable.Create(() => ErrorMsgBoxBtn.Click -= HandleErrorMsgBoxBtnClick));
-            disposables.Add(Disposable.Create(() => WarningMsgBoxBtn.Click -= HandleWarningMsgBoxBtnClick));
-            disposables.Add(Disposable.Create(() => StyleCaseHostTypeSwitch.IsCheckedChanged -= HandleStyleCaseHostTypeSwitchChanged));
-            disposables.Add(Disposable.Create(() => LoadingDialogOpenModalButton.Click -= HandleLoadingDialogOpenModalButtonClick));
-            disposables.Add(Disposable.Create(() => CustomFooterDialogOpenButton.Click -= HandleCustomFooterDialogOpenButtonClick));
-            disposables.Add(Disposable.Create(() => CustomFooterMsgBoxOpenButton.Click -= HandleCustomFooterMsgBoxOpenButtonClick));
-            disposables.Add(Disposable.Create(() => DraggableDialogOpenButton.Click -= HandleDraggableMsgBoxOpenButtonClick));
-            disposables.Add(Disposable.Create(() => DelayedCloseMsgBoxOpenButton.Click -= HandleDelayedCloseMsgBoxOpenButtonClick));
-            disposables.Add(Disposable.Create(() => ConfigureButtonsDialogOpenButton.Click -= HandleConfigureButtonsDialogButtonClick));
-
-            ConfigureButtonPropertiesDialog.ButtonsConfigure = ConfigureButtonProperties;
-
-            if (DataContext is ModalViewModel viewModel)
-            {
-                viewModel.MessageBoxStyleCaseHostType = DialogHostType.Overlay;
-                viewModel.CountdownSeconds            = 5;
-            }
-        });
         InitializeComponent();
+        AddHandler(AtomUIButton.ClickEvent, HandleDemoButtonClick);
+        AddHandler(Avalonia.Controls.Primitives.ToggleButton.IsCheckedChangedEvent, HandleDemoToggleSwitchCheckedChanged);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _delayedCloseDialogDisposal?.Dispose();
+        _delayedCloseDialogDisposal = null;
+    }
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (DataContext is ModalViewModel viewModel)
+        {
+            viewModel.MessageBoxStyleCaseHostType = DialogHostType.Overlay;
+            viewModel.CountdownSeconds            = 5;
+        }
+
+    }
+
+    private void HandleDemoButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not AtomUIButton button)
+        {
+            return;
+        }
+
+        switch (button.Name)
+        {
+            case "BasicOpenModalButton":
+                HandleBasicModalButtonClick(button, e);
+                break;
+            case "BasicWindowOpenModalButton":
+                HandleBasicWindowModalButtonClick(button, e);
+                break;
+            case "ConfirmMsgBoxBtn":
+                HandleConfirmMsgBoxBtnClick(button, e);
+                break;
+            case "InformationMsgBoxBtn":
+                HandleInformationMsgBoxBtnClick(button, e);
+                break;
+            case "SuccessMsgBoxBtn":
+                HandleSuccessMsgBoxBtnClick(button, e);
+                break;
+            case "ErrorMsgBoxBtn":
+                HandleErrorMsgBoxBtnClick(button, e);
+                break;
+            case "WarningMsgBoxBtn":
+                HandleWarningMsgBoxBtnClick(button, e);
+                break;
+            case "LoadingDialogOpenModalButton":
+                HandleLoadingDialogOpenModalButtonClick(button, e);
+                break;
+            case "AsyncDialogOpenModalButton":
+                HandleAsyncDialogOpenModalButtonClick(button, e);
+                break;
+            case "CustomFooterDialogOpenButton":
+                HandleCustomFooterDialogOpenButtonClick(button, e);
+                break;
+            case "CustomFooterMsgBoxOpenButton":
+                HandleCustomFooterMsgBoxOpenButtonClick(button, e);
+                break;
+            case "DraggableDialogOpenButton":
+                HandleDraggableMsgBoxOpenButtonClick(button, e);
+                break;
+            case "DelayedCloseMsgBoxOpenButton":
+                HandleDelayedCloseMsgBoxOpenButtonClick(button, e);
+                break;
+            case "ConfigureButtonsDialogOpenButton":
+                HandleConfigureButtonsDialogButtonClick(button, e);
+                break;
+        }
+    }
+
+    private void HandleDemoToggleSwitchCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is AtomUIToggleSwitch { Name: "StyleCaseHostTypeSwitch" } toggleSwitch)
+        {
+            HandleStyleCaseHostTypeSwitchChanged(toggleSwitch, e);
+        }
+    }
+
+    private void HandleDialogExampleLoaded(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Control root)
+        {
+            return;
+        }
+
+        SetPlacementTarget(root, "BasicDialog", "BasicOpenModalButton");
+        SetPlacementTarget(root, "BasicWindowDialog", "BasicWindowOpenModalButton");
+        SetPlacementTarget(root, "AsyncDialog", "AsyncDialogOpenModalButton");
+        SetPlacementTarget(root, "ConfirmMsgBox", "ConfirmMsgBoxBtn");
+        SetPlacementTarget(root, "InformationMsgBox", "InformationMsgBoxBtn");
+        SetPlacementTarget(root, "SuccessMsgBox", "SuccessMsgBoxBtn");
+        SetPlacementTarget(root, "ErrorMsgBox", "ErrorMsgBoxBtn");
+        SetPlacementTarget(root, "WarningMsgBox", "WarningMsgBoxBtn");
+        SetPlacementTarget(root, "LoadingDialog", "LoadingDialogOpenModalButton");
+        SetPlacementTarget(root, "CustomFooterDialog", "CustomFooterDialogOpenButton");
+        SetPlacementTarget(root, "CustomFooterMsgBox", "CustomFooterMsgBoxOpenButton");
+        SetPlacementTarget(root, "DraggableDialog", "DraggableDialogOpenButton");
+        SetPlacementTarget(root, "DelayedCloseMsgBox", "DelayedCloseMsgBoxOpenButton");
+        SetPlacementTarget(root, "ConfigureButtonPropertiesDialog", "ConfigureButtonsDialogOpenButton");
+    }
+
+    private static void SetPlacementTarget(Control root, string dialogName, string targetName)
+    {
+        var target = FindDescendantByName<Control>(root, targetName);
+        if (target is null)
+        {
+            return;
+        }
+
+        if (FindDescendantByName<Dialog>(root, dialogName) is { } dialog)
+        {
+            dialog.PlacementTarget = target;
+            return;
+        }
+
+        if (FindDescendantByName<MessageBox>(root, dialogName) is { } messageBox)
+        {
+            messageBox.PlacementTarget = target;
+        }
     }
 
     private void HandleBasicModalButtonClick(object? sender, RoutedEventArgs e)
@@ -214,8 +300,6 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
         }
     }
 
-    private IDisposable? _delayedCloseDialogDisposal;
-
     private void HandleDelayedCloseMsgBoxOpened(object? sender, EventArgs e)
     {
         if (sender is MessageBox messageBox)
@@ -240,6 +324,11 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
 
     private void HandleConfigureButtonsDialogButtonClick(object? sender, EventArgs e)
     {
+        if (TryFindTemplateControl(sender, "ConfigureButtonPropertiesDialog", out Dialog dialog))
+        {
+            dialog.ButtonsConfigure = ConfigureButtonProperties;
+        }
+
         if (DataContext is ModalViewModel viewModel)
         {
             viewModel.IsConfigureButtonsDialogOpened = true;
@@ -272,7 +361,7 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
                 HorizontalStartupLocation = DialogHorizontalAnchor.Center,
                 VerticalOffset            = new Dimension(30, DimensionUnitType.Percentage),
                 HostMinWidth              = 400,
-                PlacementTarget           = OpenOverlayDialogAPIButton
+                PlacementTarget           = sender as Control
             };
             await Dialog.ShowDialogModalAsync(content, null, options);
         }
@@ -329,6 +418,69 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
                 Age  = 2
             };
             await Dialog.ShowDialogModalAsync<ModalUserControlView, ModalUserControlViewModel>(viewModel, options);
+        }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Modal demo failed: {ex}"); }
+    }
+
+    private async void HandleOpenBeforeCloseDialogButtonClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+            var validationAttempts = 0;
+            var statusText = new TextBlock
+            {
+                Text         = "The first OK click will fail async validation. Click OK again to close.",
+                TextWrapping = Avalonia.Media.TextWrapping.Wrap
+            };
+            var content = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "DialogOptions.BeforeCloseAsync can decide whether a static dialog is allowed to close." },
+                    statusText
+                }
+            };
+            var options = new DialogOptions
+            {
+                Title                     = "Async before-close validation",
+                IsResizable               = false,
+                IsDragMovable             = true,
+                IsMaximizable             = false,
+                StandardButtons           = DialogStandardButtons.Parse("Cancel,Ok"),
+                DefaultStandardButton     = DialogStandardButton.Ok,
+                HorizontalStartupLocation = DialogHorizontalAnchor.Center,
+                VerticalStartupLocation   = DialogVerticalAnchor.Center,
+                HostMinWidth              = 420,
+                PlacementTarget           = sender as Control,
+                BeforeCloseAsync = async context =>
+                {
+                    if (context.DialogCode != DialogCode.Accepted)
+                    {
+                        return true;
+                    }
+
+                    context.Dialog.IsConfirmLoading = true;
+                    try
+                    {
+                        await Task.Delay(1000, context.CancellationToken);
+                        validationAttempts++;
+                        if (validationAttempts == 1)
+                        {
+                            statusText.Text = "Validation failed. The dialog stayed open; click OK again to pass.";
+                            return false;
+                        }
+
+                        return true;
+                    }
+                    finally
+                    {
+                        context.Dialog.IsConfirmLoading = false;
+                    }
+                }
+            };
+            await Dialog.ShowDialogModalAsync(content, null, options);
         }
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Modal demo failed: {ex}"); }
     }
@@ -461,5 +613,44 @@ public partial class ModalShowCase : GalleryReactiveUserControl<ModalViewModel>
             Text = "some messages...some messages..."
         });
         return stackPanel;
+    }
+
+    private static bool TryFindTemplateControl<T>(object? source, string name, out T control)
+        where T : Control
+    {
+        var current = source as Control;
+        while (current is not null)
+        {
+            if (current is T directControl &&
+                directControl.Name == name)
+            {
+                control = directControl;
+                return true;
+            }
+
+            var descendantControl = FindDescendantByName<T>(current, name);
+            if (descendantControl is not null)
+            {
+                control = descendantControl;
+                return true;
+            }
+
+            current = current.Parent as Control;
+        }
+
+        control = null!;
+        return false;
+    }
+
+    private static T? FindDescendantByName<T>(Control root, string name)
+        where T : Control
+    {
+        if (root is T typedRoot && typedRoot.Name == name)
+        {
+            return typedRoot;
+        }
+
+        return root.GetVisualDescendants().OfType<T>().FirstOrDefault(control => control.Name == name)
+               ?? root.GetLogicalDescendants().OfType<T>().FirstOrDefault(control => control.Name == name);
     }
 }

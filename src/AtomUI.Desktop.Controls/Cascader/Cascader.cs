@@ -1,18 +1,16 @@
 using System.Collections;
 using System.Collections.Specialized;
-using System.Reactive.Disposables;
 using AtomUI.Controls;
 using AtomUI.Controls.Primitives;
 using AtomUI.Controls.Utils;
-using AtomUI.Data;
 using AtomUI.Desktop.Controls.DataLoad;
 using AtomUI.Input;
 using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -44,13 +42,17 @@ public class Cascader : AbstractSelect
         AvaloniaProperty.RegisterDirect<Cascader, ICascaderOption?>(
             nameof(SelectedOption),
             o => o.SelectedOption,
-            (o, v) => o.SelectedOption = v);
+            (o, v) => o.SelectedOption = v,
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
     
     public static readonly DirectProperty<Cascader, IList<ICascaderOption>?> SelectedOptionsProperty =
         AvaloniaProperty.RegisterDirect<Cascader, IList<ICascaderOption>?>(
             nameof(SelectedOptions),
             o => o.SelectedOptions,
-            (o, v) => o.SelectedOptions = v);
+            (o, v) => o.SelectedOptions = v,
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
     
     public static readonly StyledProperty<IconTemplate?> ExpandIconProperty =
         CascaderView.ExpandIconProperty.AddOwner<Cascader>();
@@ -241,7 +243,7 @@ public class Cascader : AbstractSelect
     private readonly ItemCollection _options = new();
     private SelectFilterTextBox? _singleFilterInput;
     private CascaderView? _cascaderView;
-    private CompositeDisposable? _contentRightAddOnBindings;
+    private INotifyCollectionChanged? _selectedOptionsCollectionChangedSource;
     private bool _needSkipSyncSelectedOptions;
     private bool _isDefaultSelectOptionPathApplied;
 
@@ -254,14 +256,13 @@ public class Cascader : AbstractSelect
         IsMultipleProperty.Changed.AddClassHandler<Cascader>((cascader, e) => cascader.HandleIsCheckableChanged());
         OptionsSourceProperty.Changed.AddClassHandler<Cascader>((cascader, args) => cascader.HandleCascaderSourceChanged(args));
         SelectedOptionProperty.Changed.AddClassHandler<Cascader>((cascader, args) =>
-            cascader.NotifyFormValueChanged(args.NewValue));
+            cascader.HandleSelectedOptionChanged(args));
         SelectedOptionsProperty.Changed.AddClassHandler<Cascader>((cascader, args) =>
-            cascader.NotifyFormValueChanged(args.NewValue));
+            cascader.HandleSelectedOptionsChanged(args));
     }
     
     public Cascader()
     {
-        this.RegisterTokenResourceScope(CascaderToken.ScopeProvider);
         Options.CollectionChanged += HandleCascaderOptionsChanged;
     }
     
@@ -320,6 +321,19 @@ public class Cascader : AbstractSelect
         {
             SetCurrentValue(FilterProperty, ValueFilterFactory.BuildFilter(ValueFilterMode.Contains));
         }
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        ConfigureSelectedOptionsCollectionChangedSource(SelectedOptions);
+        ConfigureSelectedOptionsValueState();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        ReleaseSelectedOptionsCollectionChangedSource();
+        base.OnDetachedFromVisualTree(e);
     }
     
     private void HandleClearRequest()
@@ -497,72 +511,13 @@ public class Cascader : AbstractSelect
             _cascaderView.ItemClicked            += HandleCascaderViewItemClicked;
             _cascaderView.OptionSelected         += HandleCascaderViewItemSelected;
             _cascaderView.OptionsSource          =  BuildOptionsList(Options);
+            SyncSelectedOptionsToCascaderView();
         }
 
         ConfigurePlaceholderVisible();
         ConfigureSelectionIsEmpty();
         UpdatePseudoClasses();
         ConfigureSingleFilterTextBox();
-        SetupContentRightAddOnBindings(e);
-    }
-
-    private void SetupContentRightAddOnBindings(TemplateAppliedEventArgs e)
-    {
-        _contentRightAddOnBindings?.Dispose();
-        _contentRightAddOnBindings = new CompositeDisposable();
-
-        if (e.NameScope.Find<SelectMaxCountIndicator>("PART_SelectMaxCountIndicator") is { } indicator)
-        {
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, MaxCountProperty, indicator,
-                SelectMaxCountIndicator.MaxCountProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, SelectedCountProperty, indicator,
-                SelectMaxCountIndicator.SelectedCountProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsShowMaxCountIndicatorProperty, indicator,
-                Visual.IsVisibleProperty));
-        }
-
-        if (e.NameScope.Find<ContentPresenter>("PART_ContentRightAddOnPresenter") is { } contentPresenter)
-        {
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, ContentRightAddOnProperty, contentPresenter,
-                ContentPresenter.ContentProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, ContentRightAddOnTemplateProperty,
-                contentPresenter, ContentPresenter.ContentTemplateProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, ContentRightAddOnProperty, contentPresenter,
-                Visual.IsVisibleProperty, value => value is not null));
-        }
-
-        if (e.NameScope.Find<SelectHandle>("PART_SelectHandle") is { } handle)
-        {
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, FormFeedbackProperty, handle,
-                SelectHandle.FormFeedbackProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, SuffixLoadingIconProperty, handle,
-                SelectHandle.LoadingIconProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, SuffixIconProperty, handle,
-                SelectHandle.OpenIndicatorProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsFilterEnabledProperty, handle,
-                SelectHandle.IsFilterEnabledProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsEnabledProperty, handle,
-                InputElement.IsEnabledProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsMotionEnabledProperty, handle,
-                SelectHandle.IsMotionEnabledProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsLoadingProperty, handle,
-                SelectHandle.IsLoadingProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsAllowClearProperty, handle,
-                SelectHandle.IsAllowClearProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsSelectionEmptyProperty, handle,
-                SelectHandle.IsSelectionEmptyProperty));
-            _contentRightAddOnBindings.Add(BindUtils.RelayBind(this, IsDropDownOpenProperty, handle,
-                SelectHandle.IsDropDownOpenProperty));
-
-            var addOnBox = e.NameScope.Find<AddOnDecoratedBox>(AddOnDecoratedBox.AddOnDecoratedBoxPart);
-            if (addOnBox != null)
-            {
-                _contentRightAddOnBindings.Add(BindUtils.RelayBind(addOnBox,
-                    AddOnDecoratedBox.IsInnerBoxHoverProperty, handle, SelectHandle.IsInputHoverProperty));
-                _contentRightAddOnBindings.Add(BindUtils.RelayBind(addOnBox,
-                    AddOnDecoratedBox.IsInnerBoxPressedProperty, handle, SelectHandle.IsInputPressedProperty));
-            }
-        }
     }
     
     protected override void PopupClosed(object? sender, EventArgs e)
@@ -626,6 +581,76 @@ public class Cascader : AbstractSelect
                 _needSkipSyncSelectedOptions = false;
             }
         }
+    }
+
+    private void HandleSelectedOptionChanged(AvaloniaPropertyChangedEventArgs args)
+    {
+        NotifyFormValueChanged(args.NewValue);
+    }
+
+    private void HandleSelectedOptionsChanged(AvaloniaPropertyChangedEventArgs args)
+    {
+        ConfigureSelectedOptionsCollectionChangedSource(args.GetNewValue<IList<ICascaderOption>?>());
+        NotifyFormValueChanged(args.NewValue);
+    }
+
+    private void ConfigureSelectedOptionsCollectionChangedSource(IList<ICascaderOption>? selectedOptions)
+    {
+        if (!this.IsAttachedToVisualTree())
+        {
+            ReleaseSelectedOptionsCollectionChangedSource();
+            return;
+        }
+
+        if (ReferenceEquals(_selectedOptionsCollectionChangedSource, selectedOptions))
+        {
+            return;
+        }
+
+        ReleaseSelectedOptionsCollectionChangedSource();
+
+        _selectedOptionsCollectionChangedSource = selectedOptions as INotifyCollectionChanged;
+        if (_selectedOptionsCollectionChangedSource != null)
+        {
+            _selectedOptionsCollectionChangedSource.CollectionChanged += HandleSelectedOptionsCollectionChanged;
+        }
+    }
+
+    private void ReleaseSelectedOptionsCollectionChangedSource()
+    {
+        if (_selectedOptionsCollectionChangedSource != null)
+        {
+            _selectedOptionsCollectionChangedSource.CollectionChanged -= HandleSelectedOptionsCollectionChanged;
+            _selectedOptionsCollectionChangedSource = null;
+        }
+    }
+
+    private void HandleSelectedOptionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (!ReferenceEquals(sender, _selectedOptionsCollectionChangedSource))
+        {
+            return;
+        }
+
+        NotifyFormValueChanged(SelectedOptions);
+        ConfigureSelectedOptionsValueState();
+    }
+
+    private void ConfigureSelectedOptionsValueState()
+    {
+        ConfigurePlaceholderVisible();
+        ConfigureSelectionIsEmpty();
+        if (IsMultiple)
+        {
+            SetCurrentValue(SelectedCountProperty, SelectedOptions?.Count ?? 0);
+        }
+        else
+        {
+            SetCurrentValue(SelectedCountProperty, SelectedOption != null ? 1 : 0);
+        }
+        SyncSelectedOptionsToCascaderView();
+        BuildEffectiveSelectedOptions();
+        ConfigureMaxSelectReached();
     }
 
     private void ConfigureSelectionIsEmpty()
@@ -768,7 +793,7 @@ public class Cascader : AbstractSelect
         {
             if (!IsMultiple)
             {
-                if (option.IsEffectiveLeaf())
+                if (eventArgs.Item.IsLeaf && !eventArgs.Item.IsLoading)
                 {
                     SetCurrentValue(IsDropDownOpenProperty, false);
                 }
@@ -905,7 +930,7 @@ public class Cascader : AbstractSelect
         {
             if (SelectedOptions.Count == 0 || ShowCheckedStrategy == TreeSelectCheckedStrategy.All)
             {
-                EffectiveSelectedOptions = SelectedOptions;
+                EffectiveSelectedOptions = BuildOptionList(SelectedOptions);
             }
             else
             {

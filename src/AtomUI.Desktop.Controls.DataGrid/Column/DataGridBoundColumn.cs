@@ -5,7 +5,6 @@
 
 using System.Diagnostics;
 using AtomUI.Desktop.Controls.Utils;
-using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -116,6 +115,13 @@ public abstract class DataGridBoundColumn : DataGridColumn
                 }
             }
         }
+    }
+
+    internal string? GetBindingPath()
+    {
+        return Binding is null
+            ? null
+            : GetBindingPath(Binding);
     }
 
     private static BindingMode GetBindingMode(BindingBase binding)

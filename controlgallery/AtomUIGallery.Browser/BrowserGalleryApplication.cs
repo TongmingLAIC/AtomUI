@@ -3,7 +3,6 @@ using AtomUI;
 using AtomUI.Desktop.Controls;
 using AtomUI.Fonts.AlibabaPuHuiTi;
 using AtomUI.Theme;
-using AtomUIGallery;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
@@ -23,6 +22,7 @@ public class BrowserGalleryApplication : Application
             builder.WithDefaultFontFamily(FontFamily.Parse(
                 $"fonts:AlibabaSans#Alibaba Sans, {AlibabaPuHuiTiFontConstants.FontFamily}, $Default"));
             builder.UseDesktopControls();
+            builder.UseDesktopExtras();
             builder.UseDesktopColorPicker();
             builder.UseDesktopDataGrid();
             builder.UseGalleryControls();

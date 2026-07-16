@@ -15,7 +15,7 @@ namespace AtomUI.Desktop.Controls;
 
 public abstract class AbstractSelect : TemplatedControl,
                                        IMotionAwareControl,
-                                       ISizeTypeAware,
+                                       ICustomizableSizeTypeAware,
                                        ICompactSpaceAware,
                                        IInputControlStatusAware,
                                        IInputControlStyleVariantAware,
@@ -49,6 +49,15 @@ public abstract class AbstractSelect : TemplatedControl,
 
     public static readonly StyledProperty<bool> IsFilterEnabledProperty =
         AvaloniaProperty.Register<AbstractSelect, bool>(nameof(IsFilterEnabled));
+
+    public static readonly StyledProperty<bool> IsShowOverflowTipProperty =
+        AvaloniaProperty.Register<AbstractSelect, bool>(nameof(IsShowOverflowTip), true);
+
+    public static readonly StyledProperty<int> OverflowTipDelayProperty =
+        AvaloniaProperty.Register<AbstractSelect, int>(nameof(OverflowTipDelay), 1200);
+
+    public static readonly StyledProperty<PlacementMode> OverflowTipPlacementProperty =
+        AvaloniaProperty.Register<AbstractSelect, PlacementMode>(nameof(OverflowTipPlacement), PlacementMode.TopEdgeAlignedLeft);
 
     public static readonly StyledProperty<int> DisplayPageSizeProperty =
         AvaloniaProperty.Register<AbstractSelect, int>(nameof (DisplayPageSize), 10);
@@ -116,8 +125,8 @@ public abstract class AbstractSelect : TemplatedControl,
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<AbstractSelect>();
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractSelect>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractSelect>();
 
     public static readonly StyledProperty<object?> EmptyIndicatorProperty =
         AvaloniaProperty.Register<AbstractSelect, object?>(nameof(EmptyIndicator));
@@ -188,6 +197,24 @@ public abstract class AbstractSelect : TemplatedControl,
     {
         get => GetValue(IsFilterEnabledProperty);
         set => SetValue(IsFilterEnabledProperty, value);
+    }
+
+    public bool IsShowOverflowTip
+    {
+        get => GetValue(IsShowOverflowTipProperty);
+        set => SetValue(IsShowOverflowTipProperty, value);
+    }
+
+    public int OverflowTipDelay
+    {
+        get => GetValue(OverflowTipDelayProperty);
+        set => SetValue(OverflowTipDelayProperty, value);
+    }
+
+    public PlacementMode OverflowTipPlacement
+    {
+        get => GetValue(OverflowTipPlacementProperty);
+        set => SetValue(OverflowTipPlacementProperty, value);
     }
 
     public int DisplayPageSize
@@ -328,7 +355,7 @@ public abstract class AbstractSelect : TemplatedControl,
         set => SetValue(IsMotionEnabledProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -560,35 +587,12 @@ public abstract class AbstractSelect : TemplatedControl,
     private AddOnDecoratedBox? _addOnDecoratedBox;
 
     private IDisposable? _deactivationSubscription;
+    private EventHandler? _formValueChanged;
 
     static AbstractSelect()
     {
         AffectsArrange<AbstractSelect>(CompactSpaceItemPositionProperty, CompactSpaceOrientationProperty);
         IsDropDownOpenProperty.Changed.AddClassHandler<AbstractSelect>((select, args) => select.HandleIsDropDownOpenChanged(args));
-    }
-
-    private void HandleIsDropDownOpenChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        // Ignore the change if requested
-        if (IgnorePropertyChange)
-        {
-            IgnorePropertyChange = false;
-            return;
-        }
-
-        bool oldValue = (bool)e.OldValue!;
-        bool newValue = (bool)e.NewValue!;
-
-        if (!newValue)
-        {
-            ClosingDropDown(oldValue);
-        }
-        else
-        {
-            OpeningDropDown(oldValue);
-        }
-
-        UpdatePseudoClasses();
     }
 
     protected override void OnInitialized()
@@ -609,30 +613,6 @@ public abstract class AbstractSelect : TemplatedControl,
         }
     }
 
-    protected virtual void NotifyPopupClosed()
-    {
-        DropDownClosed?.Invoke(this, EventArgs.Empty);
-    }
-
-    protected virtual void NotifyPopupOpened()
-    {
-        DropDownOpened?.Invoke(this, EventArgs.Empty);
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-        if (change.Property == PlacementProperty)
-        {
-            ConfigurePopupPlacement();
-        }
-        else if (change.Property == DisplayPageSizeProperty ||
-                 change.Property == ItemHeightProperty)
-        {
-            ConfigureMaxDropdownHeight();
-        }
-    }
-
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
@@ -646,11 +626,6 @@ public abstract class AbstractSelect : TemplatedControl,
 
         _deactivationSubscription?.Dispose();
         _deactivationSubscription = null;
-    }
-
-    private void HandleWindowDeactivated(object? sender, EventArgs e)
-    {
-        SetCurrentValue(IsDropDownOpenProperty, false);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -691,31 +666,23 @@ public abstract class AbstractSelect : TemplatedControl,
         NotifyPopupOpened();
     }
 
-    private void IsVisibleChanged(bool isVisible)
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        if (!isVisible && IsDropDownOpen)
+        base.OnPropertyChanged(change);
+        if (change.Property == StatusProperty ||
+            change.Property == DataValidationErrors.HasErrorsProperty ||
+            change.Property == DataValidationErrors.ErrorsProperty)
         {
-            SetCurrentValue(IsDropDownOpenProperty, false);
+            UpdatePseudoClasses();
         }
-    }
-
-    private void ConfigurePopupPlacement()
-    {
-        if (Placement == SelectPopupPlacement.BottomEdgeAlignedLeft)
+        else if (change.Property == PlacementProperty)
         {
-            PopupPlacement = PlacementMode.BottomEdgeAlignedLeft;
+            ConfigurePopupPlacement();
         }
-        else if (Placement == SelectPopupPlacement.BottomEdgeAlignedRight)
+        else if (change.Property == DisplayPageSizeProperty ||
+                 change.Property == ItemHeightProperty)
         {
-            PopupPlacement = PlacementMode.BottomEdgeAlignedRight;
-        }
-        else if (Placement == SelectPopupPlacement.TopEdgeAlignedLeft)
-        {
-            PopupPlacement = PlacementMode.TopEdgeAlignedLeft;
-        }
-        else if (Placement == SelectPopupPlacement.TopEdgeAlignedRight)
-        {
-            PopupPlacement = PlacementMode.TopEdgeAlignedRight;
+            ConfigureMaxDropdownHeight();
         }
     }
 
@@ -736,6 +703,32 @@ public abstract class AbstractSelect : TemplatedControl,
         MaxPopupHeight = ItemHeight * DisplayPageSize + PopupContentPadding.Top + PopupContentPadding.Bottom;
     }
 
+    protected void UpdatePseudoClasses()
+    {
+        PseudoClasses.Set(SelectPseudoClass.DropdownOpen, IsDropDownOpen);
+        PseudoClasses.Set(StdPseudoClass.Warning,
+            Status == InputControlStatus.Warning && !DataValidationErrors.GetHasErrors(this));
+        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Outline, StyleVariant == InputControlStyleVariant.Outlined);
+        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Filled, StyleVariant == InputControlStyleVariant.Filled);
+        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Borderless, StyleVariant == InputControlStyleVariant.Borderless);
+    }
+
+    private protected void SetDropDownOpenWithoutPropertyHandling(bool isOpen)
+    {
+        IgnorePropertyChange = true;
+        try
+        {
+            SetCurrentValue(IsDropDownOpenProperty, isOpen);
+        }
+        finally
+        {
+            if (IgnorePropertyChange)
+            {
+                IgnorePropertyChange = false;
+            }
+        }
+    }
+
     protected void ClosingDropDown(bool oldValue)
     {
         var args = new CancelEventArgs();
@@ -743,8 +736,7 @@ public abstract class AbstractSelect : TemplatedControl,
 
         if (args.Cancel)
         {
-            IgnorePropertyChange = true;
-            SetCurrentValue(IsDropDownOpenProperty, oldValue);
+            SetDropDownOpenWithoutPropertyHandling(oldValue);
         }
         else
         {
@@ -788,8 +780,7 @@ public abstract class AbstractSelect : TemplatedControl,
 
         if (args.Cancel)
         {
-            IgnorePropertyChange = true;
-            SetCurrentValue(IsDropDownOpenProperty, oldValue);
+            SetDropDownOpenWithoutPropertyHandling(oldValue);
         }
         else
         {
@@ -797,6 +788,16 @@ public abstract class AbstractSelect : TemplatedControl,
         }
 
         UpdatePseudoClasses();
+    }
+
+    protected virtual void NotifyPopupClosed()
+    {
+        DropDownClosed?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected virtual void NotifyPopupOpened()
+    {
+        DropDownOpened?.Invoke(this, EventArgs.Empty);
     }
 
     protected virtual void NotifyDropDownOpening(CancelEventArgs eventArgs)
@@ -819,15 +820,7 @@ public abstract class AbstractSelect : TemplatedControl,
         DropDownClosed?.Invoke(this, eventArgs);
     }
 
-    protected void UpdatePseudoClasses()
-    {
-        PseudoClasses.Set(SelectPseudoClass.DropdownOpen, IsDropDownOpen);
-        PseudoClasses.Set(StdPseudoClass.Error, Status == InputControlStatus.Error);
-        PseudoClasses.Set(StdPseudoClass.Warning, Status == InputControlStatus.Warning);
-        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Outline, StyleVariant == InputControlStyleVariant.Outlined);
-        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Filled, StyleVariant == InputControlStyleVariant.Filled);
-        PseudoClasses.Set(AddOnDecoratedBoxPseudoClass.Borderless, StyleVariant == InputControlStyleVariant.Borderless);
-    }
+    #region 实现 CompactSpace 接口
 
     void ICompactSpaceAware.NotifyPositionChange(SpaceItemPosition? position)
     {
@@ -872,9 +865,10 @@ public abstract class AbstractSelect : TemplatedControl,
         return _addOnDecoratedBox.InnerBoxBorderThickness.Left;
     }
 
+    #endregion
+
     #region 实现 FormItem 接口
 
-    private EventHandler? _formValueChanged;
     event EventHandler? IFormItemAware.ValueChanged
     {
         add => _formValueChanged += value;
@@ -930,6 +924,65 @@ public abstract class AbstractSelect : TemplatedControl,
         }
     }
 
+    #endregion
+
+    private void HandleIsDropDownOpenChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        // Ignore the change if requested
+        if (IgnorePropertyChange)
+        {
+            IgnorePropertyChange = false;
+            return;
+        }
+
+        bool oldValue = (bool)e.OldValue!;
+        bool newValue = (bool)e.NewValue!;
+
+        if (!newValue)
+        {
+            ClosingDropDown(oldValue);
+        }
+        else
+        {
+            OpeningDropDown(oldValue);
+        }
+
+        UpdatePseudoClasses();
+    }
+
+    private void HandleWindowDeactivated(object? sender, EventArgs e)
+    {
+        SetCurrentValue(IsDropDownOpenProperty, false);
+    }
+
+    private void IsVisibleChanged(bool isVisible)
+    {
+        if (!isVisible && IsDropDownOpen)
+        {
+            SetCurrentValue(IsDropDownOpenProperty, false);
+        }
+    }
+
+    private void ConfigurePopupPlacement()
+    {
+        if (Placement == SelectPopupPlacement.BottomEdgeAlignedLeft)
+        {
+            PopupPlacement = PlacementMode.BottomEdgeAlignedLeft;
+        }
+        else if (Placement == SelectPopupPlacement.BottomEdgeAlignedRight)
+        {
+            PopupPlacement = PlacementMode.BottomEdgeAlignedRight;
+        }
+        else if (Placement == SelectPopupPlacement.TopEdgeAlignedLeft)
+        {
+            PopupPlacement = PlacementMode.TopEdgeAlignedLeft;
+        }
+        else if (Placement == SelectPopupPlacement.TopEdgeAlignedRight)
+        {
+            PopupPlacement = PlacementMode.TopEdgeAlignedRight;
+        }
+    }
+
     private void SetStatusIfChanged(InputControlStatus status)
     {
         if (Status != status)
@@ -937,5 +990,4 @@ public abstract class AbstractSelect : TemplatedControl,
             SetCurrentValue(StatusProperty, status);
         }
     }
-    #endregion
 }

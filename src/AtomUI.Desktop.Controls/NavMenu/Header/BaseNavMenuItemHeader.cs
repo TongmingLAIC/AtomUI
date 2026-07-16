@@ -5,7 +5,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -110,6 +109,47 @@ public class BaseNavMenuItemHeader : TemplatedControl
         get => _isInSelectedPath;
         set => SetAndRaise(IsInSelectedPathProperty, ref _isInSelectedPath, value);
     }
+    #endregion
+
+    #region 内部属性定义
+
+    internal static readonly StyledProperty<bool> IsItemBackgroundEnabledProperty =
+        AvaloniaProperty.Register<BaseNavMenuItemHeader, bool>(nameof(IsItemBackgroundEnabled), true);
+
+    internal static readonly DirectProperty<BaseNavMenuItemHeader, bool> IsKeyboardActiveProperty =
+        AvaloniaProperty.RegisterDirect<BaseNavMenuItemHeader, bool>(
+            nameof(IsKeyboardActive),
+            o => o.IsKeyboardActive,
+            (o, v) => o.IsKeyboardActive = v);
+
+    internal static readonly DirectProperty<BaseNavMenuItemHeader, bool> IsInlineCollapsedProperty =
+        AvaloniaProperty.RegisterDirect<BaseNavMenuItemHeader, bool>(
+            nameof(IsInlineCollapsed),
+            o => o.IsInlineCollapsed,
+            (o, v) => o.IsInlineCollapsed = v);
+
+    internal bool IsItemBackgroundEnabled
+    {
+        get => GetValue(IsItemBackgroundEnabledProperty);
+        set => SetValue(IsItemBackgroundEnabledProperty, value);
+    }
+
+    private bool _isKeyboardActive;
+
+    internal bool IsKeyboardActive
+    {
+        get => _isKeyboardActive;
+        set => SetAndRaise(IsKeyboardActiveProperty, ref _isKeyboardActive, value);
+    }
+
+    private bool _isInlineCollapsed;
+
+    internal bool IsInlineCollapsed
+    {
+        get => _isInlineCollapsed;
+        set => SetAndRaise(IsInlineCollapsedProperty, ref _isInlineCollapsed, value);
+    }
+
     #endregion
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)

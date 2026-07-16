@@ -54,7 +54,9 @@ public partial class ListView
         AvaloniaProperty.RegisterDirect<ListView, IList?>(
             nameof(SelectedItems),
             o => o.SelectedItems,
-            (o, v) => o.SelectedItems = v);
+            (o, v) => o.SelectedItems = v,
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
     
     public static readonly DirectProperty<ListView, ISelectionModel> SelectionProperty =
         AvaloniaProperty.RegisterDirect<ListView, ISelectionModel>(
@@ -421,7 +423,8 @@ public partial class ListView
         BindingValueType state,
         Exception? error)
     {
-        if (property == SelectedItemProperty)
+        if (property == SelectedItemProperty ||
+            property == SelectedItemsProperty)
         {
             DataValidationErrors.SetError(this, error);
         }
@@ -1222,6 +1225,7 @@ public partial class ListView
         {
             model.PropertyChanged  -= OnSelectionModelPropertyChanged;
             model.SelectionChanged -= OnSelectionModelSelectionChanged;
+            model.LostSelection    -= OnSelectionModelLostSelection;
         }
     }
 

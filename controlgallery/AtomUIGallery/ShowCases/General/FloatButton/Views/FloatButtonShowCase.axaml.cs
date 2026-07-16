@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.FloatButton;
 
 public partial class FloatButtonShowCase : GalleryReactiveUserControl<FloatButtonViewModel>
@@ -7,6 +6,7 @@ public partial class FloatButtonShowCase : GalleryReactiveUserControl<FloatButto
 
     public FloatButtonShowCase()
     {
+        InitializeComponent();
         this.WhenActivated(disposables =>
         {
             if (DataContext is FloatButtonViewModel vm)
@@ -14,6 +14,6 @@ public partial class FloatButtonShowCase : GalleryReactiveUserControl<FloatButto
                 vm.IsOpened = true;
             }
         });
-        InitializeComponent();
     }
+
 }

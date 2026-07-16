@@ -1,8 +1,5 @@
-﻿using System.Reactive;
-using Avalonia.Controls;
-using ReactiveUI;
-using Button = AtomUI.Desktop.Controls.Button;
-using ToggleSwitch = AtomUI.Desktop.Controls.ToggleSwitch;
+﻿using Avalonia.Controls;
+using Avalonia.Interactivity;
 
 namespace AtomUIGallery.ShowCases.ToggleSwitch;
 
@@ -10,34 +7,25 @@ public partial class ToggleSwitchShowCase : GalleryReactiveUserControl<ToggleSwi
 {
     public const string LanguageId = nameof(ToggleSwitchShowCase);
 
-    public ReactiveCommand<Unit, Unit> ToggleSwitchCommand { get; private set; }
-    public ReactiveCommand<Unit, Unit> ToggleLoadingStatus { get; private set; }
-
     public ToggleSwitchShowCase()
     {
-        ToggleSwitchCommand = ReactiveCommand.Create(HandleToggleDisabledStatus);
-        ToggleLoadingStatus = ReactiveCommand.Create(HandleToggleLoadingStatus);
         InitializeComponent();
     }
 
-    private void HandleToggleDisabledStatus()
+    public void HandleToggleDisabledButtonClick(object? sender, RoutedEventArgs args)
     {
-        if (ToggleDisabledSwitch != null)
+        if (sender is Control { DataContext: ToggleSwitchViewModel viewModel })
         {
-            ToggleDisabledSwitch.IsEnabled = !ToggleDisabledSwitch.IsEnabled;
+            viewModel.IsDisabledDemoEnabled = !viewModel.IsDisabledDemoEnabled;
         }
     }
 
-    private void HandleToggleLoadingStatus()
+    public void HandleToggleLoadingButtonClick(object? sender, RoutedEventArgs args)
     {
-        if (ToggleSwitchDefault != null)
+        if (sender is Control { DataContext: ToggleSwitchViewModel viewModel })
         {
-            ToggleSwitchDefault.IsLoading = !ToggleSwitchDefault.IsLoading;
-        }
-
-        if (ToggleSwitchSmall != null)
-        {
-            ToggleSwitchSmall.IsLoading = !ToggleSwitchSmall.IsLoading;
+            viewModel.IsLoadingDemoLoading = !viewModel.IsLoadingDemoLoading;
         }
     }
+
 }

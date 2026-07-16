@@ -1,5 +1,7 @@
 using AtomUI.Animations;
 using AtomUI.Controls;
+using AtomUI.Controls.Primitives;
+using AtomUI.Desktop.Controls.Primitives.Themes;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -16,7 +18,7 @@ using Avalonia.VisualTree;
 namespace AtomUI.Desktop.Controls;
 
 internal class AddOnDecoratedBox : ContentControl, 
-                                   ISizeTypeAware,
+                                   ICustomizableSizeTypeAware,
                                    IMotionAwareControl,
                                    IInputControlStatusAware,
                                    IInputControlStyleVariantAware
@@ -49,8 +51,8 @@ internal class AddOnDecoratedBox : ContentControl,
     public static readonly StyledProperty<IDataTemplate?> ContentRightAddOnTemplateProperty =
         AvaloniaProperty.Register<AddOnDecoratedBox, IDataTemplate?>(nameof(ContentRightAddOnTemplate));
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AddOnDecoratedBox>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AddOnDecoratedBox>();
 
     public static readonly StyledProperty<InputControlStyleVariant> StyleVariantProperty =
         InputControlStyleVariantProperty.StyleVariantProperty.AddOwner<AddOnDecoratedBox>();
@@ -60,6 +62,9 @@ internal class AddOnDecoratedBox : ContentControl,
     
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<AddOnDecoratedBox>();
+
+    public static readonly StyledProperty<BoxShadows> BoxShadowProperty =
+        Border.BoxShadowProperty.AddOwner<AddOnDecoratedBox>();
 
     [DependsOn(nameof(LeftAddOnTemplate))]
     public object? LeftAddOn
@@ -113,7 +118,7 @@ internal class AddOnDecoratedBox : ContentControl,
         set => SetValue(ContentRightAddOnTemplateProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -137,6 +142,12 @@ internal class AddOnDecoratedBox : ContentControl,
         set => SetValue(IsMotionEnabledProperty, value);
     }
 
+    public BoxShadows BoxShadow
+    {
+        get => GetValue(BoxShadowProperty);
+        set => SetValue(BoxShadowProperty, value);
+    }
+
     #endregion
     
     #region 内部属性定义
@@ -145,6 +156,12 @@ internal class AddOnDecoratedBox : ContentControl,
 
     internal static readonly StyledProperty<IBrush?> AddOnStatusIconBrushProperty =
         AvaloniaProperty.Register<AddOnDecoratedBox, IBrush?>(nameof(AddOnStatusIconBrush));
+
+    internal static readonly DirectProperty<AddOnDecoratedBox, InputControlStatus> EffectiveStatusProperty =
+        AvaloniaProperty.RegisterDirect<AddOnDecoratedBox, InputControlStatus>(
+            nameof(EffectiveStatus),
+            o => o.EffectiveStatus,
+            (o, v) => o.EffectiveStatus = v);
 
     internal IBrush? AddOnStatusForeground
     {
@@ -156,6 +173,14 @@ internal class AddOnDecoratedBox : ContentControl,
     {
         get => GetValue(AddOnStatusIconBrushProperty);
         set => SetValue(AddOnStatusIconBrushProperty, value);
+    }
+
+    private InputControlStatus _effectiveStatus;
+
+    internal InputControlStatus EffectiveStatus
+    {
+        get => _effectiveStatus;
+        private set => SetAndRaise(EffectiveStatusProperty, ref _effectiveStatus, value);
     }
 
     internal static readonly DirectProperty<AddOnDecoratedBox, Thickness> InnerBoxBorderThicknessProperty =
@@ -206,6 +231,24 @@ internal class AddOnDecoratedBox : ContentControl,
     
     internal static readonly StyledProperty<bool> IsUsedInCompactSpaceProperty = 
         CompactSpaceAwareControlProperty.IsUsedInCompactSpaceProperty.AddOwner<AddOnDecoratedBox>();
+
+    internal static readonly StyledProperty<double> CustomControlHeightProperty =
+        AvaloniaProperty.Register<AddOnDecoratedBox, double>(nameof(CustomControlHeight), double.NaN);
+
+    internal static readonly StyledProperty<Thickness> ContentFramePaddingProperty =
+        AvaloniaProperty.Register<AddOnDecoratedBox, Thickness>(nameof(ContentFramePadding));
+
+    internal static readonly StyledProperty<Thickness> CompactContentFramePaddingProperty =
+        AvaloniaProperty.Register<AddOnDecoratedBox, Thickness>(nameof(CompactContentFramePadding));
+
+    internal static readonly StyledProperty<double> ContentMinHeightProperty =
+        AvaloniaProperty.Register<AddOnDecoratedBox, double>(nameof(ContentMinHeight), double.NaN);
+
+    internal static readonly DirectProperty<AddOnDecoratedBox, Thickness> EffectiveContentFramePaddingProperty =
+        AvaloniaProperty.RegisterDirect<AddOnDecoratedBox, Thickness>(
+            nameof(EffectiveContentFramePadding),
+            o => o.EffectiveContentFramePadding,
+            (o, v) => o.EffectiveContentFramePadding = v);
     
     private Thickness _innerBoxBorderThickness;
 
@@ -288,11 +331,45 @@ internal class AddOnDecoratedBox : ContentControl,
         get => GetValue(IsUsedInCompactSpaceProperty);
         set => SetValue(IsUsedInCompactSpaceProperty, value);
     }
+
+    internal double CustomControlHeight
+    {
+        get => GetValue(CustomControlHeightProperty);
+        set => SetValue(CustomControlHeightProperty, value);
+    }
+
+    internal Thickness ContentFramePadding
+    {
+        get => GetValue(ContentFramePaddingProperty);
+        set => SetValue(ContentFramePaddingProperty, value);
+    }
+
+    internal Thickness CompactContentFramePadding
+    {
+        get => GetValue(CompactContentFramePaddingProperty);
+        set => SetValue(CompactContentFramePaddingProperty, value);
+    }
+
+    internal double ContentMinHeight
+    {
+        get => GetValue(ContentMinHeightProperty);
+        set => SetValue(ContentMinHeightProperty, value);
+    }
+
+    private Thickness _effectiveContentFramePadding;
+
+    internal Thickness EffectiveContentFramePadding
+    {
+        get => _effectiveContentFramePadding;
+        set => SetAndRaise(EffectiveContentFramePaddingProperty, ref _effectiveContentFramePadding, value);
+    }
     
     #endregion
     
     private protected Control? _leftAddOn;
     private protected Control? _rightAddOn;
+    private ContentPresenter? _leftAddOnPresenter;
+    private ContentPresenter? _rightAddOnPresenter;
     private ContentPresenter? _contentLeftAddOn;
     private ContentPresenter? _contentRightAddOn;
     private bool _borderInfoDirty;
@@ -300,7 +377,7 @@ internal class AddOnDecoratedBox : ContentControl,
     private bool _borderThicknessDirty;
     private bool _layoutUpdatePosted;
 
-    internal Border? ContentFrame;
+    internal AddOnDecoratedBoxContentFrame? ContentFrame;
     
     static AddOnDecoratedBox()
     {
@@ -312,7 +389,8 @@ internal class AddOnDecoratedBox : ContentControl,
             ContentLeftAddOnProperty,
             ContentLeftAddOnTemplateProperty,
             ContentRightAddOnProperty,
-            ContentRightAddOnTemplateProperty);
+            ContentRightAddOnTemplateProperty,
+            EffectiveContentFramePaddingProperty);
     }
 
     public AddOnDecoratedBox()
@@ -336,10 +414,27 @@ internal class AddOnDecoratedBox : ContentControl,
             UpdatePseudoClasses();
         }
 
+        if (change.Property == StatusProperty ||
+            change.Property == DataValidationErrors.HasErrorsProperty ||
+            change.Property == DataValidationErrors.ErrorsProperty)
+        {
+            UpdateEffectiveStatus();
+        }
+
         if (change.Property == StyleVariantProperty ||
             change.Property == BorderThicknessProperty)
         {
             _borderThicknessDirty = true;
+        }
+
+        if (change.Property == SizeTypeProperty ||
+            change.Property == CustomControlHeightProperty ||
+            change.Property == ContentFramePaddingProperty ||
+            change.Property == CompactContentFramePaddingProperty ||
+            change.Property == ContentMinHeightProperty ||
+            change.Property == InnerBoxBorderThicknessProperty)
+        {
+            ConfigureEffectiveContentFramePadding();
         }
 
         if (change.Property == LeftAddOnProperty ||
@@ -372,6 +467,40 @@ internal class AddOnDecoratedBox : ContentControl,
         }
 
         ScheduleLayoutUpdate();
+    }
+
+    private void UpdateEffectiveStatus()
+    {
+        var effectiveStatus = DataValidationErrors.GetHasErrors(this)
+            ? InputControlStatus.Error
+            : Status;
+        if (EffectiveStatus != effectiveStatus)
+        {
+            EffectiveStatus = effectiveStatus;
+        }
+    }
+
+    private void ConfigureEffectiveContentFramePadding()
+    {
+        var effectivePadding = ContentFramePadding;
+        if (CustomizableSizeLayoutHelper.ShouldUseCompactVerticalPadding(
+                SizeType,
+                CustomControlHeight,
+                ContentFramePadding,
+                InnerBoxBorderThickness,
+                ContentMinHeight))
+        {
+            effectivePadding = new Thickness(
+                ContentFramePadding.Left,
+                CompactContentFramePadding.Top,
+                ContentFramePadding.Right,
+                CompactContentFramePadding.Bottom);
+        }
+
+        if (EffectiveContentFramePadding != effectivePadding)
+        {
+            EffectiveContentFramePadding = effectivePadding;
+        }
     }
 
     private void ScheduleLayoutUpdate()
@@ -560,18 +689,24 @@ internal class AddOnDecoratedBox : ContentControl,
             _contentRightAddOn.PropertyChanged -= HandleContentPresenterChildChanged;
         }
 
-        if (_leftAddOn is ContentPresenter oldLeftAddOn)
+        if (_leftAddOnPresenter != null)
         {
-            oldLeftAddOn.PropertyChanged -= HandleContentPresenterChildChanged;
+            _leftAddOnPresenter.PropertyChanged -= HandleContentPresenterChildChanged;
         }
 
-        if (_rightAddOn is ContentPresenter oldRightAddOn)
+        if (_rightAddOnPresenter != null)
         {
-            oldRightAddOn.PropertyChanged -= HandleContentPresenterChildChanged;
+            _rightAddOnPresenter.PropertyChanged -= HandleContentPresenterChildChanged;
         }
 
         _leftAddOn   = e.NameScope.Find<Control>("PART_LeftAddOn");
         _rightAddOn  = e.NameScope.Find<Control>("PART_RightAddOn");
+        _leftAddOnPresenter = e.NameScope.Find<ContentPresenter>(
+                                  AddOnDecoratedBoxThemeConstants.LeftAddOnPresenterPart)
+                              ?? _leftAddOn as ContentPresenter;
+        _rightAddOnPresenter = e.NameScope.Find<ContentPresenter>(
+                                   AddOnDecoratedBoxThemeConstants.RightAddOnPresenterPart)
+                               ?? _rightAddOn as ContentPresenter;
         _contentLeftAddOn  = e.NameScope.Find<ContentPresenter>("PART_ContentLeftAddOn");
         _contentRightAddOn = e.NameScope.Find<ContentPresenter>("PART_ContentRightAddOn");
 
@@ -586,17 +721,17 @@ internal class AddOnDecoratedBox : ContentControl,
             _contentRightAddOn.PropertyChanged += HandleContentPresenterChildChanged;
         }
 
-        if (_leftAddOn is ContentPresenter newLeftAddOn)
+        if (_leftAddOnPresenter != null)
         {
-            newLeftAddOn.PropertyChanged += HandleContentPresenterChildChanged;
+            _leftAddOnPresenter.PropertyChanged += HandleContentPresenterChildChanged;
         }
 
-        if (_rightAddOn is ContentPresenter newRightAddOn)
+        if (_rightAddOnPresenter != null)
         {
-            newRightAddOn.PropertyChanged += HandleContentPresenterChildChanged;
+            _rightAddOnPresenter.PropertyChanged += HandleContentPresenterChildChanged;
         }
         
-        ContentFrame = e.NameScope.Find<Border>("PART_ContentFrame");
+        ContentFrame = e.NameScope.Find<AddOnDecoratedBoxContentFrame>("PART_ContentFrame");
 
         ConfigureInnerBoxCornerRadius();
         ConfigureAddOnBorderInfo();
@@ -644,8 +779,8 @@ internal class AddOnDecoratedBox : ContentControl,
         // 应用 Foreground 到 addon 区域的 ContentPresenter
         ApplyAddOnForeground(_contentLeftAddOn, foreground);
         ApplyAddOnForeground(_contentRightAddOn, foreground);
-        ApplyAddOnForeground(_leftAddOn as ContentPresenter, foreground);
-        ApplyAddOnForeground(_rightAddOn as ContentPresenter, foreground);
+        ApplyAddOnForeground(_leftAddOnPresenter, foreground);
+        ApplyAddOnForeground(_rightAddOnPresenter, foreground);
 
         // 应用 Icon 染色
         ApplyIconBrush(_contentLeftAddOn, iconBrush);
@@ -838,10 +973,8 @@ internal class AddOnDecoratedBox : ContentControl,
     }
 }
 
-internal class AddOnDecoratedBoxContentFrame : Border
+internal class AddOnDecoratedBoxContentFrame : PixelAlignedBorder
 {
-    protected override System.Type StyleKeyOverride => typeof(Border);
-
     protected override void OnPointerEntered(PointerEventArgs e)
     {
         base.OnPointerEntered(e);

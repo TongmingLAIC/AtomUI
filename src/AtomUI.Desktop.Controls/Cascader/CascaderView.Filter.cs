@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.LogicalTree;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -69,6 +68,7 @@ public partial class CascaderView
                 }
             }
             FilteredPathInfos = filteredPathInfos;
+            _filterList?.ClearCandidate();
             IsFiltering       = true;
             FilterResultCount = FilteredPathInfos.Count;
         }
@@ -93,7 +93,7 @@ public partial class CascaderView
 
         return new CascaderViewFilterListItemData()
         {
-            Content       = string.Join('/', pathHeaders),
+            Content     = string.Join('/', pathHeaders),
             ExpandItems = pathNodes,
             IsEnabled   = option.IsEnabled
         };
@@ -133,29 +133,52 @@ public partial class CascaderView
         SetCurrentValue(FilterValueProperty, null);
         FilteredPathInfos = null;
         _allPathInfos     = null;
+        _filterList?.ClearCandidate();
+    }
+
+    internal bool TryMoveFilterCandidate(int delta)
+    {
+        if (!IsFiltering || _filterList == null)
+        {
+            return false;
+        }
+
+        return _filterList.TryMoveCandidate(delta);
+    }
+
+    internal bool TryCommitFilterCandidate()
+    {
+        if (!IsFiltering || _filterList == null)
+        {
+            return false;
+        }
+
+        var itemData = _filterList.GetCandidateOrFirstEnabledItem();
+        return itemData != null && TrySelectFilterResult(itemData);
     }
 
     private void HandleFilterListSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        IList<ICascaderOption>? paths = null;
         if (_filterList?.SelectedItem is CascaderViewFilterListItemData itemData)
         {
-            paths = itemData.ExpandItems;
+            TrySelectFilterResult(itemData);
         }
-        var popup = this.FindLogicalAncestorOfType<Popup>();
-        if (popup == null)
-        {
-            ClearFilter(); 
-        }
+    }
+
+    private bool TrySelectFilterResult(CascaderViewFilterListItemData itemData)
+    {
+        var paths = itemData.ExpandItems;
         if (paths?.Count > 0)
         {
             var targetNode = paths[^1];
             if (!IsCheckable)
             {
-                _ignoreSelectedPropertyChanged = true;
-                SelectedOption                 = targetNode;
-                OptionSelected?.Invoke(this, new CascaderOptionSelectedEventArgs(targetNode));
+                ClearFilter();
+                SelectOptionFromInteraction(targetNode);
+                return true;
             }
         }
+
+        return false;
     }
 }

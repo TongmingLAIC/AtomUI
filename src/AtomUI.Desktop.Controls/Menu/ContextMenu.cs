@@ -13,7 +13,7 @@ namespace AtomUI.Desktop.Controls;
 using AvaloniaContextMenu = Avalonia.Controls.ContextMenu;
 
 public class ContextMenu : AvaloniaContextMenu,
-                           ISizeTypeAware,
+                           ICustomizableSizeTypeAware,
                            IMotionAwareControl
 {
     #region 公共属性定义
@@ -23,8 +23,8 @@ public class ContextMenu : AvaloniaContextMenu,
     public static readonly StyledProperty<BoxShadows> OverlayHostShadowProperty =
         Popup.OverlayHostShadowProperty.AddOwner<ContextMenu>();
     
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<ContextMenu>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<ContextMenu>();
 
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<ContextMenu>();
@@ -56,7 +56,7 @@ public class ContextMenu : AvaloniaContextMenu,
         set => SetValue(OverlayHostShadowProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -132,8 +132,8 @@ public class ContextMenu : AvaloniaContextMenu,
     }
 
     public ContextMenu()
+        : base(new DefaultMenuInteractionHandler(true))
     {
-        this.RegisterTokenResourceScope(MenuToken.ScopeProvider);
         CreatePopup();
     }
 
@@ -171,6 +171,11 @@ public class ContextMenu : AvaloniaContextMenu,
 
     private void HandlePopupClosing(object? sender, CancelEventArgs e)
     {
+        if (InteractionHandler is DefaultMenuInteractionHandler interactionHandler)
+        {
+            interactionHandler.CancelPendingHoverOperations();
+        }
+
         if (!e.Cancel)
         {
             this.OnPopupClosing(sender, e);
@@ -281,6 +286,11 @@ public class ContextMenu : AvaloniaContextMenu,
 
     public override void Close()
     {
+        if (InteractionHandler is DefaultMenuInteractionHandler interactionHandler)
+        {
+            interactionHandler.CancelPendingHoverOperations();
+        }
+
         if (!IsOpen)
         {
             return;

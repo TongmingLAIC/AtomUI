@@ -11,12 +11,12 @@ namespace AtomUI.Desktop.Controls;
 
 using AvaloniaMenu = Avalonia.Controls.Menu;
 
-public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
+public class Menu : AvaloniaMenu, ICustomizableSizeTypeAware, IMotionAwareControl
 {
     #region 公共属性定义
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<Menu>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<Menu>();
 
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<Menu>();
@@ -27,7 +27,7 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
     public static readonly StyledProperty<bool> ShouldUseOverlayPopupProperty =
         Flyout.ShouldUseOverlayPopupProperty.AddOwner<Menu>();
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -54,6 +54,8 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
     #endregion
 
     private bool _isClosing;
+    private bool _isSyncingDetachedTitleBarRadioGroup;
+    private IDisposable? _detachedTitleBarPopupDismissRoot;
 
     static Menu()
     {
@@ -63,7 +65,8 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
     public Menu()
         : base(new DefaultMenuInteractionHandler(false))
     {
-        this.RegisterTokenResourceScope(MenuToken.ScopeProvider);
+        AddHandler(MenuItem.ClickEvent, RelayDetachedTitleBarPopupClickToHostWindow);
+        AddHandler(MenuItem.IsCheckStateChangedEvent, SyncDetachedTitleBarRadioGroup);
     }
 
     protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
@@ -156,6 +159,19 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
     {
         base.OnAttachedToLogicalTree(e);
         ConfigureItemContainerTheme(false);
+        ConfigureDetachedTitleBarPopupDismissRoot();
+    }
+
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        DetachedTitleBarPopupSupport.ClearDismissRoot(ref _detachedTitleBarPopupDismissRoot);
+        base.OnDetachedFromLogicalTree(e);
+    }
+
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        ConfigureDetachedTitleBarPopupDismissRoot();
     }
 
     private void ConfigureItemContainerTheme(bool force)
@@ -177,6 +193,11 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
 
     public override void Close()
     {
+        if (InteractionHandler is DefaultMenuInteractionHandler interactionHandler)
+        {
+            interactionHandler.CancelPendingHoverOperations();
+        }
+
         if (!IsOpen || _isClosing)
         {
             return;
@@ -216,6 +237,31 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
         }
     }
 
+    internal void CloseImmediately()
+    {
+        if (InteractionHandler is DefaultMenuInteractionHandler interactionHandler)
+        {
+            interactionHandler.CancelPendingHoverOperations();
+        }
+
+        if (!IsOpen && !_isClosing)
+        {
+            return;
+        }
+
+        _isClosing = false;
+        for (var i = 0; i < ItemCount; i++)
+        {
+            var container = ContainerFromIndex(i);
+            if (container is MenuItem menuItem)
+            {
+                menuItem.Close();
+            }
+        }
+
+        HandleMenuClosed();
+    }
+
     private void HandleMenuClosed()
     {
         IsOpen        = false;
@@ -225,5 +271,134 @@ public class Menu : AvaloniaMenu, ISizeTypeAware, IMotionAwareControl
             RoutedEvent = ClosedEvent,
             Source      = this
         });
+    }
+
+    private void ConfigureDetachedTitleBarPopupDismissRoot()
+    {
+        _detachedTitleBarPopupDismissRoot =
+            DetachedTitleBarPopupSupport.UpdateDismissRoot(
+                this,
+                _detachedTitleBarPopupDismissRoot,
+                () => IsOpen,
+                Close,
+                IsInteractionInsideMenu);
+    }
+
+    // Title-bar overlay menus are outside the host Window's visual tree, so the
+    // default menu root cannot relay clicks or manage radio groups for this case.
+    private void RelayDetachedTitleBarPopupClickToHostWindow(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not MenuItem ||
+            !DetachedTitleBarPopupSupport.TryResolveHostWindow(this, out var hostWindow))
+        {
+            return;
+        }
+
+        var relayedArgs = new RoutedEventArgs(MenuItem.ClickEvent)
+        {
+            Source = e.Source
+        };
+        hostWindow.RaiseRoutedEventFromOverlay((MenuItem)e.Source, relayedArgs);
+        e.Handled = relayedArgs.Handled;
+    }
+
+    private void SyncDetachedTitleBarRadioGroup(object? sender, RoutedEventArgs e)
+    {
+        if (_isSyncingDetachedTitleBarRadioGroup ||
+            e.Source is not MenuItem checkedItem ||
+            !checkedItem.IsChecked ||
+            checkedItem.ToggleType != MenuItemToggleType.Radio ||
+            !DetachedTitleBarPopupSupport.TryResolveHostWindow(this, out _))
+        {
+            return;
+        }
+
+        _isSyncingDetachedTitleBarRadioGroup = true;
+        try
+        {
+            if (string.IsNullOrEmpty(checkedItem.GroupName))
+            {
+                UncheckSiblingRadioItems(checkedItem);
+            }
+            else
+            {
+                UncheckNamedRadioGroup(checkedItem);
+            }
+        }
+        finally
+        {
+            _isSyncingDetachedTitleBarRadioGroup = false;
+        }
+    }
+
+    private static void UncheckSiblingRadioItems(MenuItem checkedItem)
+    {
+        var parent = ((ILogical)checkedItem).LogicalParent;
+        if (parent is null)
+        {
+            return;
+        }
+
+        foreach (var sibling in parent.LogicalChildren)
+        {
+            if (sibling is MenuItem menuItem &&
+                !ReferenceEquals(menuItem, checkedItem) &&
+                menuItem.ToggleType == MenuItemToggleType.Radio &&
+                string.IsNullOrEmpty(menuItem.GroupName) &&
+                menuItem.IsChecked)
+            {
+                menuItem.SetCurrentValue(MenuItem.IsCheckedProperty, false);
+            }
+        }
+    }
+
+    private void UncheckNamedRadioGroup(MenuItem checkedItem)
+    {
+        foreach (var menuItem in EnumerateMenuItems(this))
+        {
+            if (!ReferenceEquals(menuItem, checkedItem) &&
+                menuItem.ToggleType == MenuItemToggleType.Radio &&
+                menuItem.GroupName == checkedItem.GroupName &&
+                menuItem.IsChecked)
+            {
+                menuItem.SetCurrentValue(MenuItem.IsCheckedProperty, false);
+            }
+        }
+    }
+
+    private static IEnumerable<MenuItem> EnumerateMenuItems(ILogical owner)
+    {
+        foreach (var child in owner.LogicalChildren)
+        {
+            if (child is MenuItem menuItem)
+            {
+                yield return menuItem;
+                foreach (var descendant in EnumerateMenuItems(menuItem))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+    }
+
+    private bool IsInteractionInsideMenu(ILogical control)
+    {
+        if (this.IsLogicalAncestorOf(control))
+        {
+            return true;
+        }
+
+        var current = control as StyledElement;
+        while (current is not null)
+        {
+            if (ReferenceEquals(current, this))
+            {
+                return true;
+            }
+
+            current = current.Parent;
+        }
+
+        return false;
     }
 }

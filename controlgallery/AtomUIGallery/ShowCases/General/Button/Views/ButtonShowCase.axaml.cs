@@ -20,22 +20,39 @@ public partial class ButtonShowCase : GalleryReactiveUserControl<ButtonViewModel
         InitializeComponent();
     }
 
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+        _viewModel                   = DataContext as ButtonViewModel;
+    }
+
     public void HandleButtonSizeTypeOptionCheckedChanged(object? sender, OptionCheckedChangedEventArgs args)
     {
         if (_viewModel != null)
         {
-            if (args.Index == 0)
+            var sizeType = args.Index switch
             {
-                _viewModel.ButtonSizeType = SizeType.Large;
-            }
-            else if (args.Index == 1)
+                0 => CustomizableSizeType.Large,
+                1 => CustomizableSizeType.Middle,
+                2 => CustomizableSizeType.Small,
+                3 => CustomizableSizeType.Custom,
+                _ => _viewModel.ButtonSizeType
+            };
+            _viewModel.ButtonSizeType = sizeType;
+        }
+    }
+
+    public void HandleButtonIconPlacementOptionCheckedChanged(object? sender, OptionCheckedChangedEventArgs args)
+    {
+        if (_viewModel != null)
+        {
+            var iconPlacement = args.Index switch
             {
-                _viewModel.ButtonSizeType = SizeType.Middle;
-            }
-            else
-            {
-                _viewModel.ButtonSizeType = SizeType.Small;
-            }
+                0 => ButtonIconPlacement.Start,
+                1 => ButtonIconPlacement.End,
+                _ => _viewModel.ButtonIconPlacement
+            };
+            _viewModel.ButtonIconPlacement = iconPlacement;
         }
     }
 

@@ -13,7 +13,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Metadata;
-using Avalonia.Threading;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -23,8 +22,19 @@ public enum FormItemLayout
     Vertical
 }
 
-public class FormItem : TemplatedControl, IFormItem
+public partial class FormItem : TemplatedControl, IFormItem
 {
+    public static readonly RoutedEvent<FormItemValidateChangedEventArgs> ValidateChangedEvent =
+        RoutedEvent.Register<Button, FormItemValidateChangedEventArgs>(
+            nameof(ValidateChanged),
+            RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
+
+    internal static readonly RoutedEvent<RoutedEventArgs> ValueChangedEvent =
+        RoutedEvent.Register<FormItem, RoutedEventArgs>(nameof(ValueChanged), RoutingStrategies.Bubble);
+
+    internal static readonly RoutedEvent<RoutedEventArgs> DeleteRequestEvent =
+        RoutedEvent.Register<FormItem, RoutedEventArgs>(nameof(DeleteRequest), RoutingStrategies.Bubble);
+
     #region 公共属性定义
     
     public static readonly StyledProperty<object?> ExtraProperty =
@@ -256,9 +266,6 @@ public class FormItem : TemplatedControl, IFormItem
 
     #region 公共事件定义
 
-    public static readonly RoutedEvent<FormItemValidateChangedEventArgs> ValidateChangedEvent =
-        RoutedEvent.Register<Button, FormItemValidateChangedEventArgs>(nameof(ValidateChanged), RoutingStrategies.Bubble | RoutingStrategies.Tunnel);
-    
     public event EventHandler<FormItemValidateChangedEventArgs>? ValidateChanged
     {
         add => AddHandler(ValidateChangedEvent, value);
@@ -271,8 +278,8 @@ public class FormItem : TemplatedControl, IFormItem
     internal static readonly StyledProperty<bool> IsShowColonProperty =
         Form.IsShowColonProperty.AddOwner<FormItem>();
 
-    internal static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<FormItem>();
+    internal static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<FormItem>();
     
     internal static readonly StyledProperty<InputControlStyleVariant> StyleVariantProperty =
         InputControlStyleVariantProperty.StyleVariantProperty.AddOwner<FormItem>();
@@ -399,7 +406,7 @@ public class FormItem : TemplatedControl, IFormItem
         set => SetValue(IsShowColonProperty, value);
     }
     
-    internal SizeType SizeType
+    internal CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -596,12 +603,6 @@ public class FormItem : TemplatedControl, IFormItem
 
     #region 内部事件定义
 
-    internal static readonly RoutedEvent<RoutedEventArgs> ValueChangedEvent =
-        RoutedEvent.Register<FormItem, RoutedEventArgs>(nameof(ValueChanged), RoutingStrategies.Bubble);
-    
-    internal static readonly RoutedEvent<RoutedEventArgs> DeleteRequestEvent =
-        RoutedEvent.Register<FormItem, RoutedEventArgs>(nameof(DeleteRequest), RoutingStrategies.Bubble);
-    
     internal event EventHandler<RoutedEventArgs>? ValueChanged
     {
         add => AddHandler(ValueChangedEvent, value);
@@ -625,7 +626,6 @@ public class FormItem : TemplatedControl, IFormItem
     private CompositeDisposable? _disposables;
     private FormValidateFeedback? _feedback;
     private IDisposable? _feedbackDisposable;
-    private CancellationTokenSource? _validationTokenSource;
     internal Form? OwnerForm;
     private IMediaBreakAwareControl? _mediaOwner;
     
@@ -637,7 +637,6 @@ public class FormItem : TemplatedControl, IFormItem
     
     public FormItem()
     {
-        this.RegisterTokenResourceScope(FormToken.ScopeProvider);
         LayoutUpdated += HandleLayoutUpdated;
     }
 
@@ -661,10 +660,20 @@ public class FormItem : TemplatedControl, IFormItem
 
     protected virtual void NotifyContentAdded(AvaloniaPropertyChangedEventArgs change)
     {
+        if (change.OldValue is Control oldControl)
+        {
+            FormDataValidationErrors.ClearFormErrors(oldControl);
+        }
         if (change.OldValue is IFormItemAware oldFormItemAware)
         {
             oldFormItemAware.ValueChanged -= HandleContentValueChanged;
         }
+        if (change.OldValue is IFormItemFeedbackAware oldFeedbackAware)
+        {
+            oldFeedbackAware.SetFeedbackControl(null);
+        }
+        _disposables?.Dispose();
+        _disposables = null;
         
         if (change.NewValue is IFormItemAware newFormItemAware)
         {
@@ -675,11 +684,10 @@ public class FormItem : TemplatedControl, IFormItem
             throw new Exception($"Form item content: {change.NewValue?.GetType().FullName} not implement IFormItemAware interface");
         }
         
-        _disposables?.Dispose();
-        _disposables = new CompositeDisposable(2);
-        if (Content is ISizeTypeAware)
+        _disposables = new CompositeDisposable();
+        if (Content is not null)
         {
-            _disposables.Add(BindUtils.RelayBind(this, SizeTypeProperty, Content, SizeTypeProperty));
+            _disposables.Add(FormSizeTypeBindingHelper.RelaySizeType(this, SizeTypeProperty, Content));
         }
         if (Content is IMotionAwareControl)
         {
@@ -719,239 +727,6 @@ public class FormItem : TemplatedControl, IFormItem
         }
     }
 
-    private void ValidateValueDefer()
-    {
-        _validationTokenSource?.Cancel();
-        _validationTokenSource?.Dispose();
-        _validationTokenSource = new CancellationTokenSource();
-        var cancellationToken = _validationTokenSource.Token;
-        if (ValidateDebounce != TimeSpan.Zero)
-        {
-            DispatcherTimer.RunOnce(() =>
-            {
-                Dispatcher.InvokeAsync(() => ValidateValueAsync(cancellationToken));
-            }, ValidateDebounce);
-        }
-        else
-        {
-            Dispatcher.InvokeAsync(() => ValidateValueAsync(cancellationToken));
-        }
-    }
-
-    public async Task ValidateValueAsync(CancellationToken cancellationToken)
-    {
-        if (Content == null || Validators == null || Validators.Count == 0)
-        {
-            return;
-        }
-        ValidateStatus = FormValidateStatus.Validating;
-        var formItemAware     = Content as IFormItemAware;
-        Debug.Assert(formItemAware != null);
-        var value           = formItemAware.GetFormValue();
-        var warningMessages = new List<string>(Validators.Count);
-        var hasWarning      = false;
-        var hasError        = false;
-        ValidateErrorMessages   = null;
-        ValidateWarningMessages = null;
-        if (ValidateStrategy == FormValidateStrategy.Parallel || ValidateStrategy == FormValidateStrategy.Sequential)
-        {
-            var tasks         = new Dictionary<Task<FormValidateResult>, IFormValidator>(Validators.Count);
-            var errorMessages = new List<string>(Validators.Count);
-            if (ValidateStrategy == FormValidateStrategy.Parallel)
-            {
-                foreach (var validator in Validators)
-                {
-                    var task = validator.ValidateAsync(FieldName ?? string.Empty, value, cancellationToken);
-                    tasks.Add(task, validator);
-                }
-                await Task.WhenAll(tasks.Keys);
-                foreach (var task in tasks.Keys)
-                {
-                    var result    = await task;
-                    var validator = tasks[task];
-                    if (result == FormValidateResult.Error)
-                    {
-                        hasError = true;
-                        if (!string.IsNullOrWhiteSpace(validator.Message))
-                        {
-                            errorMessages.Add(validator.Message);
-                        }
-                    }
-                    else if (result == FormValidateResult.Warning)
-                    {
-                        hasWarning = true;
-                        if (!string.IsNullOrWhiteSpace(validator.Message))
-                        {
-                            warningMessages.Add(validator.Message);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                foreach (var validator in Validators)
-                {
-                    var result = await validator.ValidateAsync(FieldName ?? string.Empty, value, cancellationToken);
-                    if (result == FormValidateResult.Error)
-                    {
-                        hasError = true;
-                        if (!string.IsNullOrWhiteSpace(validator.Message))
-                        {
-                            errorMessages.Add(validator.Message);
-                        }
-                    }
-                    else if (result == FormValidateResult.Warning)
-                    {
-                        hasWarning = true;
-                        if (!string.IsNullOrWhiteSpace(validator.Message))
-                        {
-                            warningMessages.Add(validator.Message);
-                        }
-                    }
-                }
-            }
-            
-            if (hasWarning)
-            {
-                ValidateWarningMessages = warningMessages;
-                ValidateStatus          = FormValidateStatus.Warning;
-            }
-            
-            if (hasError)
-            {
-                ValidateErrorMessages = errorMessages;
-                ValidateStatus        = FormValidateStatus.Error;
-            }
-            
-            if (!hasError && !hasWarning)
-            {
-                ValidateStatus          = FormValidateStatus.Success;
-            }
-        }
-        else
-        {
-            foreach (var validator in Validators)
-            {
-                var result = await validator.ValidateAsync(FieldName ?? string.Empty, value, cancellationToken);
-                if (result == FormValidateResult.Error)
-                {
-                    hasError       = true;
-                    ValidateStatus = FormValidateStatus.Error;
-                    if (!string.IsNullOrWhiteSpace(validator.Message))
-                    {
-                        ValidateErrorMessages = new List<string>
-                        {
-                            validator.Message
-                        };
-                    }
-                    
-                    break;
-                }
-                if (result == FormValidateResult.Warning)
-                {
-                    hasWarning = true;
-                    if (!string.IsNullOrWhiteSpace(validator.Message))
-                    {
-                        warningMessages.Add(validator.Message);
-                    }
-                }
-            }
-            
-            if  (hasWarning)
-            {
-                ValidateWarningMessages = warningMessages;
-                if (!hasError)
-                {
-                    ValidateStatus = FormValidateStatus.Warning;
-                }
-            }
-            
-            if (!hasError && !hasWarning)
-            {
-                ValidateStatus = FormValidateStatus.Success;
-            }
-        }
-
-        if (ValidateStatus == FormValidateStatus.Error)
-        {
-            ValidateResult = FormValidateResult.Error;
-        }
-        else if (ValidateStatus == FormValidateStatus.Warning)
-        {
-            ValidateResult = FormValidateResult.Warning;
-        }
-        else
-        {
-            ValidateResult = FormValidateResult.Success;
-        }
-
-        formItemAware.NotifyValidateStatus(ValidateStatus);
-        HasErrorOrWarningMsg = ValidateErrorMessages?.Count > 0 || ValidateWarningMessages?.Count > 0 || !string.IsNullOrWhiteSpace(Help);
-        BuildErrorMessageInlines();
-        RaiseEvent(new FormItemValidateChangedEventArgs(ValidateStatus)
-        {
-            RoutedEvent = ValidateChangedEvent,
-            Source      = this,
-        });
-    }
-
-    private void BuildErrorMessageInlines()
-    {
-        if (ValidateResult == FormValidateResult.Success)
-        {
-            ErrorMessageInlines = null;
-        }
-        else
-        {
-            var inlines = new InlineCollection();
-            if (ValidateErrorMessages != null)
-            {
-                for (var i = 0; i < ValidateErrorMessages.Count; i++)
-                {
-                    var message = ValidateErrorMessages[i];
-                    inlines.Add(new Run(message)
-                    {
-                        Foreground = ErrorMessageForeground,
-                    });
-                    if (i != ValidateErrorMessages.Count - 1)
-                    {
-                        inlines.Add(new LineBreak());
-                    }
-                }
-            }
-
-            if (ValidateWarningMessages != null)
-            {
-                for (int i = 0; i < ValidateWarningMessages.Count; i++)
-                {
-                    if (inlines.Count > 0 && inlines[inlines.Count - 1] is not LineBreak)
-                    {
-                        inlines.Add(new LineBreak());
-                    }
-                    var message = ValidateWarningMessages[i];
-                    inlines.Add(new Run(message)
-                    {
-                        Foreground = WarningMessageForeground,
-                    });
-         
-                    if (i != ValidateWarningMessages.Count - 1)
-                    {
-                        inlines.Add(new LineBreak());
-                    }
-                }
-            }
-
-            if (inlines.Count > 0)
-            {
-                ErrorMessageInlines = inlines;
-            }
-            else
-            {
-                ErrorMessageInlines = null;
-            }
-        }
-    }
-
     public object? GetItemValue()
     {
         if (Content is IFormItemAware formItemAware)
@@ -971,11 +746,15 @@ public class FormItem : TemplatedControl, IFormItem
 
     public void ResetItemValue()
     {
+        CancelPendingValidation();
         if (Content is IFormItemAware formItemAware)
         { 
             formItemAware.ClearFormValue();
-            formItemAware.NotifyValidateStatus(FormValidateStatus.Default);
-            ValidateStatus = FormValidateStatus.Default;
+            ResetValidationState(formItemAware);
+        }
+        else
+        {
+            ResetValidationState(null);
         }
     }
 
@@ -1048,6 +827,10 @@ public class FormItem : TemplatedControl, IFormItem
         if (OwnerForm == null)
         {
             return null;
+        }
+        if (force)
+        {
+            ReleaseFeedback();
         }
         if (_feedback == null || force)
         {
@@ -1126,6 +909,7 @@ public class FormItem : TemplatedControl, IFormItem
             _mediaOwner.MediaBreakPointChanged -= HandleMediaBreakChanged;
         }
 
+        CancelPendingValidation();
         _mediaOwner = null;
     }
     
@@ -1217,6 +1001,10 @@ public class FormItem : TemplatedControl, IFormItem
         {
             gridLength = info.ExtraExtraLarge;
         }
+        else if (breakPoint == MediaBreakPoint.ExtraExtraExtraLarge)
+        {
+            gridLength = info.ExtraExtraLarge;
+        }
 
         return gridLength;
     }
@@ -1232,9 +1020,7 @@ public class FormItem : TemplatedControl, IFormItem
 
     private void HandleFeedbackTemplateChanged()
     {
-        _feedback = null;
-        _feedbackDisposable?.Dispose();
-        _feedbackDisposable = null;
+        ReleaseFeedback();
         if (IsValidateFeedbackEnabled)
         {
             if (Content is IFormItemFeedbackAware itemFeedbackAware)
@@ -1243,6 +1029,13 @@ public class FormItem : TemplatedControl, IFormItem
                 itemFeedbackAware.SetFeedbackControl(_feedback);
             }
         }
+    }
+
+    private void ReleaseFeedback()
+    {
+        _feedbackDisposable?.Dispose();
+        _feedbackDisposable = null;
+        _feedback           = null;
     }
 }
 

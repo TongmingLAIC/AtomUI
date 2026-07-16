@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using AtomUI.Controls;
 using AtomUI.Controls.Data;
@@ -18,15 +17,15 @@ using Avalonia.Metadata;
 
 namespace AtomUI.Desktop.Controls;
 
-public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareControl
+public partial class ListView : ItemsControl, ICustomizableSizeTypeAware, IMotionAwareControl
 {
     #region 公共属性定义
     
     public static readonly StyledProperty<bool> IsSelectableProperty =
         AvaloniaProperty.Register<ListView, bool>(nameof(IsSelectable), true);
     
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<ListView>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<ListView>();
     
     public static readonly StyledProperty<bool> IsBorderlessProperty =
         AvaloniaProperty.Register<ListView, bool>(nameof(IsBorderless), false);
@@ -127,7 +126,7 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
         set => SetValue(IsSelectableProperty, value);
     }
     
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -383,6 +382,8 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
     private IListCollectionView? _collectionView;
     /// <summary>Indicates whether _collectionView was created by ListView (and should be disposed by it).</summary>
     private bool _ownsCollectionView;
+    private IListCollectionView? _defaultFilterOwner;
+    private Func<object, bool>? _defaultFilterCallback;
     
     static ListView()
     {
@@ -396,7 +397,6 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
     
     public ListView()
     {
-        this.RegisterTokenResourceScope(ListViewToken.ScopeProvider);
         // Selecting 相关设置，只能通过反射设置目前
         ((ItemCollection)ItemsView).AddSourceChangedEvent(OnItemsViewSourceChanged);
         var items = this.GetItems();
@@ -430,6 +430,7 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
                 oldCollectionView.CollectionChanged -= HandleCollectionViewChanged;
                 oldCollectionView.PageChanging      -= HandlePageChanging;
                 oldCollectionView.PageChanged       -= HandlePageChanged;
+                ClearDefaultFilterCallback(oldCollectionView);
                 // Dispose only if we created this view (not user-provided)
                 if (_ownsCollectionView)
                 {
@@ -444,8 +445,6 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
                 newCollectionView.PageChanged       += HandlePageChanged;
                 IsEmptyDataSource                   =  newCollectionView.IsEmpty;
                 TotalItemCount                      =  newCollectionView.TotalItemCount;
-       
-                newCollectionView.Filter ??= new ListDefaultFilter(newCollectionView);
             }
             else
             {
@@ -484,6 +483,7 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
         {
             IsEmptyDataSource = view.IsEmpty;
             TotalItemCount    = view.TotalItemCount;
+            SyncPaginationState();
         }
     }
     
@@ -842,7 +842,7 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
         {
             SetValue(EmptyIndicatorProperty, new Empty()
             {
-                SizeType    = SizeType.Small,
+                SizeType    = AtomUI.SizeType.Small,
                 PresetImage = PresetEmptyImage.Simple
             }, BindingPriority.Template);
         }
@@ -865,6 +865,11 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
                     FilterConditions       = [FilterValue],
                     Filter                 = Filter.Filter
                 });
+                EnsureDefaultFilterCallback(_collectionView);
+            }
+            else
+            {
+                ClearDefaultFilterCallback(_collectionView);
             }
             IsFiltering = _collectionView.FilterDescriptions.Count > 0;
         }
@@ -886,6 +891,37 @@ public partial class ListView : ItemsControl, ISizeTypeAware, IMotionAwareContro
             {
                 _collectionView.SortDescriptions.AddRange(SortDescriptions);
             }
+        }
+    }
+
+    private void EnsureDefaultFilterCallback(IListCollectionView collectionView)
+    {
+        if (ReferenceEquals(_defaultFilterOwner, collectionView) &&
+            ReferenceEquals(collectionView.Filter, _defaultFilterCallback))
+        {
+            return;
+        }
+
+        if (collectionView.Filter == null)
+        {
+            _defaultFilterOwner    = collectionView;
+            _defaultFilterCallback = new ListDefaultFilter(collectionView);
+            collectionView.Filter  = _defaultFilterCallback;
+        }
+    }
+
+    private void ClearDefaultFilterCallback(IListCollectionView collectionView)
+    {
+        if (ReferenceEquals(_defaultFilterOwner, collectionView) &&
+            ReferenceEquals(collectionView.Filter, _defaultFilterCallback))
+        {
+            collectionView.Filter = null;
+        }
+
+        if (ReferenceEquals(_defaultFilterOwner, collectionView))
+        {
+            _defaultFilterOwner    = null;
+            _defaultFilterCallback = null;
         }
     }
 }

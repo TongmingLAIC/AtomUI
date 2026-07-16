@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Calendar;
 
 public partial class CalendarShowCase : GalleryReactiveUserControl<CalendarViewModel>
@@ -9,4 +8,5 @@ public partial class CalendarShowCase : GalleryReactiveUserControl<CalendarViewM
     {
         InitializeComponent();
     }
+
 }

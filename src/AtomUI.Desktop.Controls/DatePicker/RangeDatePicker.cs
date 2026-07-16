@@ -1,11 +1,6 @@
-﻿using System.Globalization;
-using AtomUI.Controls.Utils;
-using AtomUI.Data;
-using AtomUI.Desktop.Controls.CalendarView;
-using AtomUI.Desktop.Controls.Localization;
+﻿using AtomUI.Desktop.Controls.CalendarView;
 using AtomUI.Desktop.Controls.Primitives;
 using AtomUI.Icons.AntDesign;
-using AtomUI.Media;
 using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
@@ -45,6 +40,12 @@ public class RangeDatePicker : RangeInfoPickerInput
 
     public static readonly StyledProperty<string?> FormatProperty =
         DatePicker.FormatProperty.AddOwner<RangeDatePicker>();
+
+    public static readonly StyledProperty<DatePickerMode> PickerModeProperty =
+        DatePicker.PickerModeProperty.AddOwner<RangeDatePicker>();
+
+    public static readonly StyledProperty<DateTime?> PickerDisplayDateProperty =
+        DatePicker.PickerDisplayDateProperty.AddOwner<RangeDatePicker>();
     
     public DateTime? RangeStartSelectedDate
     {
@@ -91,6 +92,18 @@ public class RangeDatePicker : RangeInfoPickerInput
         get => GetValue(FormatProperty);
         set => SetValue(FormatProperty, value);
     }
+
+    public DatePickerMode PickerMode
+    {
+        get => GetValue(PickerModeProperty);
+        set => SetValue(PickerModeProperty, value);
+    }
+
+    public DateTime? PickerDisplayDate
+    {
+        get => GetValue(PickerDisplayDateProperty);
+        set => SetValue(PickerDisplayDateProperty, value);
+    }
     
     #endregion
     
@@ -126,7 +139,16 @@ public class RangeDatePicker : RangeInfoPickerInput
     internal double PreferredWidth
     {
         get => _preferredWidth;
-        set => SetAndRaise(PreferredWidthProperty, ref _preferredWidth, value);
+        set
+        {
+            if (_preferredWidth == value)
+            {
+                return;
+            }
+
+            SetAndRaise(PreferredWidthProperty, ref _preferredWidth, value);
+            InvalidateMeasure();
+        }
     }
 
     private string? _amText;
@@ -164,15 +186,15 @@ public class RangeDatePicker : RangeInfoPickerInput
     #endregion
 
     private RangeDatePickerPresenter? _pickerPresenter;
-    private bool? _isNeedConfirmedBackup;
+    private bool? _isNeedConfirmBackup;
 
     public RangeDatePicker()
     {
-        this.RegisterTokenResourceScope(DatePickerToken.ScopeProvider);
     }
 
     static RangeDatePicker()
     {
+        AffectsMeasure<RangeDatePicker>(PreferredWidthProperty);
         RangeStartSelectedDateProperty.Changed.AddClassHandler<RangeDatePicker>((picker, args) => picker.HandleSelectedValueChanged(args));
         RangeEndSelectedDateProperty.Changed.AddClassHandler<RangeDatePicker>((picker, args) => picker.HandleSelectedValueChanged(args));
     }
@@ -180,7 +202,7 @@ public class RangeDatePicker : RangeInfoPickerInput
     protected override Control CreatePickerPresenter()
     {
         RangeDatePickerPresenter? presenter = null;
-        if (IsShowTime)
+        if (IsShowTime && PickerMode == DatePickerMode.Date)
         {
             presenter = new TimedRangeDatePickerPresenter()
             {
@@ -198,6 +220,8 @@ public class RangeDatePicker : RangeInfoPickerInput
         presenter[!RangeDatePickerPresenter.IsNeedConfirmProperty]             = this[!IsNeedConfirmProperty];
         presenter[!RangeDatePickerPresenter.IsShowNowProperty]                 = this[!IsShowNowProperty];
         presenter[!RangeDatePickerPresenter.IsShowTimeProperty]                = this[!IsShowTimeProperty];
+        presenter[!RangeDatePickerPresenter.PickerModeProperty]                = this[!PickerModeProperty];
+        presenter[!RangeDatePickerPresenter.PickerDisplayDateProperty]         = this[!PickerDisplayDateProperty];
 
         return presenter;
     }
@@ -239,9 +263,6 @@ public class RangeDatePicker : RangeInfoPickerInput
             _pickerPresenter.Confirmed             += HandleConfirmed;
             _pickerPresenter.RangePartConfirmed    += HandleRangePartConfirmed;
 
-            _pickerPresenter.SelectedDateTime          = RangeStartSelectedDate;
-            _pickerPresenter.SecondarySelectedDateTime = RangeEndSelectedDate;
-            _pickerPresenter.ResetRangePickState();
             if (RangeActivatedPart == RangeActivatedPart.Start)
             {
                 _pickerPresenter.NotifySelectRangeStart(true);
@@ -250,6 +271,11 @@ public class RangeDatePicker : RangeInfoPickerInput
             {
                 _pickerPresenter.NotifySelectRangeStart(false);
             }
+
+            _pickerPresenter.SelectedDateTime          = RangeStartSelectedDate;
+            _pickerPresenter.SecondarySelectedDateTime = RangeEndSelectedDate;
+            _pickerPresenter.ResetRangePickState();
+            _pickerPresenter.ResetRangeOpenPanelState();
         }
     }
 
@@ -291,30 +317,7 @@ public class RangeDatePicker : RangeInfoPickerInput
         {
             SecondaryText = FormatDateTime(_pickerPresenter?.SecondarySelectedDateTime ?? RangeEndSelectedDate);
         }
-    }
-    
-    private string GetEffectiveFormat()
-    {
-        if (Format is not null)
-        {
-            return Format;
-        }
-
-        var format = "yyyy-MM-dd";
-        if (IsShowTime)
-        {
-           
-            if (ClockIdentifier == ClockIdentifierType.HourClock12)
-            {
-                format = $"{format} hh:mm:ss tt";
-            }
-            else
-            {
-                format = $"{format} HH:mm:ss";
-            }
-        }
-
-        return format;
+        CalculatePreferredWidth();
     }
     
     protected string FormatDateTime(DateTime? dateTime)
@@ -324,25 +327,8 @@ public class RangeDatePicker : RangeInfoPickerInput
             return string.Empty;
         }
 
-        var format = GetEffectiveFormat();
-        if (ClockIdentifier == ClockIdentifierType.HourClock12)
-        {
-            var amDesignator = AmText ??
-                               LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.AMText);
-            var pmDesignator = PmText ??
-                               LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.PMText);
-            if (amDesignator is not null && pmDesignator is not null)
-            {
-                var formatInfo = new DateTimeFormatInfo
-                {
-                    AMDesignator = amDesignator,
-                    PMDesignator = pmDesignator
-                };
-                return dateTime.Value.ToString(format, formatInfo);
-            }
-        }
-
-        return dateTime.Value.ToString(format);
+        var formatInfo = DatePickerFormattingHelper.CreateFormatInfo(ClockIdentifier, AmText, PmText);
+        return DatePickerFormattingHelper.FormatDateTime(dateTime.Value, Format, PickerMode, IsShowTime, ClockIdentifier, formatInfo);
     }
     
     private void HandleHoverDateTimeChanged(object? sender, DateSelectedEventArgs args)
@@ -357,6 +343,7 @@ public class RangeDatePicker : RangeInfoPickerInput
             {
                 SecondaryText = FormatDateTime(args.Date);
             }
+            CalculatePreferredWidth();
         }
     }
 
@@ -404,39 +391,19 @@ public class RangeDatePicker : RangeInfoPickerInput
         {
             NotifyRangeActivatedPartChanged();
         }
-        else if (change.Property == IsShowTimeProperty)
+        else if (change.Property == IsShowTimeProperty ||
+                 change.Property == PickerModeProperty)
         {
-            if (IsShowTime)
-            {
-                _isNeedConfirmedBackup = IsNeedConfirm;
-                IsNeedConfirm          = true;
-            }
-            else
-            {
-                if (_isNeedConfirmedBackup is not null)
-                {
-                    IsNeedConfirm = _isNeedConfirmedBackup.Value;
-                }
-            }
-        }
-        else if (change.Property == FontSizeProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontStyleProperty ||
-                 change.Property == ClockIdentifierProperty ||
-                 change.Property == MinWidthProperty ||
-                 change.Property == WidthProperty ||
-                 change.Property == MaxWidthProperty ||
-                 change.Property == HorizontalAlignmentProperty)
-        {
-            CalculatePreferredWidth();
+            SyncNeedConfirmForShowTime();
         }
 
-        if (change.Property == AmTextProperty ||
-            change.Property == PmTextProperty)
+        if (IsFormattedTextAffectingProperty(change.Property))
         {
-            Text          = FormatDateTime(RangeStartSelectedDate);
-            SecondaryText = FormatDateTime(RangeEndSelectedDate);
+            RefreshRangeTexts();
+            CalculatePreferredWidth();
+        }
+        else if (IsPreferredWidthAffectingProperty(change.Property))
+        {
             CalculatePreferredWidth();
         }
 
@@ -445,12 +412,60 @@ public class RangeDatePicker : RangeInfoPickerInput
             if (change.Property == RangeStartSelectedDateProperty)
             {
                 Text = FormatDateTime(RangeStartSelectedDate);
+                CalculatePreferredWidth();
             }
             else if (change.Property == RangeEndSelectedDateProperty)
             {
                 SecondaryText = FormatDateTime(RangeEndSelectedDate);
+                CalculatePreferredWidth();
             }
         }
+    }
+
+    private void SyncNeedConfirmForShowTime()
+    {
+        if (IsShowTime && PickerMode == DatePickerMode.Date)
+        {
+            _isNeedConfirmBackup = IsNeedConfirm;
+            IsNeedConfirm        = true;
+        }
+        else if (_isNeedConfirmBackup is not null)
+        {
+            IsNeedConfirm = _isNeedConfirmBackup.Value;
+        }
+    }
+
+    private void RefreshRangeTexts()
+    {
+        Text          = FormatDateTime(RangeStartSelectedDate);
+        SecondaryText = FormatDateTime(RangeEndSelectedDate);
+    }
+
+    private static bool IsFormattedTextAffectingProperty(AvaloniaProperty property)
+    {
+        return DatePickerFormattingHelper.IsFormattedTextAffectingProperty(
+            property,
+            IsShowTimeProperty,
+            FormatProperty,
+            PickerModeProperty,
+            ClockIdentifierProperty,
+            AmTextProperty,
+            PmTextProperty);
+    }
+
+    private static bool IsPreferredWidthAffectingProperty(AvaloniaProperty property)
+    {
+        return DatePickerFormattingHelper.IsPreferredWidthAffectingProperty(
+            property,
+            FontSizeProperty,
+            FontFamilyProperty,
+            FontStyleProperty,
+            FontWeightProperty,
+            SizeTypeProperty,
+            MinWidthProperty,
+            WidthProperty,
+            MaxWidthProperty,
+            HorizontalAlignmentProperty);
     }
     
     private void CalculatePreferredWidth()
@@ -458,50 +473,25 @@ public class RangeDatePicker : RangeInfoPickerInput
         if (!double.IsNaN(Width) || HorizontalAlignment == HorizontalAlignment.Stretch)
         {
             PreferredInputWidth = double.NaN;
+            PreferredWidth      = 0;
         }
         else
         {
-            var format = GetEffectiveFormat();
-            DateTimeFormatInfo? formatInfo = null;
-            if (ClockIdentifier == ClockIdentifierType.HourClock12)
-            {
-                var amDesignator = AmText ??
-                                   LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.AMText);
-                var pmDesignator = PmText ??
-                                   LanguageResourceBinder.GetLangResource(TimePickerLangResourceKind.PMText);
-                if (amDesignator is not null && pmDesignator is not null)
-                {
-                    formatInfo = new DateTimeFormatInfo
-                    {
-                        AMDesignator = amDesignator,
-                        PMDesignator = pmDesignator
-                    };
-                }
-            }
-            var preferredInputWidth = DateTimeUtils.CalculateWidestFormattedDateTimeSize(
-                format, FontSize, FontFamily, FontStyle, FontWeight, formatInfo).Width;
-            if (PlaceholderText != null)
-            {
-                preferredInputWidth = Math.Max(preferredInputWidth, TextUtils.CalculateTextSize(PlaceholderText, FontSize, FontFamily, FontStyle, FontWeight).Width);
-            }
-
-            if (SecondaryPlaceholderText != null)
-            {
-                preferredInputWidth = Math.Max(preferredInputWidth, TextUtils.CalculateTextSize(SecondaryPlaceholderText, FontSize, FontFamily, FontStyle, FontWeight).Width);
-            }
-
-            preferredInputWidth *= 1.1;
-
-            if (!double.IsNaN(MinWidth))
-            {
-                preferredInputWidth = Math.Max(MinWidth, preferredInputWidth);
-            }
-
-            if (!double.IsNaN(MaxWidth))
-            {
-                preferredInputWidth = Math.Min(MaxWidth, preferredInputWidth);
-            }
+            var formatInfo = DatePickerFormattingHelper.CreateFormatInfo(ClockIdentifier, AmText, PmText);
+            var preferredInputWidth = DatePickerFormattingHelper.CalculateBoundedRangePreferredInputWidth(
+                Format,
+                PickerMode,
+                IsShowTime,
+                ClockIdentifier,
+                FontSize,
+                FontFamily,
+                FontStyle,
+                FontWeight,
+                MinWidth,
+                MaxWidth,
+                formatInfo);
             PreferredInputWidth = preferredInputWidth;
+            PreferredWidth      = preferredInputWidth;
         }
     }
     
@@ -570,23 +560,12 @@ public class RangeDatePicker : RangeInfoPickerInput
         var size   = base.MeasureOverride(availableSize);
         var width  = size.Width;
         var height = size.Height;
-        if (PickerInnerBox is not null)
+        if (PreferredWidth > 0 &&
+            InfoInputBox is not null &&
+            SecondaryInfoInputBox is not null)
         {
-            var preferredWidth = 0d;
-            if (DecoratedBox?.ContentRightAddOn is Control rightAddOnContent)
-            {
-                preferredWidth += PreferredWidth + rightAddOnContent.DesiredSize.Width +
-                                  PickerInnerBox.Padding.Left +
-                                  PickerInnerBox.Padding.Right;
-            }
-
-            if (RangePickerArrow is not null)
-            {
-                preferredWidth += RangePickerArrow.DesiredSize.Width;
-            }
-
-            preferredWidth += PreferredWidth;
-
+            var currentInputWidth = InfoInputBox.DesiredSize.Width + SecondaryInfoInputBox.DesiredSize.Width;
+            var preferredWidth    = size.Width - currentInputWidth + PreferredWidth * 2;
             width = Math.Max(width, preferredWidth);
         }
 
@@ -614,8 +593,7 @@ public class RangeDatePicker : RangeInfoPickerInput
         {
             SetValue(InfoIconProperty, new CalendarOutlined(), BindingPriority.Template);
         }
-        Text          = FormatDateTime(RangeStartSelectedDate);
-        SecondaryText = FormatDateTime(RangeEndSelectedDate);
+        RefreshRangeTexts();
         CalculatePreferredWidth();
     }
     

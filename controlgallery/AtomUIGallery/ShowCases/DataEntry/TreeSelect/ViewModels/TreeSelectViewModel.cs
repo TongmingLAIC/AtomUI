@@ -1,5 +1,13 @@
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Reactive;
+using AtomUI;
 using AtomUI.Controls;
+using AtomUI.Data;
 using AtomUI.Desktop.Controls;
+using AtomUIGallery.Localization;
+using Avalonia;
+using Avalonia.Threading;
 using ReactiveUI;
 
 namespace AtomUIGallery.ShowCases.TreeSelect;
@@ -11,6 +19,22 @@ public class TreeSelectViewModel : ReactiveObject, IRoutableViewModel
     public IScreen HostScreen { get; }
 
     public string? UrlPathSegment => ID.ToString();
+
+    private ObservableCollection<TreeSelectApiRow>? _apiRows;
+
+    public ObservableCollection<TreeSelectApiRow>? ApiRows
+    {
+        get => _apiRows;
+        private set => this.RaiseAndSetIfChanged(ref _apiRows, value);
+    }
+
+    private ObservableCollection<TreeSelectDesignTokenRow>? _designTokenRows;
+
+    public ObservableCollection<TreeSelectDesignTokenRow>? DesignTokenRows
+    {
+        get => _designTokenRows;
+        private set => this.RaiseAndSetIfChanged(ref _designTokenRows, value);
+    }
 
     private List<ITreeItemNode>? _basicTreeNodes = [];
 
@@ -35,6 +59,70 @@ public class TreeSelectViewModel : ReactiveObject, IRoutableViewModel
         get => _multiSelectionTreeNodes;
         set => this.RaiseAndSetIfChanged(ref _multiSelectionTreeNodes, value);
     }
+
+    private List<ITreeItemNode>? _bindingSingleTreeNodes = [];
+
+    public List<ITreeItemNode>? BindingSingleTreeNodes
+    {
+        get => _bindingSingleTreeNodes;
+        set => this.RaiseAndSetIfChanged(ref _bindingSingleTreeNodes, value);
+    }
+
+    private List<ITreeItemNode>? _bindingMultipleTreeNodes = [];
+
+    public List<ITreeItemNode>? BindingMultipleTreeNodes
+    {
+        get => _bindingMultipleTreeNodes;
+        set => this.RaiseAndSetIfChanged(ref _bindingMultipleTreeNodes, value);
+    }
+
+    private ITreeItemNode? _boundSelectedItem;
+
+    public ITreeItemNode? BoundSelectedItem
+    {
+        get => _boundSelectedItem;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _boundSelectedItem, value);
+            this.RaisePropertyChanged(nameof(BoundSelectedItemText));
+        }
+    }
+
+    private IList<ITreeItemNode>? _boundSelectedItems;
+    private INotifyCollectionChanged? _boundSelectedItemsCollectionChangedSource;
+
+    public IList<ITreeItemNode>? BoundSelectedItems
+    {
+        get => _boundSelectedItems;
+        set
+        {
+            if (ReferenceEquals(_boundSelectedItems, value))
+            {
+                this.RaisePropertyChanged(nameof(BoundSelectedItemsText));
+                return;
+            }
+
+            if (_boundSelectedItemsCollectionChangedSource != null)
+            {
+                _boundSelectedItemsCollectionChangedSource.CollectionChanged -= HandleBoundSelectedItemsCollectionChanged;
+            }
+
+            this.RaiseAndSetIfChanged(ref _boundSelectedItems, value);
+
+            _boundSelectedItemsCollectionChangedSource = value as INotifyCollectionChanged;
+            if (_boundSelectedItemsCollectionChangedSource != null)
+            {
+                _boundSelectedItemsCollectionChangedSource.CollectionChanged += HandleBoundSelectedItemsCollectionChanged;
+            }
+            this.RaisePropertyChanged(nameof(BoundSelectedItemsText));
+        }
+    }
+
+    public string BoundSelectedItemText => BoundSelectedItem?.Header?.ToString() ?? "-";
+
+    public string BoundSelectedItemsText => BoundSelectedItems is { Count: > 0 }
+        ? string.Join(", ", BoundSelectedItems.Select(item => item.Header?.ToString()))
+        : "-";
 
     private List<ITreeItemNode>? _itemsSourceTreeNodes = [];
 
@@ -74,14 +162,6 @@ public class TreeSelectViewModel : ReactiveObject, IRoutableViewModel
     {
         get => _showTreeLineTreeNodes;
         set => this.RaiseAndSetIfChanged(ref _showTreeLineTreeNodes, value);
-    }
-
-    private List<ITreeItemNode>? _leftAddTreeNodes = [];
-
-    public List<ITreeItemNode>? LeftAddTreeNodes
-    {
-        get => _leftAddTreeNodes;
-        set => this.RaiseAndSetIfChanged(ref _leftAddTreeNodes, value);
     }
 
     private List<ITreeItemNode>? _contentLeftAddTreeNodes = [];
@@ -124,8 +204,233 @@ public class TreeSelectViewModel : ReactiveObject, IRoutableViewModel
         set => this.RaiseAndSetIfChanged(ref _maxCheckedTreeNodes, value);
     }
 
+    private List<ITreeItemNode>? _sizeTypeTreeNodes = [];
+
+    public List<ITreeItemNode>? SizeTypeTreeNodes
+    {
+        get => _sizeTypeTreeNodes;
+        set => this.RaiseAndSetIfChanged(ref _sizeTypeTreeNodes, value);
+    }
+
+    private CustomizableSizeType _treeSelectSizeType = CustomizableSizeType.Middle;
+
+    public CustomizableSizeType TreeSelectSizeType
+    {
+        get => _treeSelectSizeType;
+        set => this.RaiseAndSetIfChanged(ref _treeSelectSizeType, value);
+    }
+
+    private bool _isShowTreeSelectIcon;
+
+    public bool IsShowTreeSelectIcon
+    {
+        get => _isShowTreeSelectIcon;
+        set => this.RaiseAndSetIfChanged(ref _isShowTreeSelectIcon, value);
+    }
+
+    private bool _isShowTreeSelectLeafIcon;
+
+    public bool IsShowTreeSelectLeafIcon
+    {
+        get => _isShowTreeSelectLeafIcon;
+        set => this.RaiseAndSetIfChanged(ref _isShowTreeSelectLeafIcon, value);
+    }
+
+    private bool _isShowTreeSelectLine = true;
+
+    public bool IsShowTreeSelectLine
+    {
+        get => _isShowTreeSelectLine;
+        set => this.RaiseAndSetIfChanged(ref _isShowTreeSelectLine, value);
+    }
+
     public TreeSelectViewModel(IScreen screen)
     {
         HostScreen = screen;
+        SetBoundSelectedItemCommand   = ReactiveCommand.Create(SetBoundSelectedItem);
+        ClearBoundSelectedItemCommand = ReactiveCommand.Create(ClearBoundSelectedItem);
+        SetBoundSelectedItemsCommand  = ReactiveCommand.Create(SetBoundSelectedItems);
+        ClearBoundSelectedItemsCommand = ReactiveCommand.Create(ClearBoundSelectedItems);
+    }
+
+    public ReactiveCommand<Unit, Unit> SetBoundSelectedItemCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ClearBoundSelectedItemCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> SetBoundSelectedItemsCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ClearBoundSelectedItemsCommand { get; }
+
+    private void SetBoundSelectedItem()
+    {
+        BoundSelectedItem = FindTreeItem(BindingSingleTreeNodes, "leaf2");
+    }
+
+    private void ClearBoundSelectedItem()
+    {
+        BoundSelectedItem = null;
+    }
+
+    private void SetBoundSelectedItems()
+    {
+        var firstItem  = FindTreeItem(BindingMultipleTreeNodes, "leaf1");
+        var secondItem = FindTreeItem(BindingMultipleTreeNodes, "sss");
+        var selectedItems = new[] { firstItem, secondItem }
+            .OfType<ITreeItemNode>()
+            .ToList();
+
+        if (BoundSelectedItems is ObservableCollection<ITreeItemNode> collection)
+        {
+            collection.Clear();
+            foreach (var item in selectedItems)
+            {
+                collection.Add(item);
+            }
+        }
+        else
+        {
+            BoundSelectedItems = new ObservableCollection<ITreeItemNode>(selectedItems);
+        }
+    }
+
+    private void ClearBoundSelectedItems()
+    {
+        if (BoundSelectedItems is ObservableCollection<ITreeItemNode> collection)
+        {
+            collection.Clear();
+        }
+        else
+        {
+            BoundSelectedItems = new ObservableCollection<ITreeItemNode>();
+        }
+    }
+
+    private void HandleBoundSelectedItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(BoundSelectedItemsText));
+    }
+
+    public void EnsureApiRows()
+    {
+        if (ApiRows is not null)
+        {
+            return;
+        }
+
+        ApiRows =
+        [
+            new TreeSelectApiRow("ItemsSource", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyItemsSource), "IEnumerable<ITreeItemNode>?", "cyan", "null"),
+            new TreeSelectApiRow("SelectedItem", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertySelectedItem), "ITreeItemNode?", "cyan", "null"),
+            new TreeSelectApiRow("SelectedItems", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertySelectedItems), "IList<ITreeItemNode>?", "cyan", "null"),
+            new TreeSelectApiRow("IsMultiple", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsMultiple), "bool", "green", "false"),
+            new TreeSelectApiRow("IsTreeCheckable", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsTreeCheckable), "bool", "green", "false"),
+            new TreeSelectApiRow("IsDefaultExpandAll", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsDefaultExpandAll), "bool", "green", "false"),
+            new TreeSelectApiRow("IsAllowClear", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsAllowClear), "bool", "green", "false"),
+            new TreeSelectApiRow("IsFilterEnabled", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsFilterEnabled), "bool", "green", "false"),
+            new TreeSelectApiRow("IsShowOverflowTip", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyIsShowOverflowTip), "bool", "green", "true"),
+            new TreeSelectApiRow("OverflowTipDelay", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyOverflowTipDelay), "int", "green", "1200"),
+            new TreeSelectApiRow("OverflowTipPlacement", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyOverflowTipPlacement), "PlacementMode", "purple", "TopEdgeAlignedLeft"),
+            new TreeSelectApiRow("DataLoader", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyDataLoader), "ITreeItemNodeLoader?", "cyan", "null"),
+            new TreeSelectApiRow("Placement", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyPlacement), "SelectPopupPlacement", "purple", "BottomEdgeAlignedLeft"),
+            new TreeSelectApiRow("MaxCount", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyMaxCount), "int", "green", "0"),
+            new TreeSelectApiRow("StyleVariant", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyStyleVariant), "InputControlStyleVariant", "purple", "Outlined"),
+            new TreeSelectApiRow("Status", Lang(TreeSelectShowCaseLangResourceKind.ApiPropertyStatus), "InputControlStatus", "purple", "Default")
+        ];
+    }
+
+    public void EnsureDesignTokenRows()
+    {
+        if (DesignTokenRows is not null)
+        {
+            return;
+        }
+
+        DesignTokenRows =
+        [
+            new TreeSelectDesignTokenRow("MinPopupWidth", Lang(TreeSelectShowCaseLangResourceKind.TokenNameMinPopupWidth), Lang(TreeSelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(TreeSelectShowCaseLangResourceKind.TokenStatusStable), "success")
+        ];
+    }
+
+    private static string Lang(TreeSelectShowCaseLangResourceKind kind)
+    {
+        if (Application.Current is not null && Dispatcher.UIThread.CheckAccess())
+        {
+            return LanguageResourceBinder.GetLangResource(kind) ?? FallbackLang(kind);
+        }
+
+        return FallbackLang(kind);
+    }
+
+    private static string FallbackLang(TreeSelectShowCaseLangResourceKind kind)
+    {
+        return kind switch
+        {
+            TreeSelectShowCaseLangResourceKind.ApiPropertyItemsSource          => en_US.ApiPropertyItemsSource,
+            TreeSelectShowCaseLangResourceKind.ApiPropertySelectedItem         => en_US.ApiPropertySelectedItem,
+            TreeSelectShowCaseLangResourceKind.ApiPropertySelectedItems        => en_US.ApiPropertySelectedItems,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsMultiple           => en_US.ApiPropertyIsMultiple,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsTreeCheckable      => en_US.ApiPropertyIsTreeCheckable,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsDefaultExpandAll   => en_US.ApiPropertyIsDefaultExpandAll,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsAllowClear         => en_US.ApiPropertyIsAllowClear,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsFilterEnabled      => en_US.ApiPropertyIsFilterEnabled,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyIsShowOverflowTip    => en_US.ApiPropertyIsShowOverflowTip,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyOverflowTipDelay     => en_US.ApiPropertyOverflowTipDelay,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyOverflowTipPlacement => en_US.ApiPropertyOverflowTipPlacement,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyDataLoader           => en_US.ApiPropertyDataLoader,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyPlacement            => en_US.ApiPropertyPlacement,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyMaxCount             => en_US.ApiPropertyMaxCount,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyStyleVariant         => en_US.ApiPropertyStyleVariant,
+            TreeSelectShowCaseLangResourceKind.ApiPropertyStatus               => en_US.ApiPropertyStatus,
+            TreeSelectShowCaseLangResourceKind.TokenNameMinPopupWidth          => en_US.TokenNameMinPopupWidth,
+            TreeSelectShowCaseLangResourceKind.TokenScopeComponent             => en_US.TokenScopeComponent,
+            TreeSelectShowCaseLangResourceKind.TokenStatusStable               => en_US.TokenStatusStable,
+            TreeSelectShowCaseLangResourceKind.BindingTitle                    => en_US.BindingTitle,
+            TreeSelectShowCaseLangResourceKind.BindingDescription              => en_US.BindingDescription,
+            TreeSelectShowCaseLangResourceKind.BindingSingleLabel              => en_US.BindingSingleLabel,
+            TreeSelectShowCaseLangResourceKind.BindingMultipleLabel            => en_US.BindingMultipleLabel,
+            TreeSelectShowCaseLangResourceKind.BindingSetSingleButton          => en_US.BindingSetSingleButton,
+            TreeSelectShowCaseLangResourceKind.BindingSetMultipleButton        => en_US.BindingSetMultipleButton,
+            TreeSelectShowCaseLangResourceKind.BindingClearButton              => en_US.BindingClearButton,
+            TreeSelectShowCaseLangResourceKind.BindingViewModelValueLabel      => en_US.BindingViewModelValueLabel,
+            _                                                                  => kind.ToString()
+        };
+    }
+
+    private static ITreeItemNode? FindTreeItem(IEnumerable<ITreeItemNode>? items, string value)
+    {
+        if (items == null)
+        {
+            return null;
+        }
+
+        foreach (var item in items)
+        {
+            if (item.Value?.ToString() == value || item.ItemKey?.ToString() == value)
+            {
+                return item;
+            }
+
+            var child = FindTreeItem(item.Children, value);
+            if (child != null)
+            {
+                return child;
+            }
+        }
+        return null;
     }
 }
+
+public sealed record TreeSelectApiRow(
+    string Property,
+    string Description,
+    string Type,
+    string TypeTagColor,
+    string Default);
+
+public sealed record TreeSelectDesignTokenRow(
+    string Token,
+    string Description,
+    string Scope,
+    string ScopeTagColor,
+    string Status,
+    string StatusTagColor);

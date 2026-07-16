@@ -1,4 +1,14 @@
+using System.Reactive.Disposables;
+using System.Reactive.Disposables.Fluent;
+using AtomUI.Controls;
+using AtomUI.Theme.Language;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
+using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
+using AtomUISteps = AtomUI.Desktop.Controls.Steps;
 
 namespace AtomUIGallery.ShowCases.Steps;
 
@@ -6,70 +16,101 @@ public partial class StepsShowCase : GalleryReactiveUserControl<StepsViewModel>
 {
     public const string LanguageId = nameof(StepsShowCase);
 
-    private const string BasicScenario        = "Basic";
-    private const string InteractiveScenario  = "Interactive";
-    private const string VerticalScenario     = "Vertical";
-    private const string DotClickableScenario = "DotClickable";
-    private const string NavigationScenario   = "Navigation";
-    private const string ProgressScenario     = "Progress";
-    private const string InlineScenario       = "Inline";
+    public static readonly StyledProperty<double[]> DashedArrayProperty =
+        AvaloniaProperty.Register<StepsShowCase, double[]>(nameof(DashedArray));
 
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
+    public double[] DashedArray
+    {
+        get => GetValue(DashedArrayProperty);
+        set => SetValue(DashedArrayProperty, value);
+    }
 
     public StepsShowCase()
     {
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
+        DashedArray = [4d, 3d];
+
+        this.WhenActivated(disposables =>
+        {
+            ResetInteractiveState();
+
+            var themeManager = Application.Current?.GetThemeManager();
+            if (themeManager != null)
+            {
+                EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshInteractiveButtonText();
+                themeManager.LanguageVariantChanged += handler;
+                Disposable.Create(() => themeManager.LanguageVariantChanged -= handler)
+                          .DisposeWith(disposables);
+            }
+        });
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+
+        ResetInteractiveState();
+    }
+
+    public void HandleNextButtonClick(object? sender, RoutedEventArgs args)
+    {
+        if (DataContext is StepsViewModel viewModel)
         {
-            content.DataContext = DataContext;
+            viewModel.MoveToNextInteractiveStep();
         }
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    public void HandlePreviousButtonClick(object? sender, RoutedEventArgs args)
     {
-        EnsureSelectedScenarioContent();
+        if (DataContext is StepsViewModel viewModel)
+        {
+            viewModel.MoveToPreviousInteractiveStep();
+        }
     }
 
-    private void EnsureSelectedScenarioContent()
+    public void HandleInteractiveStepsLoaded(object? sender, RoutedEventArgs args)
     {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (sender is not Control root)
         {
             return;
         }
 
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
+        var steps = FindDescendantByName<AtomUISteps>(root, "CurrentStepContentSteps");
+        var presenter = FindDescendantByName<ContentPresenter>(root, "CurrentStepContentPresenter");
+        if (steps is null || presenter is null)
         {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
+            return;
         }
 
-        if (tabItem.Content != content)
+        presenter[!ContentPresenter.ContentProperty] = steps[!AtomUISteps.CurrentContentProperty];
+        presenter[!ContentPresenter.ContentTemplateProperty] = steps[!AtomUISteps.CurrentContentTemplateProperty];
+    }
+
+    private void ResetInteractiveState()
+    {
+        if (DataContext is StepsViewModel viewModel)
         {
-            tabItem.Content = content;
+            viewModel.ResetInteractiveStep();
         }
     }
 
-    private static Control CreateScenarioContent(string scenario)
+    private void RefreshInteractiveButtonText()
     {
-        return scenario switch
+        if (DataContext is StepsViewModel viewModel)
         {
-            BasicScenario        => new StepsBasicShowCase(),
-            InteractiveScenario  => new StepsInteractiveShowCase(),
-            VerticalScenario     => new StepsVerticalShowCase(),
-            DotClickableScenario => new StepsDotClickableShowCase(),
-            NavigationScenario   => new StepsNavigationShowCase(),
-            ProgressScenario     => new StepsProgressShowCase(),
-            InlineScenario       => new StepsInlineShowCase(),
-            _                    => throw new InvalidOperationException($"Unknown Steps scenario: {scenario}")
-        };
+            viewModel.RefreshInteractiveButtonText();
+        }
+    }
+
+    private static T? FindDescendantByName<T>(Control root, string name)
+        where T : Control
+    {
+        if (root is T typedRoot && typedRoot.Name == name)
+        {
+            return typedRoot;
+        }
+
+        return root.GetVisualDescendants().OfType<T>().FirstOrDefault(control => control.Name == name)
+               ?? root.GetLogicalDescendants().OfType<T>().FirstOrDefault(control => control.Name == name);
     }
 }

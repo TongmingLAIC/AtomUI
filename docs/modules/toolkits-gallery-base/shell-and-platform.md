@@ -1,0 +1,216 @@
+# GalleryBase Shell 与平台宿主设计
+
+本文档细化 GalleryBase 的共享 Shell、Desktop Window 适配、Browser View、品牌区域、标题栏菜单和平台差异。当前 GalleryBase 已承载 Workspace ViewModel、导航运行时、共享侧边栏/内容布局、Browser OverlayLayer 和媒体断点；产品侧只保留窗口菜单、字体、产品导航视图适配和启动代码。
+
+## 设计目标
+
+- Desktop 和 Browser 共用同一套品牌、导航、路由、Workspace ViewModel 和 Shell 布局。
+- 产品侧只提供配置，不重写 Shell 布局。
+- Shell 视觉使用 AtomUI 控件和 Token，但不写入任何产品品牌默认值。
+- Desktop 差异和 Browser 差异封装在平台宿主边界。
+- 支持未来扩展搜索、面包屑、页面元信息和响应式布局。
+
+## Shell 组成
+
+通用 Shell 结构：
+
+```text
+GalleryShell
+  Sidebar
+    BrandArea
+    Navigation
+    FooterLinks / Version
+  ContentHost
+    RoutedViewHost
+  OptionalTopSeparator
+  PlatformTitleBarMenu
+```
+
+`GalleryShellView` 负责 Sidebar、BrandArea、FooterLinks、VersionTag、`RoutedViewHost` 和导航/内容分隔线。Shell 不负责 Demo 页面内部布局。ShowCase 页面继续使用 `GalleryStickyTabsHost`、`ShowCasePanel` 和 `ShowCaseItem`。
+
+## 共享 ViewModel
+
+```csharp
+public class GalleryWorkspaceViewModel : ReactiveObject, IScreen, IDisposable
+{
+    public RoutingState Router { get; }
+    public GalleryNavigationViewModel Navigation { get; }
+
+    public ReactiveCommand<bool, Unit> ToggleDarkModeCommand { get; }
+    public ReactiveCommand<bool, Unit> ToggleCompactModeCommand { get; }
+    public ReactiveCommand<bool, Unit> ToggleMotionCommand { get; }
+    public ReactiveCommand<bool, Unit> ToggleWaveSpiritCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToZhCNCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToZhTWCommand { get; }
+    public ReactiveCommand<Unit, Unit> SwitchToEnUSCommand { get; }
+}
+```
+
+职责：
+
+- 持有 ReactiveUI Router。
+- 持有导航 ViewModel。
+- 转发主题、紧凑、动效、语言切换命令。
+- 监听 ThemeManager 语言变化并更新菜单状态。
+- 释放时解绑 ThemeManager 语言事件，并释放 `GalleryNavigationViewModel`。
+
+`GalleryWorkspaceViewModel` 不能知道具体产品页面类型。产品可以通过继承或组合方式提供自己的导航 ViewModel 类型别名，例如 AtomUI Gallery 的 `WorkspaceWindowViewModel` 继承 `GalleryWorkspaceViewModel`，并把 `CaseNavigation` 暴露为产品侧兼容属性。
+
+宿主 View/Window 关闭或 Browser 根视图卸载时，如果其生命周期不是进程级单例，应调用 `Dispose()`。当前 AtomUI Gallery 的 `WorkspaceWindowViewModel` 继承该基类，因此同样获得导航诊断 timer 和语言事件的释放边界。
+
+## Desktop 宿主适配
+
+```csharp
+public sealed class GalleryShellView : UserControl, IDisposable
+```
+
+AtomUI Gallery 的 `WorkspaceWindow` 保留产品窗口菜单和标题栏事件处理，然后在 code-behind 中创建 `GalleryShellView`：
+
+```csharp
+var shellView = new GalleryShellView(configuration, navigationView, viewModel.Router);
+```
+
+职责：
+
+- 产品窗口创建并绑定产品 `GalleryWorkspaceViewModel` 派生类型。
+- 产品窗口配置 AtomUI Window title bar 和菜单事件。
+- `GalleryShellView` 应用 Sidebar、品牌、footer 和 routing content host。
+- 产品窗口处理 caption button 可见性、移动、缩放、置顶等窗口行为。
+
+Desktop 不负责：
+
+- 注册产品页面。
+- 创建产品导航树。
+- 写死 sidebar、footer、logo、链接或 routing host。
+
+## Browser 宿主
+
+```csharp
+public class GalleryBrowserShellView : UserControl, IScreen, IMediaBreakAwareControl, IDisposable
+{
+}
+```
+
+职责：
+
+- 创建并绑定产品提供的 `GalleryWorkspaceViewModel`。
+- 使用 `GalleryShellView` 渲染侧边栏和内容路由区。
+- 配置 Browser 需要的 overlay layers。
+- 根据内容区域宽度维护 media breakpoint。
+- 在 detach 时释放 Shell 和 Workspace ViewModel。
+
+AtomUI Gallery 的 `BrowserGalleryView` 继承 `GalleryBrowserShellView`，只提供字体、`WorkspaceWindowViewModel` 工厂和 `CaseNavigation` 视图工厂。
+
+## Branding 渲染
+
+Branding 区域由 `GalleryBrandingOptions` 驱动：
+
+```text
+BrandArea
+  LogoPresenter
+  Optional AppName
+```
+
+规则：
+
+- 有 Logo 时优先展示 Logo。
+- 无 Logo 但有 AppName 时展示文本。
+- 字符串 Logo 当前按 SVG 资源路径渲染，并使用 Shell 默认尺寸约束。
+- 产品可通过 `GalleryBrandingOptions.Logo` 提供自定义 Control。
+
+Footer 区域：
+
+```text
+Footer
+  LinkButtons
+  VersionTag
+```
+
+规则：
+
+- `Links` 为空且 `VersionText` 为空时 footer 默认隐藏。
+- `Links` 不为空时渲染超链接按钮。
+- `VersionText` 不为空时渲染 Tag。
+- 链接图标由产品配置提供；GalleryBase 不默认显示官网、GitHub 或 Gitee。
+
+## 标题栏菜单
+
+标题栏菜单分三组：
+
+| 菜单 | 配置开关 | 职责 |
+|---|---|---|
+| Window Options | `IsWindowOptionsMenuEnabled` | 控制 caption button、移动、缩放 |
+| Theme | `IsThemeMenuEnabled` | 暗色、紧凑、动效、WaveSpirit |
+| Language | `IsLanguageMenuEnabled` | 切换 AtomUI 语言变体 |
+
+语言菜单第一阶段提供 AtomUI 已支持的语言：
+
+- `zh_CN`
+- `zh_TW`
+- `en_US`
+
+后续如果 AtomUI 语言系统支持动态枚举，菜单应改成根据 `ThemeManager` 可用语言生成。
+
+## 内容宿主
+
+内容区使用 ReactiveUI `RoutedViewHost`：
+
+```csharp
+RoutedViewHost = new RoutedViewHost
+{
+    Router         = router,
+    PageTransition = null,
+    ClipToBounds   = true
+};
+```
+
+规则：
+
+- Shell 不设置页面 DataContext。
+- 页面 ViewModel 由路由创建。
+- View 由 ViewLocator 创建。
+- Shell 不缓存页面；缓存策略交给 ReactiveUI 和页面内部 controller。
+
+## 媒体断点
+
+Browser 宿主实现 `IMediaBreakAwareControl`，用于让 AtomUI 控件获得内容区域断点。
+
+断点来源：
+
+- Desktop 第一阶段不由 GalleryBase 强制提供，继续依赖 Window/AtomUI 现有机制。
+- Browser 由 `GalleryBrowserShellView` 根据 `GalleryShellView.ContentHost` 宽度计算。
+
+规则：
+
+- 断点变化只由 Shell 内容区尺寸驱动，不由整个浏览器窗口直接驱动。
+- 侧边栏宽度变化会自然影响内容断点。
+
+## OverlayLayer
+
+Browser 宿主需要初始化 `VisualLayerManager`：
+
+- OverlayLayer
+- PopupOverlayLayer
+- LightDismissOverlayLayer
+
+这是 AtomUI popup/flyout/tour/badge 等控件在 Browser Gallery 中正常工作的必要条件。GalleryBase 封装这段逻辑，产品不再复制反射访问 `VisualLayerManager` 私有属性的代码。
+
+## 崩溃日志
+
+Desktop 崩溃日志当前仍由产品启动项目处理。`GalleryPlatformOptions` 已保留 `EnableDesktopCrashLog` 和 `CrashLogDirectoryName`，但 GalleryBase 尚未提供统一 crash logger helper。
+
+规则：
+
+- 产品可以替换为自己的日志系统。
+- 如果后续新增 GalleryBase helper，不能强制包裹 `Main`，也不能吞异常。
+
+## 测试要求
+
+- Desktop 产品窗口不包含具体产品 logo URI、footer 链接或 routing host。
+- Browser 产品视图不包含具体产品 logo URI、footer 链接、sidebar 构造或 OverlayLayer 反射代码。
+- Desktop 和 Browser 都使用 `GalleryWorkspaceViewModel`。
+- Workspace ViewModel 可释放并释放导航运行时。
+- Footer 在 links/version 为空时隐藏。
+- 标题栏菜单按配置开关显示或隐藏。
+- Browser OverlayLayer 初始化方法存在于 GalleryBase Browser 宿主中。
+- Browser 不再手写重复导航树。

@@ -3,61 +3,92 @@
              x:Class="AtomUIGallery.ShowCases.Palette.PaletteShowCase"
              xmlns:atom="https://atomui.net"
              xmlns:gallery="https://atomui.net/oss-controls/gallery"
-             xmlns:viewModels="clr-namespace:AtomUIGallery.ShowCases.Palette"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             xmlns:vm="using:AtomUIGallery.ShowCases.Palette"
+             x:DataType="vm:PaletteViewModel">
 
-    <atom:TabControl SizeType="Large">
-        <atom:TabItem Header="{gallery:PaletteShowCaseLangResource P2HeaderLight}">
-            <atom:ScrollViewer>
-                <ItemsControl ItemsSource="{Binding PresetPaletteInfos}"
-                              x:DataType="viewModels:PaletteViewModel"
-                              Padding="10">
+    <UserControl.Resources>
+        <DataTemplate x:Key="LightPaletteContentTemplate"
+                      x:DataType="vm:PaletteViewModel">
+            <ItemsControl ItemsSource="{Binding PresetPaletteInfos}"
+                          Margin="28,10,28,28"
+                          Padding="10">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PresetPaletteInfoPair">
+                        <UniformGrid Rows="1"
+                                     Columns="2">
+                            <gallery:ColorListControl Margin="0,0,10,10"
+                                                      PaletteMetaInfo="{Binding Left}" />
+                            <gallery:ColorListControl Margin="0,0,0,10"
+                                                      PaletteMetaInfo="{Binding Right}" />
+                        </UniformGrid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </DataTemplate>
+
+        <DataTemplate x:Key="DarkPaletteContentTemplate"
+                      x:DataType="vm:PaletteViewModel">
+            <Border Background="Black"
+                    Margin="28,10,28,28"
+                    Padding="10">
+                <ItemsControl ItemsSource="{Binding PresetPaletteInfos}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Vertical" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="viewModels:PresetPaletteInfoPair">
-                            <UniformGrid Rows="1" Columns="2">
+                        <DataTemplate x:DataType="vm:PresetPaletteInfoPair">
+                            <UniformGrid Rows="1"
+                                         Columns="2">
                                 <gallery:ColorListControl Margin="0,0,10,10"
-                                                          PaletteMetaInfo="{Binding Left}" />
+                                                          PaletteMetaInfo="{Binding Left}"
+                                                          IsDark="True" />
                                 <gallery:ColorListControl Margin="0,0,0,10"
-                                                          PaletteMetaInfo="{Binding Right}" />
+                                                          PaletteMetaInfo="{Binding Right}"
+                                                          IsDark="True" />
                             </UniformGrid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-            </atom:ScrollViewer>
-        </atom:TabItem>
-        <atom:TabItem Header="{gallery:PaletteShowCaseLangResource P2HeaderDark}">
-            <atom:ScrollViewer>
-                <Border Background="Black">
-                    <ItemsControl ItemsSource="{Binding PresetPaletteInfos}"
-                                  x:DataType="viewModels:PaletteViewModel"
-                                  Padding="10">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Vertical" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewModels:PresetPaletteInfoPair">
-                                <UniformGrid Rows="1" Columns="2">
-                                    <gallery:ColorListControl Margin="0,0,10,10"
-                                                              PaletteMetaInfo="{Binding Left}"
-                                                              IsDark="True" />
-                                    <gallery:ColorListControl Margin="0,0,0,10"
-                                                              PaletteMetaInfo="{Binding Right}"
-                                                              IsDark="True" />
-                                </UniformGrid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Border>
-            </atom:ScrollViewer>
-        </atom:TabItem>
-    </atom:TabControl>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="Palette"
+                    Category="{gallery:PaletteShowCaseLangResource ComponentCategory}"
+                    Status="{gallery:PaletteShowCaseLangResource ComponentStatusStable}"
+                    Subtitle="{gallery:PaletteShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:PaletteShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Theme.Palette"
+                    Package="AtomUI.Controls"
+                    BaseClass="PresetPalettes"
+                    MetadataValueWidth="220" />
+            </gallery:GalleryStickyTabsHost.Header>
+
+            <gallery:GalleryStickyTabsHost.StickyContent>
+                <atom:TabStrip Name="ScenarioTabs"
+                               SizeType="Large"
+                               SelectedIndex="0">
+                    <atom:TabStripItem Content="{gallery:PaletteShowCaseLangResource P2HeaderLight}"
+                                       Tag="Light"
+                                       IsSelected="True" />
+                    <atom:TabStripItem Content="{gallery:PaletteShowCaseLangResource P2HeaderDark}"
+                                       Tag="Dark" />
+                </atom:TabStrip>
+            </gallery:GalleryStickyTabsHost.StickyContent>
+
+            <ContentControl Name="ScenarioContentHost">
+            </ContentControl>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
 </UserControl>

@@ -33,14 +33,11 @@ public class SimplePagination : AbstractPagination
         AffectsMeasure<SimplePagination>(IsReadOnlyProperty);
     }
 
-    public SimplePagination()
-    {
-        this.RegisterTokenResourceScope(PaginationToken.ScopeProvider);
-    }
-
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        ClearTemplateParts();
+
         _previousPageItem = e.NameScope.Find<PaginationNavItem>("PART_PreviousNavItem");
         _nextPageItem     = e.NameScope.Find<PaginationNavItem>("PART_NextNavItem");
         _infoIndicator    = e.NameScope.Find<TextBlock>("PART_InfoIndicator");
@@ -110,7 +107,7 @@ public class SimplePagination : AbstractPagination
     {
         if (sender is PaginationNavItem navItemSender)
         {
-            CurrentPage = navItemSender.PageNumber;
+            SetCurrentValue(CurrentPageProperty, navItemSender.PageNumber);
             HandlePageConditionChanged();
         }
     }
@@ -123,10 +120,35 @@ public class SimplePagination : AbstractPagination
             {
                 if (lineEdit.Text is { } text && int.TryParse(text.AsSpan().Trim(), out var pageNumber))
                 {
-                    var pageCount   = (int)Math.Ceiling(Total / (double)PageSize);
-                    CurrentPage = Math.Max(1, Math.Min(pageNumber, pageCount));
+                    var pageSize    = PageSize <= 0 ? DefaultPageSize : PageSize;
+                    var pageCount   = (int)Math.Ceiling(Total / (double)pageSize);
+                    SetCurrentValue(CurrentPageProperty, Math.Max(1, Math.Min(pageNumber, pageCount)));
                 }
             }
         }
+    }
+
+    private void ClearTemplateParts()
+    {
+        if (_previousPageItem is not null)
+        {
+            _previousPageItem.Click -= HandleNavItemClicked;
+        }
+
+        if (_nextPageItem is not null)
+        {
+            _nextPageItem.Click -= HandleNavItemClicked;
+        }
+
+        if (_quickJumper is not null)
+        {
+            _quickJumper.KeyUp -= HandleLineEditKeyUp;
+        }
+
+        _previousPageItem = null;
+        _nextPageItem     = null;
+        _infoIndicator    = null;
+        _quickJumper      = null;
+        TemplateConfigured = false;
     }
 }

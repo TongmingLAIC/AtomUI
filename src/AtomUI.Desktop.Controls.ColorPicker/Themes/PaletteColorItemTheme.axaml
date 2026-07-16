@@ -7,11 +7,11 @@
     <ControlTheme x:Key="{x:Type atom:PaletteColorItem}" TargetType="atom:PaletteColorItem">
         <Setter Property="Template">
             <ControlTemplate>
-                <Border Name="Frame"
-                        CornerRadius="{TemplateBinding CornerRadius}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        Padding="1">
+                <atom:PixelAlignedBorder Name="Frame"
+                                         CornerRadius="{TemplateBinding CornerRadius}"
+                                         BorderThickness="{TemplateBinding BorderThickness}"
+                                         BorderBrush="{TemplateBinding BorderBrush}"
+                                         Padding="1">
                     <Border Name="ColorPreview"
                             CornerRadius="{TemplateBinding CornerRadius}"
                             Background="{TemplateBinding Background}"
@@ -23,24 +23,24 @@
                                                      RenderTransform="{TemplateBinding CheckedMarkRenderTransform}"
                                                      RenderTransformOrigin="{x:Static RelativePoint.Center}"/>
                     </Border>
-                </Border>
+                </atom:PixelAlignedBorder>
             </ControlTemplate>
         </Setter>
 
-        <Style Selector="^ /template/ Border#Frame">
+        <Style Selector="^ /template/ atom|PixelAlignedBorder#Frame">
             <Setter Property="Width"
                     Value="{atom:ColorPickerTokenResource ColorPickerPresetColorSize}" />
             <Setter Property="Height"
                     Value="{atom:ColorPickerTokenResource ColorPickerPresetColorSize}" />
         </Style>
 
-        <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}" />
+        <Setter Property="CornerRadius" Value="{atom:ColorPickerTokenSharedTokenResource BorderRadiusSM}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="{atom:SharedTokenResource BorderThickness}" />
+        <Setter Property="BorderThickness" Value="{atom:ColorPickerTokenSharedTokenResource BorderThickness}" />
 
         <Style Selector="^:pointerover">
-            <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorFill}" />
+            <Setter Property="BorderBrush" Value="{atom:ColorPickerTokenSharedTokenResource ColorFill}" />
         </Style>
 
         <Style Selector="^[IsMotionEnabled=True]">
@@ -74,7 +74,7 @@
         
         <Style Selector="^[IsLightColor=False]">
             <Style Selector="^ /template/ atom|Icon#PART_CheckedMark">
-                <Setter Property="Foreground" Value="{atom:SharedTokenResource ColorWhite}" />
+                <Setter Property="Foreground" Value="{atom:ColorPickerTokenSharedTokenResource ColorWhite}" />
             </Style>
         </Style>
 

@@ -71,7 +71,9 @@ public class GenerateDataMemberAccessorsTests
         };
         var view = new ListCollectionView(source, descriptor);
 
+#pragma warning disable ATOMUIAOT003
         view.SortDescriptions.Add(ListSortDescription.FromPath("SyntheticScore"));
+#pragma warning restore ATOMUIAOT003
 
         view.Cast<ManualRow>().Select(row => row.Score).ShouldBe([null, 1, 2]);
     }
@@ -98,7 +100,9 @@ public class GenerateDataMemberAccessorsTests
     [Fact]
     public void PathSortRequiresGeneratedAccessorWhenDynamicCodeIsDisabled()
     {
+#pragma warning disable ATOMUIAOT001
         var sort = ListSortDescription.FromPath(nameof(UnregisteredRow.Score));
+#pragma warning restore ATOMUIAOT001
 
         Should.Throw<InvalidOperationException>(() =>
             sort.Initialize(typeof(UnregisteredRow), isDynamicCodeSupported: false));
@@ -114,7 +118,9 @@ public class GenerateDataMemberAccessorsTests
         };
         var view = new ListCollectionView(source);
 
+#pragma warning disable ATOMUIAOT001
         view.SortDescriptions.Add(ListSortDescription.FromPath(nameof(UnregisteredRow.Score)));
+#pragma warning restore ATOMUIAOT001
 
         view.Cast<UnregisteredRow>().Select(row => row.Score).ShouldBe([1, 2]);
     }
@@ -129,12 +135,56 @@ public class GenerateDataMemberAccessorsTests
         Should.NotThrow(() => sort.Initialize(descriptor.DataType, isDynamicCodeSupported: false));
     }
 
+    [Fact]
+    public void PathSortUsesCompatibleGeneratedAccessorWhenDynamicCodeIsDisabled()
+    {
+        var sort = ListSortDescription.FromPath(nameof(BaseRow.Score));
+
+        Should.NotThrow(() => sort.Initialize(typeof(DerivedRow), isDynamicCodeSupported: false));
+    }
+
+    [Fact]
+    public void PathSortUsesAbstractBaseGeneratedAccessorWhenDynamicCodeIsDisabled()
+    {
+        var sort = ListSortDescription.FromPath(nameof(AbstractBaseRow.Score));
+
+        Should.NotThrow(() => sort.Initialize(typeof(AbstractDerivedRow), isDynamicCodeSupported: false));
+    }
+
+    [Fact]
+    public void IListItemDataContentPathSortUsesGeneratedAccessorWhenDynamicCodeIsDisabled()
+    {
+        var sort = ListSortDescription.FromPath(nameof(IListItemData.Content));
+
+        Should.NotThrow(() => sort.Initialize(typeof(IListItemData), isDynamicCodeSupported: false));
+    }
+
     [GenerateDataMemberAccessors]
     public partial class SampleRow
     {
         public string? Name { get; set; }
 
         public int? Score { get; set; }
+    }
+
+    [GenerateDataMemberAccessors]
+    public partial class BaseRow
+    {
+        public int Score { get; set; }
+    }
+
+    private sealed class DerivedRow : BaseRow
+    {
+    }
+
+    [GenerateDataMemberAccessors]
+    public abstract partial class AbstractBaseRow
+    {
+        public int Score { get; set; }
+    }
+
+    private sealed class AbstractDerivedRow : AbstractBaseRow
+    {
     }
 
     private sealed class ManualRow

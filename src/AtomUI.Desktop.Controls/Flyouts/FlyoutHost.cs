@@ -1,6 +1,5 @@
 ﻿using System.Reactive.Disposables;
 using AtomUI.Controls;
-using AtomUI.Controls.Utils;
 using AtomUI.Data;
 using AtomUI.MotionScene;
 using AtomUI.Theme;
@@ -194,7 +193,6 @@ public class FlyoutHost : ContentControl, IMotionAwareControl
     
     public FlyoutHost()
     {
-        this.RegisterTokenResourceScope(FlyoutHostToken.ScopeProvider);
         _flyoutStateHelper                                             = new FlyoutStateHelper();
         _flyoutStateHelper[!FlyoutStateHelper.AnchorTargetProperty]    = this[!ContentProperty];
         _flyoutStateHelper[!FlyoutStateHelper.FlyoutProperty]          = this[!FlyoutProperty];
@@ -250,6 +248,12 @@ public class FlyoutHost : ContentControl, IMotionAwareControl
             return;
         }
 
+        if (flyout.IsOpen)
+        {
+            flyout.Hide();
+        }
+
+        flyout.ReleaseGlobalResourceBindings();
         _registeredFlyout = null;
         _flyoutDisposables?.Dispose();
         _flyoutDisposables = null;

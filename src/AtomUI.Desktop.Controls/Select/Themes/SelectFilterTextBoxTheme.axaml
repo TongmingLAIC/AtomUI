@@ -6,19 +6,26 @@
     x:ClassModifier="internal">
     <ControlTheme x:Key="{x:Type atom:SelectFilterTextBox}" TargetType="atom:SelectFilterTextBox">
         <ControlTheme.BasedOn>
-            <themes:TextBoxTheme TargetType="{x:Type atom:SelectFilterTextBox}" />
+            <themes:EmbeddedTextBoxTheme TargetType="{x:Type atom:SelectFilterTextBox}" />
         </ControlTheme.BasedOn>
+
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="BorderThickness" Value="0" />
 
         <Style Selector="^[IsCustomFontSize=False]">
             <Style Selector="^[SizeType=Large]">
                 <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSizeLG}" />
             </Style>
-            <Style Selector="^[SizeType=Middle]">
+            <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
                 <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSize}" />
             </Style>
             <Style Selector="^[SizeType=Small]">
                 <Setter Property="FontSize" Value="{atom:LineEditTokenResource InputFontSize}" />
             </Style>
+        </Style>
+
+        <Style Selector="^ /template/ :is(TextPresenter)#PART_TextPresenter">
+            <Setter Property="Margin" Value="2 0 2 0" />
         </Style>
 
         <Style Selector="^ /template/ atom|TextBlock#Placeholder">

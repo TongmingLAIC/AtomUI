@@ -1,4 +1,3 @@
-using System.Reactive.Disposables;
 using AtomUI.Controls;
 using AtomUI.Desktop.Controls;
 
@@ -10,11 +9,6 @@ public partial class CarouselShowCase : GalleryReactiveUserControl<CarouselViewM
 
     public CarouselShowCase()
     {
-        this.WhenActivated(disposables =>
-        {
-            PositionOptionGroup.OptionCheckedChanged += HandlePositionOptionChanged;
-            disposables.Add(Disposable.Create(() => PositionOptionGroup.OptionCheckedChanged -= HandlePositionOptionChanged));
-        });
         InitializeComponent();
     }
 

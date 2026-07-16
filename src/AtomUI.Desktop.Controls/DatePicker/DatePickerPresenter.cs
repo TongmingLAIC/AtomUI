@@ -35,8 +35,14 @@ internal class DatePickerPresenter : PickerPresenterBase
     public static readonly StyledProperty<bool> IsShowTimeProperty =
         DatePicker.IsShowTimeProperty.AddOwner<DatePickerPresenter>();
 
+    public static readonly StyledProperty<DatePickerMode> PickerModeProperty =
+        DatePicker.PickerModeProperty.AddOwner<DatePickerPresenter>();
+
     public static readonly StyledProperty<DateTime?> SelectedDateTimeProperty =
         DatePicker.SelectedDateTimeProperty.AddOwner<DatePickerPresenter>();
+
+    public static readonly StyledProperty<DateTime?> PickerDisplayDateProperty =
+        DatePicker.PickerDisplayDateProperty.AddOwner<DatePickerPresenter>();
 
     public static readonly StyledProperty<ClockIdentifierType> ClockIdentifierProperty =
         TimePicker.ClockIdentifierProperty.AddOwner<DatePickerPresenter>();
@@ -59,10 +65,22 @@ internal class DatePickerPresenter : PickerPresenterBase
         set => SetValue(IsShowTimeProperty, value);
     }
 
+    public DatePickerMode PickerMode
+    {
+        get => GetValue(PickerModeProperty);
+        set => SetValue(PickerModeProperty, value);
+    }
+
     public DateTime? SelectedDateTime
     {
         get => GetValue(SelectedDateTimeProperty);
         set => SetValue(SelectedDateTimeProperty, value);
+    }
+
+    public DateTime? PickerDisplayDate
+    {
+        get => GetValue(PickerDisplayDateProperty);
+        set => SetValue(PickerDisplayDateProperty, value);
     }
 
     public ClockIdentifierType ClockIdentifier
@@ -80,6 +98,11 @@ internal class DatePickerPresenter : PickerPresenterBase
             o => o.IsButtonsPanelVisible,
             (o, v) => o.IsButtonsPanelVisible = v);
 
+    internal static readonly DirectProperty<DatePickerPresenter, bool> IsTimeSelectionVisibleProperty =
+        AvaloniaProperty.RegisterDirect<DatePickerPresenter, bool>(nameof(IsTimeSelectionVisible),
+            o => o.IsTimeSelectionVisible,
+            (o, v) => o.IsTimeSelectionVisible = v);
+
     public static readonly StyledProperty<TimeSpan?> TempSelectedTimeProperty =
         AvaloniaProperty.Register<DatePickerPresenter, TimeSpan?>(nameof(TempSelectedTime));
 
@@ -93,11 +116,18 @@ internal class DatePickerPresenter : PickerPresenterBase
     }
 
     private bool _buttonsPanelVisible = true;
+    private bool _isTimeSelectionVisible;
 
     internal bool IsButtonsPanelVisible
     {
         get => _buttonsPanelVisible;
         set => SetAndRaise(IsButtonsPanelVisibleProperty, ref _buttonsPanelVisible, value);
+    }
+
+    internal bool IsTimeSelectionVisible
+    {
+        get => _isTimeSelectionVisible;
+        set => SetAndRaise(IsTimeSelectionVisibleProperty, ref _isTimeSelectionVisible, value);
     }
 
     public TimeSpan? TempSelectedTime
@@ -128,6 +158,13 @@ internal class DatePickerPresenter : PickerPresenterBase
     protected PickerCalendar? CalendarView;
     protected TimeView? TimeView;
     private CompositeDisposable? _pointerDisposables;
+    private DateTime? _pendingOpenDisplayAnchor;
+
+    internal void ResetOpenPanelState()
+    {
+        _pendingOpenDisplayAnchor = ResolveOpenDisplayAnchor();
+        ApplyPendingOpenPanelState();
+    }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
@@ -165,9 +202,11 @@ internal class DatePickerPresenter : PickerPresenterBase
         base.OnPropertyChanged(change);
         if (change.Property == IsNeedConfirmProperty ||
             change.Property == IsShowNowProperty ||
-            change.Property == IsShowTimeProperty)
+            change.Property == IsShowTimeProperty ||
+            change.Property == PickerModeProperty)
         {
             SetupButtonStatus();
+            CalendarView?.SetCurrentValue(PickerCalendar.PickerModeProperty, PickerMode);
         }
         else if (change.Property == SelectedDateTimeProperty)
         {
@@ -188,12 +227,25 @@ internal class DatePickerPresenter : PickerPresenterBase
     {
         DetachTemplateEventHandlers();
         base.OnApplyTemplate(e);
+        ResolveTemplateParts(e);
+        SetupButtonStatus();
+        AttachTemplateEventHandlers();
+        SetupConfirmButtonEnableStatus();
+        RefreshPointerSubscriptionsIfAttached();
+        ApplyPendingOpenPanelState();
+    }
+
+    private void ResolveTemplateParts(TemplateAppliedEventArgs e)
+    {
         NowButton     = e.NameScope.Get<Button>("PART_NowButton");
         TodayButton   = e.NameScope.Get<Button>("PART_TodayButton");
         ConfirmButton = e.NameScope.Get<Button>("PART_ConfirmButton");
         CalendarView  = e.NameScope.Get<PickerCalendar>("PART_CalendarView");
         TimeView      = e.NameScope.Find<TimeView>("PART_TimeView");
-        SetupButtonStatus();
+    }
+
+    private void AttachTemplateEventHandlers()
+    {
         if (CalendarView is not null)
         {
             CalendarView.HoverDateChanged += HandleCalendarViewDateHoverChanged;
@@ -202,7 +254,7 @@ internal class DatePickerPresenter : PickerPresenterBase
 
         if (TimeView is not null)
         {
-            if (IsShowTime)
+            if (IsTimeSelectionVisible)
             {
                 SyncTimeViewTimeValue();
             }
@@ -233,8 +285,10 @@ internal class DatePickerPresenter : PickerPresenterBase
             ConfirmButton.PointerEntered += HandleConfirmButtonPointerEntered;
             ConfirmButton.PointerExited  += HandleConfirmButtonPointerExited;
         }
+    }
 
-        SetupConfirmButtonEnableStatus();
+    private void RefreshPointerSubscriptionsIfAttached()
+    {
         if (this.IsAttachedToVisualTree())
         {
             RefreshPointerSubscriptions();
@@ -315,6 +369,40 @@ internal class DatePickerPresenter : PickerPresenterBase
     protected virtual void NotifyPointerExitNowButton()
     {
         EmitChoosingStatusChanged(false);
+    }
+
+    protected virtual DateTime? ResolveOpenDisplayAnchor()
+    {
+        if (PickerDisplayDate is null)
+        {
+            return null;
+        }
+
+        var anchor = SelectedDateTime ?? PickerDisplayDate;
+        return anchor.HasValue
+            ? DatePickerFormattingHelper.NormalizeDateTime(anchor.Value, PickerMode)
+            : null;
+    }
+
+    protected void ApplyCalendarDisplayAnchor(PickerCalendar calendar, DateTime anchor)
+    {
+        calendar.SetCurrentValue(PickerCalendar.DisplayDateProperty, anchor);
+        calendar.SelectedMonth    = anchor;
+        calendar.SelectedYear     = anchor;
+        calendar.LastSelectedDate = anchor;
+        calendar.UpdateHighlightDays();
+    }
+
+    private void ApplyPendingOpenPanelState()
+    {
+        if (_pendingOpenDisplayAnchor is null || CalendarView is null)
+        {
+            return;
+        }
+
+        var anchor = CalendarView.NormalizePickerDate(_pendingOpenDisplayAnchor.Value);
+        ApplyCalendarDisplayAnchor(CalendarView, anchor);
+        _pendingOpenDisplayAnchor = null;
     }
 
     private void HandleTodayButtonClicked(object? sender, RoutedEventArgs args)
@@ -440,7 +528,7 @@ internal class DatePickerPresenter : PickerPresenterBase
         }
 
         date = date.Value.Date;
-        if (IsShowTime && timeSpan is not null)
+        if (IsTimeSelectionVisible && timeSpan is not null)
         {
             date = date.Value.Add(timeSpan.Value);
         }
@@ -450,6 +538,8 @@ internal class DatePickerPresenter : PickerPresenterBase
 
     private void SetupButtonStatus()
     {
+        IsTimeSelectionVisible = IsShowTime && PickerMode == DatePickerMode.Date;
+
         if (NowButton is null ||
             TodayButton is null ||
             ConfirmButton is null)
@@ -464,11 +554,11 @@ internal class DatePickerPresenter : PickerPresenterBase
         NowButton.HorizontalAlignment   = HorizontalAlignment.Left;
         TodayButton.HorizontalAlignment = HorizontalAlignment.Left;
 
-        if (IsShowNow)
+        if (IsShowNow && PickerMode == DatePickerMode.Date)
         {
             NowButton.IsVisible   = false;
             TodayButton.IsVisible = false;
-            if (IsShowTime)
+            if (IsTimeSelectionVisible)
             {
                 NowButton.IsVisible = true;
             }

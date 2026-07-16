@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Segmented;
 
 public partial class SegmentedShowCase : GalleryReactiveUserControl<SegmentedViewModel>
@@ -9,4 +8,5 @@ public partial class SegmentedShowCase : GalleryReactiveUserControl<SegmentedVie
     {
         InitializeComponent();
     }
+
 }

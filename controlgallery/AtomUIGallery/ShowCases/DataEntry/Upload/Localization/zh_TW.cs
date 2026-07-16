@@ -1,10 +1,9 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Upload;
 
 [LanguageProvider(LanguageCode.zh_TW, UploadShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
     public const string UploadByClickingTitle = "點擊上傳";
     public const string UploadByClickingDescription = "經典模式。點擊上傳按鈕時彈出文件選擇對話框。";
@@ -14,9 +13,9 @@ internal partial class zh_TW : LanguageProvider
     public const string AvatarTitle = "頭像";
     public const string AvatarDescription = "點擊上傳用戶頭像，並通過 beforeUpload 校驗圖片大小和格式。";
     public const string DefaultFilesTitle = "默認文件";
-    public const string DefaultFilesDescription = "頁面初始化時使用 defaultFileList 設置已上傳文件。";
+    public const string DefaultFilesDescription = "透過綁定 Files 提供初始的可觀察上傳文件列表。";
     public const string PicturesWallTitle = "圖片牆";
-    public const string PicturesWallDescription = "用戶上傳圖片後，縮略圖會顯示在列表中。當數量達到限制時，上傳按鈕會消失。";
+    public const string PicturesWallDescription = "用戶上傳圖片後，縮略圖會顯示在 picture-card 列表中，觸發器始終作為獨立 append 入口呈現。";
     public const string PictureCircleTypeTitle = "圓形圖片卡片";
     public const string PictureCircleTypeDescription = "picture-card 的另一種展示形式。";
     public const string DragAndDropTitle = "拖拽上傳";
@@ -25,8 +24,8 @@ internal partial class zh_TW : LanguageProvider
     public const string PicturesWithListStyleDescription = "如果上傳文件是圖片，可以顯示縮略圖。";
     public const string MaxCountTitle = "最大數量";
     public const string MaxCountDescription = "使用 maxCount 限制文件數量。當 maxCount 為 1 時會替換當前文件。";
-    public const string UploadDirectoryTitle = "上傳目錄";
-    public const string UploadDirectoryDescription = "可以選擇並上傳整個目錄。";
+    public const string FileAndDirectoryTitle = "文件與目錄";
+    public const string FileAndDirectoryDescription = "組合兩個 UploadTrigger，分別觸發文件選擇和目錄選擇。";
     public const string UploadPngOnlyTitle = "僅上傳 PNG 文件";
     public const string UploadPngOnlyDescription = "beforeUpload 返回 false 或拒絕 promise 時只會阻止上傳行為，被阻止的文件仍會顯示在文件列表中。本示例通過返回 UPLOAD.LIST_IGNORE 將被阻止的文件排除在列表外。";
     public const string P2ContentClickToUpload = "點擊上傳";
@@ -41,7 +40,55 @@ internal partial class zh_TW : LanguageProvider
     public const string P2CancelImageSize = "圖片必須小於 2MB！";
     public const string P2CancelPngOnly = "只能上傳 PNG 文件！";
     public const string P2UploadSuccessFormat = "{0} 上傳成功！";
+    public const string PageSubtitle = "選擇、校驗、預覽並上傳文件，支援列表和圖片展示方式。";
+    public const string ScrollableListTitle = "可滾動列表";
+    public const string ScrollableListDescription = "UploadList 自己管理滾動區域，長文件列表不需要外層 ScrollViewer。";
+    public const string SuccessAutoRemoveTitle = "成功後自動移除";
+    public const string SuccessAutoRemoveDescription = "透過 SuccessAutoRemoveDelay 在上傳成功後延遲移除文件。";
+    public const string PageDescription = "Upload 支援組合式文件和目錄觸發器、拖拽區域、可觀察 Files 狀態、圖片列表、最大數量限制、成功清理和文件類型過濾。";
+    public const string ComponentCategory = "資料錄入";
+    public const string ComponentStatusStable = "穩定";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變數";
+    public const string ApiColumnProperty = "屬性";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "類型";
+    public const string ApiColumnDefault = "默認值";
+    public const string ApiPropertyFiles = "所有上傳文件項的唯一可觀察狀態 owner。";
+    public const string ApiPropertyAccepts = "允許的 MIME 類型、擴展名或存儲提供程序過濾條件。";
+    public const string ApiPropertyExtraContext = "傳遞給上傳傳輸實現的附加上下文。";
+    public const string ApiPropertyMaxCount = "任務列表中允許的最大文件數量。";
+    public const string ApiPropertyAutoUpload = "文件通過校驗後自動啟動上傳任務。";
+    public const string ApiPropertyListType = "上傳任務列表的視覺展示方式。";
+    public const string ApiPropertyIsMultipleEnabled = "允許選擇多個文件或目錄。";
+    public const string ApiPropertyIsOpenFileDialogOnClick = "點擊觸發器時打開平台文件對話框。";
+    public const string ApiPropertyIsShowUploadList = "控制是否渲染上傳任務列表。";
+    public const string ApiPropertyMaxConcurrentTasks = "最大並發上傳任務數量。";
+    public const string ApiPropertyUploadTransport = "用於上傳文件的傳輸實現。";
+    public const string ApiPropertyListMaxHeight = "內部上傳列表滾動區域的最大高度。";
+    public const string ApiPropertyListScrollBarVisibility = "內部上傳列表的垂直滾動條可見性。";
+    public const string ApiPropertySuccessAutoRemoveDelay = "成功文件自動移除前的延遲時間。";
+    public const string ApiPropertyPendingText = "複製到新文件項上的 pending 文案。";
+    public const string ApiPropertyFileValueMode = "控制 Upload 向 Form 投影的值。";
+    public const string ApiPropertyTriggerContent = "渲染在文件列表之外的組合式觸發器或拖拽區內容。";
+    public const string ApiPropertyUploadTriggerSourceKind = "選擇 UploadTrigger 打開文件選擇還是目錄選擇。";
+    public const string TokenColumnToken = "變數";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenScopeComponent = "組件";
+    public const string TokenStatusStable = "穩定";
+    public const string TokenNameActionsColor = "上傳列表操作圖標使用的顏色。";
+    public const string TokenNamePictureCardSize = "picture-card 和 picture-circle 列表項尺寸。";
+    public const string TokenNameTextListItemMargin = "文本列表項的外邊距。";
+    public const string TokenNameTextListNamePadding = "文本列表文件名的內邊距。";
+    public const string TokenNameTextListProgressPadding = "文本列表上傳進度的前置內邊距。";
+    public const string TokenNameUploadThumbnailSize = "文件類型縮略圖圖標大小。";
+    public const string TokenNameDragIconSize = "拖拽上傳區域圖標大小。";
+    public const string TokenNameDragIconMargin = "拖拽上傳區域圖標外邊距。";
+    public const string TokenNameDragHeaderMargin = "拖拽上傳區域標題下方外邊距。";
+    public const string TokenNamePictureListItemMargin = "圖片列表項外邊距。";
+    public const string TokenNamePictureListPreviewerSize = "圖片列表項預覽縮略圖尺寸。";
 
-    protected override Type GetResourceKindType() => typeof(UploadShowCaseLangResourceKind);
 }
-

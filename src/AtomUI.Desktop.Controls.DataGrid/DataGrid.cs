@@ -26,13 +26,13 @@ namespace AtomUI.Desktop.Controls;
 
 [PseudoClasses(StdPseudoClass.Invalid, DataGridPseudoClass.EmptyRows, DataGridPseudoClass.EmptyColumns)]
 public partial class DataGrid : TemplatedControl,
-                                ISizeTypeAware,
+                                ICustomizableSizeTypeAware,
                                 IMotionAwareControl
 {
     #region 公共属性定义
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<DataGrid>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<DataGrid>();
     
     public static readonly StyledProperty<bool> IsOperatingProperty =
         AvaloniaProperty.Register<DataGrid, bool>(nameof(IsOperating));
@@ -224,7 +224,7 @@ public partial class DataGrid : TemplatedControl,
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<DataGrid>();
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -976,7 +976,7 @@ public partial class DataGrid : TemplatedControl,
             HorizontalScrollBarVisibilityProperty,
             VerticalScrollBarVisibilityProperty);
 
-        SizeTypeProperty.OverrideDefaultValue<DataGrid>(SizeType.Large);
+        SizeTypeProperty.OverrideDefaultValue<DataGrid>(CustomizableSizeType.Large);
 
         ItemsSourceProperty.Changed.AddClassHandler<DataGrid>((x, e) => x.HandleItemsSourcePropertyChanged(e));
         CanUserResizeColumnsProperty.Changed.AddClassHandler<DataGrid>((x, e) =>
@@ -1007,8 +1007,6 @@ public partial class DataGrid : TemplatedControl,
 
     public DataGrid()
     {
-        this.RegisterTokenResourceScope(DataGridToken.ScopeProvider);
-
         CurrentCellCoordinates   = new DataGridCellCoordinates(-1, -1);
         _loadedRows              = new List<DataGridRow>();
         _lostFocusActions        = new Queue<Action>();
@@ -1026,6 +1024,7 @@ public partial class DataGrid : TemplatedControl,
 
         DataConnection       = new DataGridDataConnection(this);
         _showDetailsTable    = new IndexToValueTable<bool>();
+        _rowDetailsHeightEstimateTable = new IndexToValueTable<double>();
         _collapsedSlotsTable = new IndexToValueTable<bool>();
 
         AnchorSlot          = -1;
@@ -1339,6 +1338,7 @@ public partial class DataGrid : TemplatedControl,
         base.OnDataContextEndUpdate();
 
         NotifyDataContextPropertyForAllRowCells(GetAllRows(), false);
+        UpdateColumnDataContext();
     }
 
     /// <summary>
@@ -1615,11 +1615,12 @@ public partial class DataGrid : TemplatedControl,
             ConfigureFrameBorderThickness();
         }
 
+        ConfigureFrameCornerRadius();
         ConfigureHeaderCornerRadius();
         ConfigurePaginationVisibility();
         SetValue(EmptyIndicatorProperty, new Empty()
         {
-            SizeType    = SizeType.Middle,
+            SizeType    = AtomUI.SizeType.Middle,
             PresetImage = PresetEmptyImage.Simple
         }, BindingPriority.Template);
 
@@ -1757,15 +1758,24 @@ public partial class DataGrid : TemplatedControl,
     {
         base.OnPropertyChanged(change);
 
+        var refreshDisplayedRowsGridLines = false;
         if (change.Property == BorderThicknessProperty ||
             change.Property == GridLinesVisibilityProperty ||
             change.Property == IsFrameBorderVisibleProperty ||
             change.Property == FooterProperty)
         {
             ConfigureFrameBorderThickness();
+            refreshDisplayedRowsGridLines = true;
         }
 
-        if (change.Property == TitleProperty ||
+        if (change.Property == CornerRadiusProperty ||
+            change.Property == IsFrameBorderVisibleProperty)
+        {
+            ConfigureFrameCornerRadius();
+        }
+
+        if (change.Property == CornerRadiusProperty ||
+            change.Property == TitleProperty ||
             change.Property == HeadersVisibilityProperty)
         {
             ConfigureHeaderCornerRadius();
@@ -1775,6 +1785,12 @@ public partial class DataGrid : TemplatedControl,
             change.Property == PaginationVisibilityProperty)
         {
             ConfigurePaginationVisibility();
+            refreshDisplayedRowsGridLines = true;
+        }
+
+        if (refreshDisplayedRowsGridLines)
+        {
+            RefreshDisplayedRowsGridLines();
         }
 
         if (_templatedApplied)

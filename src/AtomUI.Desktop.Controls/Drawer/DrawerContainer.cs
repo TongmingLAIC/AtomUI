@@ -54,6 +54,11 @@ internal class DrawerContainer : ContentControl
             o => o.FooterTemplate,
             (o, v) => o.FooterTemplate = v);
 
+    internal static readonly DirectProperty<DrawerContainer, Thickness> ContentPaddingProperty =
+        AvaloniaProperty.RegisterDirect<DrawerContainer, Thickness>(nameof(ContentPadding),
+            o => o.ContentPadding,
+            (o, v) => o.ContentPadding = v);
+
     internal static readonly DirectProperty<DrawerContainer, object?> ExtraProperty =
         AvaloniaProperty.RegisterDirect<DrawerContainer, object?>(nameof(Extra),
             o => o.Extra,
@@ -139,6 +144,14 @@ internal class DrawerContainer : ContentControl
         set => SetAndRaise(FooterTemplateProperty, ref _footerTemplate, value);
     }
 
+    private Thickness _contentPadding;
+
+    internal Thickness ContentPadding
+    {
+        get => _contentPadding;
+        set => SetAndRaise(ContentPaddingProperty, ref _contentPadding, value);
+    }
+
     private object? _extra;
 
     internal object? Extra
@@ -211,6 +224,8 @@ internal class DrawerContainer : ContentControl
     private int _lifecycleVersion;
     private int _pushTransformVersion;
     private CompositeDisposable? _drawerBindingDisposables;
+    private IDisposable? _hostMarginSubscription;
+    private IDisposable? _drawnTitleBarOverlaySuppression;
 
     internal void BindToDrawer(Drawer drawer)
     {
@@ -220,6 +235,7 @@ internal class DrawerContainer : ContentControl
             Bind(DataContextProperty, drawer[!DataContextProperty]),
             Bind(ContentProperty, drawer[!AtomUI.Desktop.Controls.Drawer.ContentProperty]),
             Bind(ContentTemplateProperty, drawer[!AtomUI.Desktop.Controls.Drawer.ContentTemplateProperty]),
+            Bind(ContentPaddingProperty, drawer[!AtomUI.Desktop.Controls.Drawer.ContentPaddingProperty]),
             Bind(FooterProperty, drawer[!AtomUI.Desktop.Controls.Drawer.FooterProperty]),
             Bind(FooterTemplateProperty, drawer[!AtomUI.Desktop.Controls.Drawer.FooterTemplateProperty]),
             Bind(ExtraProperty, drawer[!AtomUI.Desktop.Controls.Drawer.ExtraProperty]),
@@ -241,9 +257,12 @@ internal class DrawerContainer : ContentControl
         {
             var lifecycleVersion = ++_lifecycleVersion;
             _closeAnimating = false;
+            PrepareOpenVisualState(drawer.IsMotionEnabled);
             ScopeAwareAdornerLayer.SetAdornedElement(this, drawer.OpenOn);
+            ConfigureHostMargin(drawer.OpenOn);
             AttachToLayer(layer);
             ApplyTemplate();
+            PrepareOpenVisualState(drawer.IsMotionEnabled);
             Dispatcher.InvokeAsync(async () =>
             {
                 if (lifecycleVersion != _lifecycleVersion)
@@ -280,6 +299,15 @@ internal class DrawerContainer : ContentControl
                 drawer.NotifyOpened();
             });
 
+        }
+    }
+
+    private void PrepareOpenVisualState(bool isMotionEnabled)
+    {
+        ClearValue(BackgroundProperty);
+        if (_motionActor is not null)
+        {
+            _motionActor.Opacity = isMotionEnabled ? 0.0 : 1.0;
         }
     }
 
@@ -345,6 +373,7 @@ internal class DrawerContainer : ContentControl
         DetachFromLayer(null);
         _drawerBindingDisposables?.Dispose();
         _drawerBindingDisposables = null;
+        ClearHostMargin();
         ReleaseTemplateContent();
 
         if (_infoContainer != null)
@@ -365,6 +394,7 @@ internal class DrawerContainer : ContentControl
         ClearValue(DataContextProperty);
         ClearValue(ContentProperty);
         ClearValue(ContentTemplateProperty);
+        ClearValue(ContentPaddingProperty);
         ClearValue(FooterProperty);
         ClearValue(FooterTemplateProperty);
         ClearValue(ExtraProperty);
@@ -421,6 +451,52 @@ internal class DrawerContainer : ContentControl
         }
 
         ScopeAwareAdornerLayer.SetAdornedElement(this, null);
+        ClearHostMargin();
+    }
+
+    private void ConfigureHostMargin(Control? host)
+    {
+        _hostMarginSubscription?.Dispose();
+        _hostMarginSubscription = host is null
+            ? null
+            : TopLevelMarginBinder.BindCsdHostGeometry(
+                host,
+                (isCsd, margin, cornerRadius) =>
+                    ApplyHostGeometry(host, isCsd, margin, cornerRadius));
+
+        if (host is null)
+        {
+            ApplyHostGeometry(null, false, default, default);
+        }
+    }
+
+    private void ApplyHostGeometry(
+        Control? host,
+        bool isCsd,
+        Thickness margin,
+        CornerRadius cornerRadius)
+    {
+        Margin       = margin;
+        CornerRadius = cornerRadius;
+        if (isCsd && host is Window window)
+        {
+            _drawnTitleBarOverlaySuppression ??= window.SuppressDrawnTitleBarOverlay();
+        }
+        else
+        {
+            _drawnTitleBarOverlaySuppression?.Dispose();
+            _drawnTitleBarOverlaySuppression = null;
+        }
+    }
+
+    private void ClearHostMargin()
+    {
+        _hostMarginSubscription?.Dispose();
+        _hostMarginSubscription = null;
+        _drawnTitleBarOverlaySuppression?.Dispose();
+        _drawnTitleBarOverlaySuppression = null;
+        Margin       = default;
+        CornerRadius = default;
     }
 
     private AbstractMotion BuildMotionByPlacement(DrawerPlacement placement, TimeSpan duration, bool isOpen)
@@ -473,7 +549,7 @@ internal class DrawerContainer : ContentControl
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (IsCloseOnMaskClick)
+        if (IsCloseOnMaskClick && e.InitialPressMouseButton == MouseButton.Left)
         {
             if (Drawer != null && Drawer.TryGetTarget(out var drawer))
             {
@@ -512,6 +588,28 @@ internal class DrawerContainer : ContentControl
     {
         _activeChildDrawer = new WeakReference<Drawer>(childDrawer);
         RefreshActiveChildDrawerPushTransform();
+    }
+
+    internal void CloseActiveChildDrawer()
+    {
+        if (_activeChildDrawer == null)
+        {
+            return;
+        }
+
+        if (!_activeChildDrawer.TryGetTarget(out var childDrawer) || !childDrawer.IsOpen)
+        {
+            _activeChildDrawer = null;
+            RestoreChildDrawerPushTransform();
+            return;
+        }
+
+        childDrawer.IsOpen = false;
+        if (IsActiveChildDrawer(childDrawer))
+        {
+            _activeChildDrawer = null;
+            RestoreChildDrawerPushTransform();
+        }
     }
 
     internal void NotifyChildDrawerAboutToClose(Drawer childDrawer)

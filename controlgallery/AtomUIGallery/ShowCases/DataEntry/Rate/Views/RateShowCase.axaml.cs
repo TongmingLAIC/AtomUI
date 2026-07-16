@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using AtomUI.Controls;
@@ -16,15 +14,12 @@ public partial class RateShowCase : GalleryReactiveUserControl<RateViewModel>
 
     public RateShowCase()
     {
+        InitializeComponent();
         this.WhenActivated(disposables =>
         {
             if (DataContext is RateViewModel viewModel)
             {
                 ConfigureLocalizedTooltips(viewModel);
-
-                GalleryBindingUtils.OneWay(viewModel, nameof(RateViewModel.Tooltips), vm => vm.Tooltips,
-                                           ToolTipRate, AtomUI.Controls.Commons.AbstractRate.ToolTipsProperty)
-                                   .DisposeWith(disposables);
 
                 var themeManager = Application.Current?.GetThemeManager();
                 if (themeManager != null)
@@ -41,7 +36,6 @@ public partial class RateShowCase : GalleryReactiveUserControl<RateViewModel>
                 }).DisposeWith(disposables);
             }
         });
-        InitializeComponent();
     }
 
     private void ConfigureLocalizedTooltips(RateViewModel viewModel)
@@ -54,7 +48,8 @@ public partial class RateShowCase : GalleryReactiveUserControl<RateViewModel>
             RateShowCaseLanguage.Get(RateShowCaseLangResourceKind.P2TooltipGood, "good"),
             RateShowCaseLanguage.Get(RateShowCaseLangResourceKind.P2TooltipWonderful, "wonderful"),
         };
-        SyncActiveTooltip(viewModel, ToolTipRate.Value);
+        SyncActiveTooltip(viewModel, 0);
+        viewModel.RefreshLocalizedState();
     }
 
     private void HandleValueChanged(object? sender, RateValueChangedEventArgs e)

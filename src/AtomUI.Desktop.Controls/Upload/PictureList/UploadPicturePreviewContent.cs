@@ -8,31 +8,23 @@ internal class UploadPicturePreviewContent : AbstractUploadPictureContent
 {
     #region 公共属性定义
 
-    public static readonly StyledProperty<IList<string>?> SourcesProperty =
-        AvaloniaProperty.Register<UploadPicturePreviewContent, IList<string>?>(nameof(Sources));
+    public static readonly StyledProperty<IList<IImagePreviewSource>?> SourcesProperty =
+        AvaloniaProperty.Register<UploadPicturePreviewContent, IList<IImagePreviewSource>?>(nameof(Sources));
     
-    public IList<string>? Sources
+    public IList<IImagePreviewSource>? Sources
     {
         get => GetValue(SourcesProperty);
         set => SetValue(SourcesProperty, value);
     }
 
     #endregion
+
+    private UploadImagePreviewer? _uploadImagePreviewer;
     
     static UploadPicturePreviewContent()
     {
         HyperLinkTextBlock.ClickEvent.AddClassHandler<UploadPicturePreviewContent>((o, args) => o.HandleLinkTextClicked());
     }
-    
-    private void HandleLinkTextClicked()
-    {
-        if (_uploadImagePreviewer != null)
-        {
-            _uploadImagePreviewer.OpenDialog();
-        }
-    }
-    
-    private UploadImagePreviewer? _uploadImagePreviewer;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
@@ -41,7 +33,7 @@ internal class UploadPicturePreviewContent : AbstractUploadPictureContent
         {
             if (FilePath != null)
             {
-                SetCurrentValue(SourcesProperty, new[] { FilePath.ToString() });
+                SetCurrentValue(SourcesProperty, new[] { new UriImagePreviewSource(FilePath.ToString()) });
             }
             else
             {
@@ -54,5 +46,13 @@ internal class UploadPicturePreviewContent : AbstractUploadPictureContent
     {
         base.OnApplyTemplate(e);
         _uploadImagePreviewer = e.NameScope.Find<UploadImagePreviewer>("PART_ImagePreviewer");
+    }
+
+    private void HandleLinkTextClicked()
+    {
+        if (_uploadImagePreviewer != null)
+        {
+            _uploadImagePreviewer.OpenDialog();
+        }
     }
 }

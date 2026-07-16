@@ -18,16 +18,13 @@
         <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="AvaloniaUI.DiagnosticsSupport"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <AvaloniaResource Include="../AtomUIGallery/Assets/gallery-logo.png" Link="Assets/gallery-logo.png"/>
-    </ItemGroup>
-
     <ItemGroup Condition="'$(RunAOTCompilation)' == 'true' and '$(BrowserAotForceInterpretAssemblies)' != ''">
         <_AOT_InternalForceInterpretAssemblies Include="$(BrowserAotForceInterpretAssemblies)"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../AtomUIGallery/AtomUIGallery.csproj"/>
+        <ProjectReference Include="../../src/AtomUI.Desktop.Controls.Extras/AtomUI.Desktop.Controls.Extras.csproj"/>
         <ProjectReference Include="../../src/AtomUI.Fonts.AlibabaPuHuiTi/AtomUI.Fonts.AlibabaPuHuiTi.csproj"/>
     </ItemGroup>
 
@@ -40,6 +37,18 @@
         <ItemGroup>
             <WasmStaticWebAsset Remove="@(WasmStaticWebAsset)"/>
             <WasmStaticWebAsset Include="@(_DeduplicatedWasmStaticWebAsset)"/>
+        </ItemGroup>
+    </Target>
+
+    <Target Name="ExcludeDesktopPlatformAssembliesFromBrowserWasm"
+            AfterTargets="_GetDefaultWasmAssembliesToBundle"
+            BeforeTargets="PrepareInputsForWasmBuild">
+        <ItemGroup>
+            <WasmAssembliesToBundle Remove="@(WasmAssembliesToBundle)"
+                                    Condition="'%(FileName)' == 'Avalonia.Wayland' or
+                                               '%(FileName)' == 'NWayland' or
+                                               '%(FileName)' == 'Avalonia.Win32' or
+                                               '%(FileName)' == 'Avalonia.Win32.Automation'" />
         </ItemGroup>
     </Target>
 

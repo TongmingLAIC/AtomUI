@@ -1,16 +1,22 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Menu;
 
 [LanguageProvider(LanguageCode.zh_CN, MenuShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string ScenarioBasic = "基础";
     public const string ScenarioFeatures = "特性";
     public const string ScenarioItemsSource = "数据源";
     public const string ScenarioContext = "上下文";
     public const string ScenarioNavMenu = "导航菜单";
+    public const string ComponentCategory = "导航";
+    public const string ComponentStatusStable = "稳定";
+    public const string PageSubtitle = "用于组织命令与导航动作的菜单控件。";
+    public const string PageDescription = "Menu、ContextMenu、MenuFlyout 和 NavMenu 覆盖命令列表、上下文操作、嵌套导航、数据驱动生成，以及垂直、内联、水平导航布局。";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计变量";
 
     public const string BasicTitle = "基础用法";
     public const string BasicDescription = "最简单的用法。";
@@ -34,6 +40,10 @@ internal partial class zh_CN : LanguageProvider
     public const string VerticalNavMenuDescription = "子菜单以弹出层方式打开。";
     public const string InlineMenuTitle = "内联菜单";
     public const string InlineMenuDescription = "带内联子菜单的垂直菜单。";
+    public const string NavMenuNodeCommandTitle = "NavMenuNode 命令";
+    public const string NavMenuNodeCommandDescription = "每个导航节点通过显式业务 key 调用 ViewModel 命令。";
+    public const string InlineCollapsedMenuTitle = "缩起内联菜单";
+    public const string InlineCollapsedMenuDescription = "内联菜单可以被缩起或展开。";
     public const string TopNavigationTitle = "顶部导航";
     public const string TopNavigationDescription = "水平顶部导航菜单。";
     public const string SwitchMenuTypeTitle = "切换菜单类型";
@@ -75,9 +85,60 @@ internal partial class zh_CN : LanguageProvider
     public const string P2HeaderItemN2 = "项目 2";
     public const string P2HeaderOptionN3 = "选项 3";
     public const string P2HeaderOptionN4 = "选项 4";
+    public const string P2HeaderOptionN5 = "选项 5";
+    public const string P2HeaderOptionN6 = "选项 6";
+    public const string P2HeaderOptionN7 = "选项 7";
+    public const string P2HeaderOptionN8 = "选项 8";
     public const string P2HeaderNavigationFour = "导航四";
+    public const string P2HeaderCustomerOverview = "客户概览";
+    public const string P2HeaderInvoiceList = "发票列表";
+    public const string P2TextLastCommandKey = "最后执行的 key：";
     public const string P2TextChangeMode = "切换模式";
     public const string P2TextChangeStyle = "切换样式";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyMenuSizeType = "控制菜单项的视觉尺寸。";
+    public const string ApiPropertyMenuIsMotionEnabled = "在主题允许时启用菜单弹出动效。";
+    public const string ApiPropertyMenuDisplayPageSize = "限制滚动前可见的菜单项数量。";
+    public const string ApiPropertyMenuShouldUseOverlayPopup = "控制菜单弹出层是否使用 overlay popup host。";
+    public const string ApiPropertyMenuItemIcon = "显示在菜单项文本前的图标。";
+    public const string ApiPropertyMenuItemToggleType = "将菜单项渲染为复选或单选项。";
+    public const string ApiPropertyContextMenuSizeType = "控制上下文菜单项的视觉尺寸。";
+    public const string ApiPropertyContextMenuItemsSource = "用于生成上下文菜单项的数据源。";
+    public const string ApiPropertyMenuFlyoutItemsSource = "用于生成菜单浮出层条目的数据源。";
+    public const string ApiPropertyNavMenuMode = "控制 NavMenu 使用内联、垂直或水平模式。";
+    public const string ApiPropertyNavMenuNodeCommand = "导航节点通过鼠标或键盘有效触发时执行的命令。";
+    public const string ApiPropertyNavMenuNodeCommandParameter = "传递给 Command 的显式业务值；默认值为 null，且不会回退到 ItemKey。";
+    public const string ApiPropertyNavMenuIsInlineCollapsed = "将内联 NavMenu 折叠为紧凑的弹出式导航栏。";
+    public const string ApiPropertyNavMenuInlineCollapsedWidth = "内联 NavMenu 折叠时使用的宽度。";
+    public const string ApiPropertyNavMenuIsDarkStyle = "应用暗色导航菜单样式。";
+    public const string ApiPropertyNavMenuDefaultOpenPaths = "导航菜单初始化时默认展开的路径。";
+    public const string ApiPropertyNavMenuDefaultSelectedPath = "导航菜单初始化时默认选中的路径。";
+    public const string ApiPropertyNavMenuSelectedItem = "当前选中的导航节点。";
+    public const string ApiPropertyNavMenuIsAccordionMode = "只允许一个子菜单分支保持展开。";
+    public const string ApiPropertyNavMenuShouldUseOverlayPopup = "控制 NavMenu 弹出层是否使用 overlay popup host。";
+    public const string TokenColumnToken = "变量";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "范围";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenNameMenuItemHeight = "默认菜单项高度。";
+    public const string TokenNameMenuItemIconSize = "默认菜单项图标尺寸。";
+    public const string TokenNameMenuItemHoverBg = "菜单项悬浮背景。";
+    public const string TokenNameMenuPopupContentPadding = "菜单弹出内容内边距。";
+    public const string TokenNameMenuPopupMinWidth = "菜单弹出层最小宽度。";
+    public const string TokenNameMenuSeparatorItemHeight = "菜单分割项占用高度。";
+    public const string TokenNameMenuContextMenuOffsetX = "上下文菜单水平偏移。";
+    public const string TokenNameNavMenuItemHeight = "默认导航菜单项高度。";
+    public const string TokenNameNavMenuItemContentPadding = "导航菜单项内容内边距。";
+    public const string TokenNameNavMenuInlineItemIndentUnit = "内联导航层级缩进单位。";
+    public const string TokenNameNavMenuCollapsedWidth = "收起状态的导航菜单宽度。";
+    public const string TokenNameNavMenuInlineCollapsedWidth = "内联折叠导航菜单的默认宽度。";
+    public const string TokenNameNavMenuMenuHorizontalHeight = "水平导航菜单高度。";
+    public const string TokenNameNavMenuDarkMenuBg = "暗色导航菜单背景。";
+    public const string TokenNameNavMenuMenuPopupMaxHeight = "导航弹出菜单最大高度。";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
 
-    protected override Type GetResourceKindType() => typeof(MenuShowCaseLangResourceKind);
 }

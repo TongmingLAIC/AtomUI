@@ -2,16 +2,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AtomUIGallery.ShowCases.Icon.IconShowCase"
              xmlns:atom="https://atomui.net"
-             xmlns:gallery="https://atomui.net/oss-controls/gallery">
-    <atom:TabControl>
-        <atom:TabItem Header="{gallery:IconShowCaseLangResource P2HeaderOutlined}">
-            <gallery:IconGallery IconThemeType="Outlined" />
-        </atom:TabItem>
-        <atom:TabItem Header="{gallery:IconShowCaseLangResource P2HeaderFilled}">
-            <gallery:IconGallery IconThemeType="Filled" />
-        </atom:TabItem>
-        <atom:TabItem Header="{gallery:IconShowCaseLangResource P2HeaderTwoTone}">
-            <gallery:IconGallery IconThemeType="TwoTone" />
-        </atom:TabItem>
-    </atom:TabControl>
+             xmlns:gallery="https://atomui.net/oss-controls/gallery"
+             xmlns:vm="using:AtomUIGallery.ShowCases.Icon"
+             x:DataType="vm:IconViewModel">
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}"
+          RowDefinitions="Auto,Auto,*">
+        <gallery:GalleryShowCaseHeader
+            Grid.Row="0"
+            Title="Icon"
+            Category="{gallery:IconShowCaseLangResource ComponentCategory}"
+            Status="{gallery:IconShowCaseLangResource ComponentStatusStable}"
+            Subtitle="{gallery:IconShowCaseLangResource PageSubtitle}"
+            Description="{gallery:IconShowCaseLangResource PageDescription}"
+            Namespace="AtomUI.Controls"
+            Package="AtomUI.Icons.AntDesign"
+            BaseClass="Icon"
+            MetadataValueWidth="220" />
+
+        <atom:TabStrip Name="ScenarioTabs"
+                       Grid.Row="1"
+                       Margin="28,0,28,0"
+                       SizeType="Large"
+                       SelectedIndex="0">
+            <atom:TabStripItem Content="{gallery:IconShowCaseLangResource P2HeaderOutlined}"
+                               Tag="Outlined"
+                               IsSelected="True" />
+            <atom:TabStripItem Content="{gallery:IconShowCaseLangResource P2HeaderFilled}"
+                               Tag="Filled" />
+            <atom:TabStripItem Content="{gallery:IconShowCaseLangResource P2HeaderTwoTone}"
+                               Tag="TwoTone" />
+        </atom:TabStrip>
+
+        <ContentControl Name="ScenarioContentHost"
+                        Grid.Row="2"
+                        Margin="28,10,28,28" />
+    </Grid>
 </UserControl>

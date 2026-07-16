@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reactive.Disposables;
+﻿using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using AtomUI.Controls;
 using AtomUI.Data;
@@ -15,32 +14,14 @@ public partial class CheckBoxShowCase : GalleryReactiveUserControl<CheckBoxViewM
 
     public CheckBoxShowCase()
     {
+        InitializeComponent();
+
         this.WhenActivated(disposables =>
         {
             if (DataContext is CheckBoxViewModel viewModel)
             {
                 RefreshLocalizedContent(viewModel);
                 
-                GalleryBindingUtils.OneWay(viewModel, nameof(CheckBoxViewModel.CheckBoxOptions),
-                                           vm => vm.CheckBoxOptions, BasicCheckBoxGroup,
-                                           AtomUI.Controls.Commons.AbstractCheckBoxGroup.ItemsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(CheckBoxViewModel.DefaultCheckBoxOptions),
-                                           vm => vm.DefaultCheckBoxOptions, BasicCheckBoxGroup,
-                                           AtomUI.Controls.Commons.AbstractCheckBoxGroup.CheckedItemsProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(CheckStatusBtn, viewModel.CheckStatusCommand).DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(EnableStatusBtn, viewModel.EnableStatusCommand).DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(ControlledCheckbox, viewModel.CheckBoxCommand).DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(CheckAllCheckbox, viewModel.CheckedAllStatusCommand)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(AppleCheckBox, viewModel.CheckedItemStatusCommand1)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(PearCheckBox, viewModel.CheckedItemStatusCommand2)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.BindCommand(OrangeCheckBox, viewModel.CheckedItemStatusCommand3)
-                                   .DisposeWith(disposables);
-
                 var themeManager = Application.Current?.GetThemeManager();
                 if (themeManager != null)
                 {
@@ -52,12 +33,13 @@ public partial class CheckBoxShowCase : GalleryReactiveUserControl<CheckBoxViewM
                 
                 Disposable.Create(() =>
                 {
-                    viewModel.CheckBoxOptions        = null;
+                    viewModel.CheckBoxOptions       = null;
                     viewModel.DefaultCheckBoxOptions = null;
+                    viewModel.TwoWayCheckBoxOptions = null;
+                    viewModel.TwoWayCheckedOptions  = null;
                 }).DisposeWith(disposables);
             }
         });
-        InitializeComponent();
     }
 
     private void RefreshLocalizedContent(CheckBoxViewModel viewModel)
@@ -90,6 +72,20 @@ public partial class CheckBoxShowCase : GalleryReactiveUserControl<CheckBoxViewM
         {
             pear,
         };
+
+        var twoWayApple = new CheckBoxOption()
+        {
+            Content = CheckBoxShowCaseLanguage.Get(CheckBoxShowCaseLangResourceKind.P2ContentApple, "Apple")
+        };
+        var twoWayPear = new CheckBoxOption()
+        {
+            Content = CheckBoxShowCaseLanguage.Get(CheckBoxShowCaseLangResourceKind.P2ContentPear, "Pear")
+        };
+        var twoWayOrange = new CheckBoxOption()
+        {
+            Content = CheckBoxShowCaseLanguage.Get(CheckBoxShowCaseLangResourceKind.P2ContentOrange, "Orange")
+        };
+        viewModel.ConfigureTwoWayCheckBoxOptions(twoWayApple, twoWayPear, twoWayOrange);
     }
 }
 

@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Pagination;
 
 public partial class PaginationShowCase : GalleryReactiveUserControl<PaginationViewModel>
@@ -7,9 +6,7 @@ public partial class PaginationShowCase : GalleryReactiveUserControl<PaginationV
 
     public PaginationShowCase()
     {
-        this.WhenActivated(disposables =>
-        {
-        });
         InitializeComponent();
     }
+
 }

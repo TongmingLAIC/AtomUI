@@ -1,10 +1,9 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.LineEdit;
 
 [LanguageProvider(LanguageCode.zh_CN, LineEditShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string ScenarioBasic = "基础";
     public const string ScenarioState = "状态";
@@ -13,6 +12,8 @@ internal partial class zh_CN : LanguageProvider
 
     public const string BasicUsageTitle = "基础用法";
     public const string BasicUsageDescription = "基础用法示例。";
+    public const string TextBoxTitle = "TextBox";
+    public const string TextBoxDescription = "AtomUI TextBox 保留原生 TextBox API，同时使用 LineEdit 的边框、悬停和聚焦视觉。";
     public const string InputSizesTitle = "输入框三种尺寸";
     public const string InputSizesDescription = "输入框有三种尺寸：大号（40px）、默认（32px）和小号（24px）。";
     public const string VariantsTitle = "变体";
@@ -25,12 +26,26 @@ internal partial class zh_CN : LanguageProvider
     public const string WithClearIconDescription = "带移除图标的输入框，点击图标可清空全部内容。";
     public const string PasswordBoxTitle = "密码框";
     public const string PasswordBoxDescription = "密码类型输入框。";
+    public const string OtpLineEditTwoWayBindingTitle = "OTP 双向绑定";
+    public const string OtpLineEditTwoWayBindingDescription = "OtpLineEdit.Text 使用单一可绑定值源，可由 ViewModel 设置或清空。";
+    public const string OtpLineEditFormTitle = "OTP 表单验证";
+    public const string OtpLineEditFormDescription = "Form validator 通过 Avalonia DataValidationErrors 写入错误。";
+    public const string OtpLineEditAntDesignTitle = "一次性密码框";
+    public const string OtpLineEditAntDesignDescription = "一次性密码输入框。";
+    public const string OtpLineEditSetValueButtonText = "设为 654321";
+    public const string OtpLineEditClearButtonText = "清空";
+    public const string OtpLineEditCurrentValueFormat = "当前值：{0}";
+    public const string OtpLineEditEmptyValueText = "（空）";
+    public const string OtpLineEditFormLabelCode = "验证码";
+    public const string OtpLineEditFormValidationMessage = "请输入验证码";
     public const string PrefixAndSuffixTitle = "前缀和后缀";
     public const string PrefixAndSuffixDescription = "在输入框内部添加前缀或后缀图标。";
     public const string InputStatusTitle = "状态";
     public const string InputStatusDescription = "通过 status 为 Input 添加状态，可设置为错误或警告。";
     public const string SearchBoxTitle = "搜索框";
     public const string SearchBoxDescription = "将标准输入框和搜索按钮组合创建搜索框的示例。";
+    public const string SearchEditSizeTypeTitle = "SearchEdit 尺寸";
+    public const string SearchEditSizeTypeDescription = "SearchEdit 支持大号、中号、小号，也支持通过 Custom 配合本地高度和字号自定义。";
     public const string DisabledSearchBoxTitle = "禁用搜索框";
     public const string DisabledSearchBoxDescription = "将标准输入框和搜索按钮组合创建搜索框的示例。";
     public const string SearchBoxWithLoadingTitle = "带加载状态的搜索框";
@@ -44,9 +59,11 @@ internal partial class zh_CN : LanguageProvider
     public const string TextAreaStatusTitle = "状态";
     public const string TextAreaStatusDescription = "通过 status 为 TextArea 添加状态，可设置为错误或警告。";
     public const string P2PlaceholderTextBasicUsage = "基础用法";
+    public const string P2PlaceholderTextTextBox = "AtomUI TextBox";
     public const string P2PlaceholderTextLarge = "大号";
     public const string P2PlaceholderTextMiddle = "中号";
     public const string P2PlaceholderTextSmall = "小号";
+    public const string P2PlaceholderTextCustom = "自定义";
     public const string P2TitleNormal = "普通";
     public const string P2PlaceholderTextOutlined = "线框风格";
     public const string P2PlaceholderTextFilled = "填充风格";
@@ -79,6 +96,51 @@ internal partial class zh_CN : LanguageProvider
     public const string P2SearchButtonTextSearch = "搜索";
 
     public const string P2SearchButtonTextText = "搜索一下";
+    public const string PageSubtitle = "采集单行文本、搜索输入、密码和多行文本。";
+    public const string PageDescription = "LineEdit 覆盖标准输入框、前后置附加、清除操作、密码显示、前缀后缀、校验状态、SearchEdit 和 TextArea 场景。";
+    public const string ComponentCategory = "数据录入";
+    public const string ComponentStatusStable = "稳定";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计变量";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyPlaceholderText = "输入为空时显示的占位文本。";
+    public const string ApiPropertyText = "当前可编辑文本值。";
+    public const string ApiPropertyIsAllowClear = "文本可清除时显示清除按钮。";
+    public const string ApiPropertySizeType = "设置输入框尺寸。";
+    public const string ApiPropertyStyleVariant = "选择线框、填充、无边框或下划线表现。";
+    public const string ApiPropertyStatus = "应用错误或警告等校验状态样式。";
+    public const string ApiPropertyLeftAddOn = "输入框外框前置附加内容。";
+    public const string ApiPropertyRightAddOn = "输入框外框后置附加内容。";
+    public const string ApiPropertyInnerLeftContent = "输入框内部、文本区域之前渲染的内容。";
+    public const string ApiPropertyInnerRightContent = "输入框内部、文本区域之后渲染的内容。";
+    public const string ApiPropertyRevealPassword = "控制密码显示状态。";
+    public const string ApiPropertySearchButtonStyle = "设置 SearchEdit 按钮样式。";
+    public const string ApiPropertySearchButtonText = "SearchEdit 按钮显示文本。";
+    public const string ApiPropertyIsOperating = "显示 SearchEdit 加载状态并防止重复搜索点击。";
+    public const string ApiPropertyLines = "TextArea 初始可见行数。";
+    public const string ApiPropertyIsAutoSize = "允许 TextArea 高度随内容增长。";
+    public const string ApiPropertyIsShowCount = "显示当前字符数。";
+    public const string ApiPropertyIsResizable = "允许 TextArea 手动调整大小。";
+    public const string TokenColumnToken = "变量";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
+    public const string TokenNameInputFontSize = "LineEdit 默认字体大小。";
+    public const string TokenNameInputFontSizeLG = "LineEdit 大号字体大小。";
+    public const string TokenNameInputFontSizeSM = "LineEdit 小号字体大小。";
+    public const string TokenNameFontSize = "TextArea 默认字体大小。";
+    public const string TokenNameFontSizeLG = "TextArea 大号字体大小。";
+    public const string TokenNameFontSizeSM = "TextArea 小号字体大小。";
+    public const string TokenNameResizeHandleSize = "TextArea 调整大小手柄尺寸。";
+    public const string TokenNameResizeIndicatorLineColor = "TextArea 调整大小指示线颜色。";
+    public const string TokenNameRightAddOnPadding = "TextArea 默认右侧附加内边距。";
+    public const string TokenNameRightAddOnPaddingSM = "TextArea 小号右侧附加内边距。";
+    public const string TokenNameRightAddOnPaddingLG = "TextArea 大号右侧附加内边距。";
 
-    protected override Type GetResourceKindType() => typeof(LineEditShowCaseLangResourceKind);
 }

@@ -2,10 +2,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="AtomUIGallery.ShowCases.Calendar.CalendarShowCase"
              xmlns:atom="https://atomui.net"
-             xmlns:gallery="https://atomui.net/oss-controls/gallery">
-    <gallery:ShowCasePanel>
-        <gallery:ShowCaseItem Description="{gallery:CalendarShowCaseLangResource BasicDescription}" Title="{gallery:CalendarShowCaseLangResource BasicTitle}">
-            <atom:Calendar />
-        </gallery:ShowCaseItem>
-    </gallery:ShowCasePanel>
+             xmlns:gallery="https://atomui.net/oss-controls/gallery"
+             xmlns:vm="using:AtomUIGallery.ShowCases.Calendar"
+             x:DataType="vm:CalendarViewModel">
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="Calendar"
+                    Category="{gallery:CalendarShowCaseLangResource ComponentCategory}"
+                    Status="{gallery:CalendarShowCaseLangResource ComponentStatusStable}"
+                    Subtitle="{gallery:CalendarShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:CalendarShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Desktop.Controls"
+                    Package="AtomUI.Desktop.Controls"
+                    BaseClass="TemplatedControl" />
+            </gallery:GalleryStickyTabsHost.Header>
+
+
+            <gallery:ShowCasePanel Name="ExamplesContent"
+                                   IsScrollEnabled="False"
+                                   IsDeferredLoadingEnabled="True"
+                                   InitialDeferredLoadItemCount="4"
+                                   DeferredLoadBatchSize="2"
+                                   ContentMargin="28,10,28,28">
+                <gallery:ShowCaseItem Description="{gallery:CalendarShowCaseLangResource BasicDescription}" Title="{gallery:CalendarShowCaseLangResource BasicTitle}"
+                                      IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:CalendarViewModel">
+                    <atom:Calendar />
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+            </gallery:ShowCasePanel>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
 </UserControl>

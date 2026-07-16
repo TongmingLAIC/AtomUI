@@ -1,15 +1,64 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Cascader;
 
 [LanguageProvider(LanguageCode.en_US, CascaderShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string ScenarioBasic = "Basic";
     public const string ScenarioMultiple = "Multiple";
     public const string ScenarioAdvanced = "Advanced";
     public const string ScenarioCascaderView = "CascaderView";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string PageSubtitle = "Hierarchical selection and cascaded option browsing.";
+    public const string PageDescription = "Cascader combines an input selector with linked option columns, while CascaderView exposes the column browser directly for embedded selection workflows.";
+    public const string ComponentCategory = "Data Entry";
+    public const string ComponentStatusStable = "Stable";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyOptionsSource = "Hierarchical options displayed by Cascader or CascaderView.";
+    public const string ApiPropertyOptionTemplate = "Template used to render each option node.";
+    public const string ApiPropertySelectedOption = "Currently selected option in single selection mode.";
+    public const string ApiPropertySelectedOptions = "Currently selected options in multiple selection mode.";
+    public const string ApiPropertyDefaultSelectOptionPath = "Initial selected path for Cascader.";
+    public const string ApiPropertyIsAllowClear = "Shows the clear affordance when a value is selected.";
+    public const string ApiPropertyIsMultiple = "Enables selecting multiple leaf or parent options.";
+    public const string ApiPropertyShowCheckedStrategy = "Controls how checked options are rendered in the input.";
+    public const string ApiPropertyExpandTrigger = "Controls whether child columns expand by click or hover.";
+    public const string ApiPropertyIsAllowSelectParent = "Allows selecting parent options before reaching a leaf.";
+    public const string ApiPropertyDataLoader = "Loads child options on demand for lazy option trees.";
+    public const string ApiPropertyFilter = "Filters options when search is enabled.";
+    public const string ApiPropertyIsShowOverflowTip = "Shows a tooltip with the full path or tag text when the selected result overflows.";
+    public const string ApiPropertyOverflowTipDelay = "Delay in milliseconds before the overflow tooltip opens.";
+    public const string ApiPropertyOverflowTipPlacement = "Placement of the overflow tooltip relative to the clipped selected path or tag.";
+    public const string ApiPropertyStyleVariant = "Visual input variant.";
+    public const string ApiPropertyStatus = "Validation status style.";
+    public const string ApiPropertyPlacement = "Popup placement relative to the selector.";
+    public const string ApiPropertyCascaderViewOptionsSource = "Hierarchical options displayed by CascaderView.";
+    public const string ApiPropertyCascaderViewIsCheckable = "Shows check boxes in CascaderView.";
+    public const string ApiPropertyCascaderViewDefaultExpandedPath = "Initial expanded path for CascaderView.";
+    public const string ApiPropertyCascaderViewFilterValue = "Current CascaderView filter value.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
+    public const string TokenNameHeaderHeight = "Column header height.";
+    public const string TokenNameControlWidth = "Default Cascader selector width.";
+    public const string TokenNameControlItemWidth = "Single option column width.";
+    public const string TokenNameDropdownHeight = "Popup dropdown height.";
+    public const string TokenNameOptionSelectedBg = "Background color of a selected option.";
+    public const string TokenNameOptionHoverBg = "Background color of a hovered option.";
+    public const string TokenNameOptionSelectedColor = "Text color of a selected option.";
+    public const string TokenNameOptionPadding = "Padding inside each option row.";
+    public const string TokenNameMenuPadding = "Padding around a single option column.";
+    public const string TokenNameFilterHighlightColor = "Highlight color used by filtered text.";
+    public const string TokenNameItemHeaderSpacing = "Spacing between elements inside an option header.";
     public const string BasicTitle = "Basic";
     public const string BasicDescription = "Cascade selection box for selecting province/city/district.";
     public const string DefaultValueTitle = "Default value";
@@ -22,6 +71,13 @@ internal partial class en_US : LanguageProvider
     public const string ChangeOnSelectDescription = "Allows the selection of only parent options.";
     public const string MultipleTitle = "Multiple";
     public const string MultipleDescription = "Select multiple options. Disable the checkbox by adding the disableCheckbox property and selecting a specific item. The style of the disable can be modified by the className.";
+    public const string SelectionBindingTitle = "SelectedOption / SelectedOptions binding";
+    public const string SelectionBindingDescription = "Bind SelectedOption and SelectedOptions to view-model values, then click options or action buttons to watch both sides stay synchronized.";
+    public const string SelectionBindingValueTitle = "Bound value";
+    public const string SelectionBindingSelectFirst = "Select West Lake";
+    public const string SelectionBindingSelectSecond = "Select Lingyin shi";
+    public const string SelectionBindingSelectBoth = "Select both";
+    public const string SelectionBindingClear = "Clear";
     public const string ShowCheckedStrategyTitle = "ShowCheckedStrategy";
     public const string ShowCheckedStrategyDescription = "Shows a selected item in a box using showCheckedStrategy.";
     public const string SearchTitle = "Search";
@@ -37,7 +93,7 @@ internal partial class en_US : LanguageProvider
     public const string StatusTitle = "Status";
     public const string StatusDescription = "Add status to Cascader with status, which could be error or warning.";
     public const string SizeTitle = "Size";
-    public const string SizeDescription = "Cascade selection box of different sizes.";
+    public const string SizeDescription = "Cascader supports large, middle, small, and Custom sizes with local height overrides.";
     public const string BasicCascaderViewTitle = "Basic CascaderView";
     public const string BasicCascaderViewDescription = "The most basic usage.";
     public const string GenerateByTemplateTitle = "Generate by template";
@@ -49,8 +105,14 @@ internal partial class en_US : LanguageProvider
     public const string DefaultExpandedTitle = "Default expanded";
     public const string DefaultExpandedDescription = "You can set the default expansion path..";
     public const string P2PlaceholderTextPleaseSelect = "Please select";
+    public const string P2PlaceholderSizeTypeLarge = "SizeType: Large";
+    public const string P2PlaceholderSizeTypeMiddle = "SizeType: Middle";
+    public const string P2PlaceholderSizeTypeSmall = "SizeType: Small";
+    public const string P2PlaceholderSizeTypeCustom = "SizeType: Custom";
     public const string P2TitleShowcheckedstrategyAll = "ShowCheckedStrategy=All";
     public const string P2TitleShowcheckedstrategyShowparent = "ShowCheckedStrategy=ShowParent";
+    public const string P2TextSelectedOptionBinding = "SelectedOption";
+    public const string P2TextSelectedOptionsBinding = "SelectedOptions";
     public const string P2HeaderZhejiang = "Zhejiang";
     public const string P2HeaderHangzhou = "Hangzhou";
     public const string P2HeaderWestLake = "West Lake";
@@ -93,5 +155,4 @@ internal partial class en_US : LanguageProvider
     public const string P2ContentBottomleft = "BottomLeft";
     public const string P2ContentBottomright = "BottomRight";
 
-    protected override Type GetResourceKindType() => typeof(CascaderShowCaseLangResourceKind);
 }

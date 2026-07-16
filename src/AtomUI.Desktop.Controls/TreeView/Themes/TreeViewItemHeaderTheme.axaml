@@ -6,10 +6,10 @@
               x:ClassModifier="internal">
     <Setter Property="Template">
         <ControlTemplate TargetType="atom:TreeViewItemHeader">
-            <Border Name="Frame"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="{TemplateBinding CornerRadius}"
-                    Background="{TemplateBinding Background}">
+            <atom:PixelAlignedBorder Name="Frame"
+                                     BorderThickness="{TemplateBinding BorderThickness}"
+                                     CornerRadius="{TemplateBinding CornerRadius}"
+                                     Background="{TemplateBinding Background}">
                 <Grid Name="ItemsLayout"
                       ColumnDefinitions="Auto, Auto, Auto, *"
                       Margin="{TemplateBinding Level, Mode=OneWay, Converter={x:Static atom:TreeViewItemTheme.MarginMultiplierConverter}}">
@@ -80,7 +80,7 @@
                         </Panel>
                     </Border>
                 </Grid>
-            </Border>
+            </atom:PixelAlignedBorder>
         </ControlTemplate>
     </Setter>
 
@@ -89,17 +89,17 @@
         <Setter Property="MinHeight" Value="{atom:TreeViewTokenResource HeaderHeight}" />
         <Setter Property="Margin" Value="{atom:TreeViewTokenResource TreeItemMargin}" />
         <Setter Property="CornerRadius"
-                Value="{atom:SharedTokenResource BorderRadius}" />
+                Value="{atom:TreeViewTokenSharedTokenResource BorderRadius}" />
 
         <Style Selector="^ /template/ atom|IconPresenter#PART_IconPresenter">
-            <Setter Property="Height" Value="{atom:SharedTokenResource IconSize}" />
-            <Setter Property="Width" Value="{atom:SharedTokenResource IconSize}" />
+            <Setter Property="Height" Value="{atom:TreeViewTokenSharedTokenResource IconSize}" />
+            <Setter Property="Width" Value="{atom:TreeViewTokenSharedTokenResource IconSize}" />
             <Setter Property="Margin" Value="{atom:TreeViewTokenResource TreeNodeIconMargin}" />
         </Style>
 
         <Style Selector="^ /template/ Border#PART_HeaderContentFrame">
             <Setter Property="CornerRadius"
-                    Value="{atom:SharedTokenResource BorderRadius}" />
+                    Value="{atom:TreeViewTokenSharedTokenResource BorderRadius}" />
             <Setter Property="Margin" Value="{atom:TreeViewTokenResource TreeItemHeaderMargin}" />
             <Setter Property="Padding" Value="{atom:TreeViewTokenResource TreeItemHeaderPadding}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -140,7 +140,7 @@
 
         <Style Selector="^[NodeHoverMode=WholeLine]">
             <Setter Property="Background" Value="Transparent" />
-            <Style Selector="^ /template/ Border#Frame">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#Frame">
                 <Setter Property="Cursor" Value="Hand" />
             </Style>
             <Style Selector="^[IsHover=True]">
@@ -198,15 +198,15 @@
         </Style>
 
         <Style Selector="^[IsDragging=True]">
-            <Style Selector="^ /template/ Border#Frame">
-                <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorPrimary}" />
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#Frame">
+                <Setter Property="BorderBrush" Value="{atom:TreeViewTokenSharedTokenResource ColorPrimary}" />
             </Style>
         </Style>
 
         <Style Selector="^:disabled">
             <Style Selector="^ /template/ ContentPresenter#HeaderPresenter">
                 <Setter Property="Foreground"
-                        Value="{atom:SharedTokenResource ColorTextDisabled}" />
+                        Value="{atom:TreeViewTokenSharedTokenResource ColorTextDisabled}" />
             </Style>
             <Style Selector="^ /template/ atom|IconPresenter#PART_IconPresenter">
                 <Setter Property="Opacity" Value="0.3" />
@@ -219,7 +219,7 @@
                 <Style Selector="^[IsSelectable=True]">
                     <Style Selector="^[IsSelected=True]">
                         <Setter Property="ContentFrameBackground"
-                                Value="{atom:SharedTokenResource ColorBgContainerDisabled}" />
+                                Value="{atom:TreeViewTokenSharedTokenResource ColorBgContainerDisabled}" />
                     </Style>
                 </Style>
             </Style>
@@ -228,7 +228,7 @@
                 <Style Selector="^[IsSelectable=True]">
                     <Style Selector="^[IsSelected=True]">
                         <Setter Property="Background"
-                                Value="{atom:SharedTokenResource ColorBgContainerDisabled}" />
+                                Value="{atom:TreeViewTokenSharedTokenResource ColorBgContainerDisabled}" />
                     </Style>
                 </Style>
             </Style>

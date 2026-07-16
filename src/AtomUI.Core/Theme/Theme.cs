@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+using AtomUI.Theme.Catalog;
+using AtomUI.Theme.Compilation;
+using AtomUI.Theme.Resources;
 using AtomUI.Theme.Styling;
 using AtomUI.Theme.TokenSystem;
 using Avalonia;
@@ -8,7 +10,7 @@ using Avalonia.Styling;
 namespace AtomUI.Theme;
 
 /// <summary>
-/// 主要是生成主题资源，绘制相关的管理不在这里，因为是公用的所以放在 ThemeManager 里面
+/// Compatibility facade over a catalog descriptor and its compiled snapshot.
 /// </summary>
 internal class Theme : AvaloniaObject, ITheme
 {
@@ -16,63 +18,74 @@ internal class Theme : AvaloniaObject, ITheme
     protected bool LoadedStatus = true;
     protected bool Activated;
 
-    protected readonly ResourceDictionary ResourceDictionary;
-    protected readonly Dictionary<string, IControlDesignToken> ControlTokens;
-    internal ThemeDefinition ThemeDefinition;
+    protected ResourceDictionary ResourceDictionary;
+    protected Dictionary<string, IControlDesignToken> ControlTokens;
+
+    private readonly ThemeDescriptor _descriptor;
+    private readonly ThemeCatalog _catalog;
+    private readonly ThemeCompiler _compiler;
+    private readonly ThemeSnapshotCache _snapshotCache;
+    private readonly string _id;
+    private readonly ThemeVariant _themeVariant;
+    private readonly List<ThemeAlgorithm> _algorithms;
+    private string? _loadErrorMsg;
+    private DesignToken _sharedToken;
+    private bool _isPrimary;
+    private ThemeSnapshot? _snapshot;
+    private IDisposable? _activeSnapshotPin;
+
+    internal Theme(
+        ThemeDescriptor descriptor,
+        ThemeCatalog catalog,
+        ThemeCompiler compiler,
+        ThemeSnapshotCache snapshotCache,
+        IReadOnlyList<ThemeAlgorithm> algorithms)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(compiler);
+        ArgumentNullException.ThrowIfNull(snapshotCache);
+        ArgumentNullException.ThrowIfNull(algorithms);
+
+        _descriptor         = descriptor;
+        _catalog            = catalog;
+        _compiler           = compiler;
+        _snapshotCache      = snapshotCache;
+        _id                 = descriptor.Id;
+        _themeVariant       = BuildThemeVariant(_id, algorithms);
+        _algorithms         = new List<ThemeAlgorithm>(algorithms);
+        _sharedToken        = new DesignToken();
+        ResourceDictionary  = new ResourceDictionary();
+        ControlTokens       = new Dictionary<string, IControlDesignToken>();
+        DefinitionFilePath  = descriptor.DefinitionFilePath;
+        _isPrimary          = IsPrimaryAlgorithmSet(descriptor.Definition, algorithms);
+    }
+
+    internal Theme(
+        ThemeDescriptor descriptor,
+        ThemeCatalog catalog,
+        ThemeCompiler compiler,
+        IReadOnlyList<ThemeAlgorithm> algorithms)
+        : this(descriptor, catalog, compiler, new ThemeSnapshotCache(), algorithms)
+    {
+    }
 
     public string DefinitionFilePath { get; }
-
     public string Id => _id;
-    public string DisplayName => ThemeDefinition.DisplayName;
+    public string DisplayName => _descriptor.Definition?.DisplayName ?? _id;
     public bool LoadStatus => LoadedStatus;
     public string? LoadErrorMsg => _loadErrorMsg;
     public bool IsLoaded => Loaded;
     public ThemeVariant ThemeVariant => _themeVariant;
     public ResourceDictionary ThemeResource => ResourceDictionary;
-    public bool IsDarkMode { get; protected set; }
+    public bool IsDarkMode { get; private set; }
     public bool IsActivated => Activated;
-    public bool IsBuiltIn => _isBuiltIn;
-
-    // 当 request algorithms 跟定义文件加载的一样的时候就是 primary theme
+    public bool IsBuiltIn => _descriptor.IsBuiltIn;
     public bool IsPrimary => _isPrimary;
-
     public DesignToken SharedToken => _sharedToken;
     public IList<ThemeAlgorithm> Algorithms => _algorithms;
-    
-    private string _id;
-    private string? _loadErrorMsg;
-    private ThemeVariant _themeVariant;
-    private DesignToken _sharedToken;
-    private bool _isBuiltIn;
-    private bool _isPrimary;
-    private IList<ThemeAlgorithm> _algorithms;
-    private ThemeManager _themeManager;
-
-    public Theme(ThemeManager themeManager, string id, string defFilePath, ISet<ThemeAlgorithm> requestAlgorithms, bool isBuiltIn = false)
-    {
-        _id                = id;
-        _isBuiltIn         = isBuiltIn;
-        _sharedToken       = new DesignToken();
-        _themeVariant      = new ThemeVariant(id, null);
-        _algorithms        = new List<ThemeAlgorithm>(3);
-        DefinitionFilePath = defFilePath;
-        ResourceDictionary = new ResourceDictionary();
-        ControlTokens      = new Dictionary<string, IControlDesignToken>(themeManager.ControlTokenTypes.Count);
-        ThemeDefinition    = new ThemeDefinition(_id);
-        _algorithms.Add(ThemeAlgorithm.Default);
-        if (requestAlgorithms.Contains(ThemeAlgorithm.Dark))
-        {
-            _algorithms.Add(ThemeAlgorithm.Dark);
-        }
-
-        if (requestAlgorithms.Contains(ThemeAlgorithm.Compact))
-        {
-            _algorithms.Add(ThemeAlgorithm.Compact);
-        }
-
-        _themeVariant = BuildThemeVariant(id, _algorithms);
-        _themeManager = themeManager;
-    }
+    internal ThemeSnapshot Snapshot =>
+        _snapshot ?? throw new InvalidOperationException($"Theme '{_id}' has not been loaded.");
 
     public List<string> ThemeResourceKeys
     {
@@ -88,35 +101,24 @@ internal class Theme : AvaloniaObject, ITheme
         }
     }
 
-    internal void Load()
+    internal void Load(IReadOnlyDictionary<string, string>? runtimeOverrides = null)
     {
+        if (Loaded)
+        {
+            throw new InvalidOperationException($"Theme: {_id} already loaded");
+        }
+
         try
         {
-            if (Loaded)
+            var request = _catalog.CreateCompileRequest(_id, _algorithms, runtimeOverrides);
+            var result = Compile(request);
+            if (!result.Success)
             {
-                throw new InvalidOperationException($"Theme: {_id} already loaded");
+                throw CreateCompilationException(result);
             }
-            NotifyLoadThemeDef();
 
-            if (_algorithms.Count != ThemeDefinition.Algorithms.Count)
-            {
-                _isPrimary = false;
-            }
-            else
-            {
-                _isPrimary = true;
-                foreach (var algorithm in _algorithms)
-                {
-                    if (!ThemeDefinition.Algorithms.Contains(algorithm))
-                    {
-                        _isPrimary = false;
-                        break;
-                    }
-                }
-            }
-            
-            BuildThemeResource(_algorithms);
-
+            Hydrate(result.Snapshot!);
+            _loadErrorMsg = null;
             LoadedStatus = true;
             Loaded       = true;
         }
@@ -128,121 +130,65 @@ internal class Theme : AvaloniaObject, ITheme
         }
     }
 
-    private void BuildThemeResource(IList<ThemeAlgorithm> algorithms)
+    private void Hydrate(ThemeSnapshot snapshot)
     {
-        if (algorithms.Contains(DarkThemeVariantCalculator.Algorithm))
+        var resources = new ResourceDictionary();
+        var controlTokens = new Dictionary<string, IControlDesignToken>(StringComparer.Ordinal);
+        foreach (var resource in snapshot.SharedResources)
         {
-            IsDarkMode    = true;
-        }
-        else
-        {
-            IsDarkMode    = false;
-        }
-    
-        IThemeVariantCalculator? baseCalculator = null;
-        IThemeVariantCalculator? calculator     = null;
-        foreach (var algorithmId in algorithms)
-        {
-            calculator     = _themeManager.CreateThemeVariantCalculator(algorithmId, baseCalculator);
-            baseCalculator = calculator;
-        }
-    
-        Debug.Assert(calculator != null);
-        
-        var seedTokenKeys  = DesignToken.GetTokenPropertyNames(DesignTokenKind.Seed);
-        var mapTokenKeys   = DesignToken.GetTokenPropertyNames(DesignTokenKind.Map);
-        var aliasTokenKeys = DesignToken.GetTokenPropertyNames(DesignTokenKind.Alias);
-        
-        var sharedTokenConfig = new TokenConfigBuckets();
-        foreach (var tokenSetter in ThemeDefinition.SharedTokens)
-        {
-            sharedTokenConfig.AddByTokenName(tokenSetter.Key,
-                                             tokenSetter.Value,
-                                             seedTokenKeys,
-                                             mapTokenKeys,
-                                             aliasTokenKeys);
-        }
-        
-        _sharedToken.LoadConfig(sharedTokenConfig.Seed);
-        // 计算得到 Map Tokens
-        calculator.Calculate(_sharedToken);
-        // 覆盖 Map Token
-        _sharedToken.LoadConfig(sharedTokenConfig.Map);
-
-        // 交付最终的基础色
-        _sharedToken.ColorBgBase   = calculator.ColorBgBase;
-        _sharedToken.ColorTextBase = calculator.ColorTextBase;
-
-        _sharedToken.CalculateAliasTokenValues();
-        
-        // 覆盖 Alias Token
-        _sharedToken.LoadConfig(sharedTokenConfig.Alias);
-        
-        _sharedToken.BuildResourceDictionary(ResourceDictionary);
-
-        CollectControlTokens();
-        foreach (var entry in ControlTokens)
-        {
-            // 如果没有修改就使用全局的
-            entry.Value.AssignSharedToken(_sharedToken);
+            resources[resource.Key] = resource.Value;
         }
 
-        foreach (var entry in ThemeDefinition.ControlTokens)
+        foreach (var control in snapshot.Controls.Values)
         {
-            var controlTokenInfo  = entry.Value;
-            if (!ControlTokens.TryGetValue(entry.Key, out var token))
+            foreach (var resource in control.ControlResources)
             {
-                continue;
+                resources[resource.Key] = resource.Value;
             }
 
-            var copiedSharedToken = (DesignToken)_sharedToken.Clone();
-            
-            var controlTokenConfig = new TokenConfigBuckets();
-            foreach (var tokenSetter in controlTokenInfo.SharedTokens)
-            {
-                controlTokenConfig.AddByTokenName(tokenSetter.Key,
-                                                  tokenSetter.Value,
-                                                  seedTokenKeys,
-                                                  mapTokenKeys,
-                                                  aliasTokenKeys);
-            }
-            
-            if (controlTokenInfo.EnableAlgorithm)
-            {
-                copiedSharedToken.LoadConfig(controlTokenConfig.Seed);
-                calculator.Calculate(copiedSharedToken);
-                copiedSharedToken.LoadConfig(controlTokenConfig.Map);
-                copiedSharedToken.CalculateAliasTokenValues();
-                copiedSharedToken.LoadConfig(controlTokenConfig.Alias);
-            }
-            else
-            {
-                copiedSharedToken.LoadConfig(controlTokenConfig.Seed);
-                copiedSharedToken.LoadConfig(controlTokenConfig.Map);
-                copiedSharedToken.LoadConfig(controlTokenConfig.Alias);
-            }
-
-            var controlToken = (token as AbstractControlDesignToken)!;
-            controlToken.AssignSharedToken(copiedSharedToken);
-            controlToken.SetHasCustomTokenConfig(true);
-            controlToken.SetCustomTokens(new List<string>(controlTokenInfo.Tokens.Keys));
+            var controlToken = control.ControlToken;
+            controlTokens.Add(controlToken.Id, controlToken);
         }
 
-        foreach (var token in ControlTokens.Values)
+        resources.MergedDictionaries.Add(new ThemeTokenResourceProvider(snapshot));
+
+        ResourceDictionary = resources;
+        ControlTokens      = controlTokens;
+        _sharedToken       = DesignTokenClone.DeepClone(snapshot.SharedTokenCore);
+        IsDarkMode         = snapshot.IsDark;
+        _isPrimary         = IsPrimaryAlgorithmSet(_descriptor.Definition, snapshot.Algorithms);
+        _snapshot          = snapshot;
+    }
+
+    protected virtual ThemeCompileResult Compile(ThemeCompileRequest request)
+    {
+        return _snapshotCache.GetOrCompile(request, _compiler);
+    }
+
+    private static ThemeLoadException CreateCompilationException(ThemeCompileResult result)
+    {
+        if (result.Exception is not null)
         {
-            var controlToken = (token as AbstractControlDesignToken)!;
-            controlToken.CalculateTokenValues(IsDarkMode);
-            if (ThemeDefinition.ControlTokens.TryGetValue(controlToken.Id, out var tokenInfo))
-            {
-                controlToken.LoadConfig(tokenInfo.Tokens);
-            }
-
-            controlToken.BuildResourceDictionary(ResourceDictionary);
-            if (controlToken.HasCustomTokenConfig())
-            {
-                controlToken.BuildSharedResourceDeltaDictionary(_sharedToken);
-            }
+            return new ThemeLoadException("Theme compilation failed.", result.Exception);
         }
+
+        var errors = result.Diagnostics
+                           .Where(static diagnostic => diagnostic.Severity == Definitions.ThemeDiagnosticSeverity.Error)
+                           .Select(static diagnostic => diagnostic.Message)
+                           .ToArray();
+        var message = errors.Length == 0
+            ? "Theme compilation failed."
+            : $"Theme compilation failed: {string.Join(" ", errors)}";
+        return new ThemeLoadException(message);
+    }
+
+    private static bool IsPrimaryAlgorithmSet(
+        ThemeDefinition? definition,
+        IReadOnlyList<ThemeAlgorithm> algorithms)
+    {
+        return definition is not null &&
+               algorithms.Count == definition.Algorithms.Count &&
+               algorithms.All(definition.Algorithms.Contains);
     }
 
     internal static ThemeVariant BuildThemeVariant(string id, IList<ThemeAlgorithm> algorithms)
@@ -252,7 +198,19 @@ internal class Theme : AvaloniaObject, ITheme
         return BuildThemeVariant(id, hasDark, hasCompact);
     }
 
+    internal static ThemeVariant BuildThemeVariant(string id, IReadOnlyList<ThemeAlgorithm> algorithms)
+    {
+        var hasDark    = algorithms.Contains(DarkThemeVariantCalculator.Algorithm);
+        var hasCompact = algorithms.Contains(CompactThemeVariantCalculator.Algorithm);
+        return BuildThemeVariant(id, hasDark, hasCompact);
+    }
+
     internal static ThemeVariant BuildThemeVariant(string id, bool hasDark, bool hasCompact)
+    {
+        return new ThemeVariant(BuildThemeVariantName(id, hasDark, hasCompact), null);
+    }
+
+    internal static string BuildThemeVariantName(string id, bool hasDark, bool hasCompact)
     {
         var variantName = id;
         if (hasDark)
@@ -265,7 +223,7 @@ internal class Theme : AvaloniaObject, ITheme
             variantName += $"-{nameof(ThemeAlgorithm.Compact)}";
         }
 
-        return new ThemeVariant(variantName, null);
+        return variantName;
     }
 
     internal static ISet<ThemeAlgorithm> CheckAlgorithmNames(IList<string> algorithmNames)
@@ -283,26 +241,6 @@ internal class Theme : AvaloniaObject, ITheme
         return algorithms;
     }
 
-    protected void CollectControlTokens()
-    {
-        ControlTokens.Clear();
-        var controlTokenTypes = ThemeManager.Current?.ControlTokenTypes;
-        if (controlTokenTypes is null)
-        {
-            return;
-        }
-
-        ControlTokens.EnsureCapacity(controlTokenTypes.Count);
-        foreach (var tokenRegistration in controlTokenTypes)
-        {
-            var obj = Activator.CreateInstance(tokenRegistration.TokenType);
-            if (obj is AbstractControlDesignToken controlToken)
-            {
-                ControlTokens.Add(controlToken.Id, controlToken);
-            }
-        }
-    }
-
     public IControlDesignToken? GetControlToken(string tokenId)
     {
         return ControlTokens.GetValueOrDefault(tokenId);
@@ -314,6 +252,10 @@ internal class Theme : AvaloniaObject, ITheme
 
     internal virtual void NotifyActivated()
     {
+        if (_snapshot is not null && _activeSnapshotPin is null)
+        {
+            _activeSnapshotPin = _snapshotCache.Pin(_snapshot);
+        }
         Activated = true;
     }
 
@@ -323,6 +265,8 @@ internal class Theme : AvaloniaObject, ITheme
 
     internal virtual void NotifyDeActivated()
     {
+        _activeSnapshotPin?.Dispose();
+        _activeSnapshotPin = null;
         Activated = false;
     }
 
@@ -340,12 +284,6 @@ internal class Theme : AvaloniaObject, ITheme
 
     internal virtual void NotifyUnloaded()
     {
-    }
-
-    internal virtual void NotifyLoadThemeDef()
-    {
-        var reader = new ThemeDefinitionReader(this);
-        reader.Load(ThemeDefinition);
     }
 
     internal virtual void NotifyRegistered()

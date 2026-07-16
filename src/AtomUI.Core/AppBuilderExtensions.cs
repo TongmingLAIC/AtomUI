@@ -17,10 +17,8 @@ public static class AppBuilderExtensions
     /// <list type="bullet">
     ///   <item>
     ///     <description>
-    ///     <b>Windows</b>：<c>Win32PlatformOptions.CompositionMode</c> 优先使用
-    ///     <c>Win32CompositionMode.LowLatencyDxgiSwapChain</c> / <c>Win32CompositionMode.RedirectionSurface</c>。
-    ///     普通 AtomUI 窗口是 opaque 窗口，避免 WinUIComposition / DirectComposition 的 no-redirection
-    ///     透明 surface 在快速 resize 时露出未绘制区域。
+    ///     <b>Windows</b>：Windows 10 和 Windows 11 都使用 RedirectionSurface，避免
+    ///     WinUIComposition / DirectComposition 在 live resize 期间提交与 HWND 尺寸不同步的表面。
     ///     </description>
     ///   </item>
     ///   <item>
@@ -43,15 +41,14 @@ public static class AppBuilderExtensions
     /// <example>
     /// <code>
     /// BuildAvaloniaApp()
-    ///     .UseAtomUIDefaults()
-    ///     .UsePlatformDetect()
+    ///     .UseAtomUIPlatformDetect()
+    ///     .WithAtomUIDefaultOptions()
     ///     .StartWithClassicDesktopLifetime(args);
     /// </code>
     /// </example>
     public static AppBuilder WithAtomUIDefaultOptions(this AppBuilder appBuilder)
     {
         return appBuilder
-            .WithWin32OpaqueFriendlyCompositionOptions()
             .With(new AvaloniaNativePlatformOptions
             {
                 RenderingMode =
@@ -61,9 +58,18 @@ public static class AppBuilderExtensions
                     AvaloniaNativeRenderingMode.Software
                 ]
             })
+            .With(new Win32PlatformOptions
+            {
+                RenderingMode =
+                [
+                    Win32RenderingMode.AngleEgl,
+                    Win32RenderingMode.Software
+                ],
+                CompositionMode = [Win32CompositionMode.RedirectionSurface]
+            })
             .With(new X11PlatformOptions
             {
-                EnableDrawnDecorations = false
+                EnableDrawnDecorations = true
             })
             .With(new FontManagerOptions
             {
@@ -72,53 +78,5 @@ public static class AppBuilderExtensions
                     FontFamily = new FontFamily("Microsoft YaHei")
                 }]
             });
-    }
-
-    private static AppBuilder WithWin32OpaqueFriendlyCompositionOptions(this AppBuilder appBuilder)
-    {
-        var win32OptionsType = Type.GetType("Avalonia.Win32PlatformOptions, Avalonia.Win32");
-        var renderingModeType = Type.GetType("Avalonia.Win32RenderingMode, Avalonia.Win32");
-        var compositionModeType = Type.GetType("Avalonia.Win32CompositionMode, Avalonia.Win32");
-        if (win32OptionsType is null || renderingModeType is null || compositionModeType is null)
-        {
-            return appBuilder;
-        }
-
-        var options = Activator.CreateInstance(win32OptionsType);
-        if (options is null)
-        {
-            return appBuilder;
-        }
-
-        win32OptionsType.GetProperty("RenderingMode")?.SetValue(options,
-            CreateEnumArray(renderingModeType, "AngleEgl", "Software"));
-        win32OptionsType.GetProperty("CompositionMode")?.SetValue(options,
-            CreateEnumArray(compositionModeType, "LowLatencyDxgiSwapChain", "RedirectionSurface"));
-
-        var withMethod = typeof(AppBuilder).GetMethods()
-                                           .Single(method =>
-                                           {
-                                               if (method.Name != nameof(AppBuilder.With) ||
-                                                   !method.IsGenericMethodDefinition)
-                                               {
-                                                   return false;
-                                               }
-
-                                               var parameters = method.GetParameters();
-                                               return parameters.Length == 1 &&
-                                                      parameters[0].ParameterType.IsGenericParameter;
-                                           });
-        withMethod.MakeGenericMethod(win32OptionsType).Invoke(appBuilder, [options]);
-        return appBuilder;
-    }
-
-    private static Array CreateEnumArray(Type enumType, params string[] names)
-    {
-        var values = Array.CreateInstance(enumType, names.Length);
-        for (var i = 0; i < names.Length; i++)
-        {
-            values.SetValue(Enum.Parse(enumType, names[i]), i);
-        }
-        return values;
     }
 }

@@ -1,8 +1,8 @@
 using AtomUI.Controls;
+using AtomUI.Controls.Commons;
 using AtomUI.Data;
 using AtomUI.Desktop.Controls;
 using AtomUI.Icons.AntDesign;
-using AtomUI.Theme.Language;
 using AtomUIGallery.Localization;
 using Avalonia;
 using Avalonia.Controls;
@@ -21,31 +21,26 @@ public partial class NotificationShowCase : GalleryReactiveUserControl<Notificat
     private WindowNotificationManager? _bottomLeftManager;
     private WindowNotificationManager? _bottomManager;
     private WindowNotificationManager? _bottomRightManager;
+    private bool _isPauseOnHover = true;
 
     public NotificationShowCase()
     {
         InitializeComponent();
-    }
-
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        HoverOptionGroup.OptionCheckedChanged -= HandleHoverOptionGroupCheckedChanged;
-        HoverOptionGroup.OptionCheckedChanged += HandleHoverOptionGroupCheckedChanged;
+        AddHandler(AbstractOptionButtonGroup.OptionCheckedChangedEvent, HandleHoverOptionGroupCheckedChanged);
     }
 
     private void HandleHoverOptionGroupCheckedChanged(object? sender, OptionCheckedChangedEventArgs args)
     {
+        _isPauseOnHover = args.Index == 0;
         if (_basicManager is not null)
         {
-            _basicManager.IsPauseOnHover = args.Index == 0;
+            _basicManager.IsPauseOnHover = _isPauseOnHover;
         }
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        HoverOptionGroup.OptionCheckedChanged -= HandleHoverOptionGroupCheckedChanged;
         DisposeManager(ref _basicManager);
         DisposeManager(ref _topLeftManager);
         DisposeManager(ref _topManager);
@@ -55,12 +50,18 @@ public partial class NotificationShowCase : GalleryReactiveUserControl<Notificat
         DisposeManager(ref _bottomRightManager);
     }
 
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+    }
+
     private WindowNotificationManager? GetBasicManager()
     {
         var manager = GetManager(ref _basicManager, NotificationPosition.TopRight);
         if (manager is not null)
         {
-            manager.IsPauseOnHover = HoverOptionGroup.SelectedIndex != 1;
+            manager.IsPauseOnHover = _isPauseOnHover;
         }
         return manager;
     }

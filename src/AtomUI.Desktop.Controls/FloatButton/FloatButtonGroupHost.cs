@@ -3,11 +3,9 @@ using System.Reactive.Disposables;
 using AtomUI.Controls;
 using AtomUI.Controls.Primitives;
 using AtomUI.Data;
-using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Data;
 using Avalonia.Media;
 using Avalonia.Metadata;
 
@@ -142,7 +140,6 @@ public class FloatButtonGroupHost : TemplatedControl, IMotionAwareControl
     
     public FloatButtonGroupHost()
     {
-        this.RegisterTokenResourceScope(FloatButtonToken.ScopeProvider);
         Children.CollectionChanged += NotifyChildrenChanged;
     }
     
@@ -192,6 +189,7 @@ public class FloatButtonGroupHost : TemplatedControl, IMotionAwareControl
     protected virtual FloatButtonGroup NotifyCreateFloatButtonGroup(CompositeDisposable disposables)
     {
         var floatButtonGroup = new FloatButtonGroup();
+        disposables.Add(BindUtils.RelayBind(this, DataContextProperty, floatButtonGroup, DataContextProperty));
         disposables.Add(BindUtils.RelayBind(this, IsMotionEnabledProperty, floatButtonGroup, IsMotionEnabledProperty));
         disposables.Add(BindUtils.RelayBind(this, PlacementProperty, floatButtonGroup, PlacementProperty));
         disposables.Add(BindUtils.RelayBind(this, FloatOffsetXProperty, floatButtonGroup, FloatOffsetXProperty));
@@ -218,12 +216,12 @@ public class FloatButtonGroupHost : TemplatedControl, IMotionAwareControl
     
     private void OnFloatButtonGroupOpenRequest(object? sender, EventArgs args)
     {
-        SetValue(IsOpenProperty, true, BindingPriority.Style);
+        SetCurrentValue(IsOpenProperty, true);
     }
 
     private void OnFloatButtonGroupCloseRequest(object? sender, EventArgs args)
     {
-        SetValue(IsOpenProperty, false, BindingPriority.Style);
+        SetCurrentValue(IsOpenProperty, false);
     }
 
     protected virtual void NotifyChildrenChanged(object? sender, NotifyCollectionChangedEventArgs e)

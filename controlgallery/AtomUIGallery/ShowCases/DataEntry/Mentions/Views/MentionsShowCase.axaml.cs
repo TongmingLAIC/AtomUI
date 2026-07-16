@@ -10,6 +10,8 @@ public partial class MentionsShowCase : GalleryReactiveUserControl<MentionsViewM
 
     public MentionsShowCase()
     {
+        InitializeComponent();
+
         this.WhenActivated(disposables =>
         {
             if (DataContext is MentionsViewModel viewModel)
@@ -17,43 +19,6 @@ public partial class MentionsShowCase : GalleryReactiveUserControl<MentionsViewM
                 InitBasicMentionOptions(viewModel);
                 viewModel.MentionTriggers          = ["@", "#"];
                 viewModel.MentionOptionAsyncLoader = new MentionOptionsAsyncLoader();
-
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, BasicMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, DisabledMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, ReadonlyMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, PlacementMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, ErrorMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, WarningMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, AutoSizeMentions,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, ClearableMentions1,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
-                GalleryBindingUtils.OneWay(viewModel, nameof(MentionsViewModel.BasicMentionOptions),
-                                           vm => vm.BasicMentionOptions, ClearableMentions2,
-                                           AtomUI.Desktop.Controls.Mentions.OptionsSourceProperty)
-                                   .DisposeWith(disposables);
 
                 Disposable.Create(() =>
                 {
@@ -63,7 +28,6 @@ public partial class MentionsShowCase : GalleryReactiveUserControl<MentionsViewM
                 }).DisposeWith(disposables);
             }
         });
-        InitializeComponent();
     }
 
     private void InitBasicMentionOptions(MentionsViewModel viewModel)

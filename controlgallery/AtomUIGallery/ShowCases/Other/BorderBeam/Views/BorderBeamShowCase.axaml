@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AtomUIGallery.ShowCases.BorderBeam.BorderBeamShowCase"
+             xmlns:atom="https://atomui.net"
+             xmlns:gallery="https://atomui.net/oss-controls/gallery"
+             xmlns:vm="using:AtomUIGallery.ShowCases.BorderBeam"
+             x:DataType="vm:BorderBeamViewModel">
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="BorderBeam"
+                    Category="{gallery:BorderBeamShowCaseLangResource ComponentCategory}"
+                    IntroducedVersion="{gallery:BorderBeamShowCaseLangResource ComponentIntroducedVersion}"
+                    Subtitle="{gallery:BorderBeamShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:BorderBeamShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Desktop.Controls"
+                    Package="AtomUI.Desktop.Controls"
+                    BaseClass="ContentControl"
+                    MetadataValueWidth="220" />
+            </gallery:GalleryStickyTabsHost.Header>
+
+
+            <gallery:ShowCasePanel Name="ExamplesContent"
+                                   IsScrollEnabled="False"
+                                   IsDeferredLoadingEnabled="True"
+                                   InitialDeferredLoadItemCount="4"
+                                   DeferredLoadBatchSize="2"
+                                   ContentMargin="28,10,28,28">
+                <gallery:ShowCaseItem
+                    Title="{gallery:BorderBeamShowCaseLangResource BasicTitle}"
+                    Description="{gallery:BorderBeamShowCaseLangResource BasicDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:BorderBeamViewModel">
+                            <atom:BorderBeam Width="360"
+                                             HorizontalAlignment="Left">
+                                <atom:Card Header="Workspace overview"
+                                           BorderThickness="1"
+                                           CornerRadius="8">
+                                    <Grid ColumnDefinitions="*,*,*"
+                                          RowDefinitions="Auto,Auto"
+                                          MinHeight="96">
+                                        <atom:TextBlock Grid.Column="0"
+                                                        Text="Users"
+                                                        Foreground="{atom:SharedTokenResource ColorTextTertiary}" />
+                                        <atom:TextBlock Grid.Column="1"
+                                                        Text="Projects"
+                                                        Foreground="{atom:SharedTokenResource ColorTextTertiary}" />
+                                        <atom:TextBlock Grid.Column="2"
+                                                        Text="Tasks"
+                                                        Foreground="{atom:SharedTokenResource ColorTextTertiary}" />
+                                        <atom:TextBlock Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Text="128"
+                                                        FontSize="22"
+                                                        FontWeight="Bold" />
+                                        <atom:TextBlock Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Text="24"
+                                                        FontSize="22"
+                                                        FontWeight="Bold" />
+                                        <atom:TextBlock Grid.Row="1"
+                                                        Grid.Column="2"
+                                                        Text="86"
+                                                        FontSize="22"
+                                                        FontWeight="Bold" />
+                                    </Grid>
+                                </atom:Card>
+                            </atom:BorderBeam>
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+
+                <gallery:ShowCaseItem
+                    Title="{gallery:BorderBeamShowCaseLangResource NonUniformRadiusTitle}"
+                    Description="{gallery:BorderBeamShowCaseLangResource NonUniformRadiusDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:BorderBeamViewModel">
+                            <atom:BorderBeam Width="360"
+                                             Outset="0"
+                                             BorderThickness="1"
+                                             CornerRadius="20,20,0,0"
+                                             HorizontalAlignment="Left">
+                                <atom:PixelAlignedBorder ClipToBounds="True"
+                                                         CornerRadius="20,20,0,0"
+                                                         BorderThickness="1"
+                                                         BorderBrush="{atom:SharedTokenResource ColorBorderSecondary}"
+                                                         Background="{atom:SharedTokenResource ColorBgContainer}"
+                                                         Padding="24">
+                                    <StackPanel Spacing="8">
+                                        <atom:TextBlock Text="Non-uniform radius"
+                                                        FontWeight="Bold" />
+                                        <atom:TextBlock Text="{gallery:BorderBeamShowCaseLangResource NonUniformRadiusCardDescription}"
+                                                        TextWrapping="Wrap"
+                                                        Foreground="{atom:SharedTokenResource ColorTextSecondary}" />
+                                    </StackPanel>
+                                </atom:PixelAlignedBorder>
+                            </atom:BorderBeam>
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+
+                <gallery:ShowCaseItem
+                    Title="{gallery:BorderBeamShowCaseLangResource CustomizedColorTitle}"
+                    Description="{gallery:BorderBeamShowCaseLangResource CustomizedColorDescription}"
+                    IsDeferredContentEnabled="True"
+                    IsOccupyEntireRow="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:BorderBeamViewModel">
+                            <StackPanel Spacing="16"
+                                        HorizontalAlignment="Left">
+                                <atom:Segmented ItemsSource="{Binding ColorPresets}"
+                                                SelectedItem="{Binding SelectedColorPreset}"
+                                                HorizontalAlignment="Left" />
+                                <atom:BorderBeam Width="420"
+                                                 ColorStops="{Binding SelectedColorStops}"
+                                                 HorizontalAlignment="Left">
+                                    <atom:Card Header="{Binding SelectedColorPreset.Name}"
+                                               BorderThickness="1"
+                                               CornerRadius="8">
+                                        <StackPanel Spacing="12">
+                                            <atom:TextBlock Text="{gallery:BorderBeamShowCaseLangResource CustomizedColorCardDescription}"
+                                                            TextWrapping="Wrap"
+                                                            Foreground="{atom:SharedTokenResource ColorTextSecondary}" />
+                                            <StackPanel Orientation="Horizontal"
+                                                        Spacing="8">
+                                                <Border Width="28"
+                                                        Height="12"
+                                                        CornerRadius="6"
+                                                        Background="#1677FF" />
+                                                <Border Width="28"
+                                                        Height="12"
+                                                        CornerRadius="6"
+                                                        Background="#36CFC9" />
+                                                <Border Width="28"
+                                                        Height="12"
+                                                        CornerRadius="6"
+                                                        Background="#F759AB" />
+                                                <Border Width="28"
+                                                        Height="12"
+                                                        CornerRadius="6"
+                                                        Background="#B37FEB" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </atom:Card>
+                                </atom:BorderBeam>
+                            </StackPanel>
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+            </gallery:ShowCasePanel>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
+</UserControl>

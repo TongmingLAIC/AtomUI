@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.GroupBox;
 
 public partial class GroupBoxShowCase : GalleryReactiveUserControl<GroupBoxViewModel>
@@ -9,4 +8,5 @@ public partial class GroupBoxShowCase : GalleryReactiveUserControl<GroupBoxViewM
     {
         InitializeComponent();
     }
+
 }

@@ -12,24 +12,25 @@
         <Setter Property="Template">
             <ControlTemplate>
                 <Panel>
-                    <Border Name="PART_Frame"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            CornerRadius="{TemplateBinding EffectiveCornerRadius}"
-                            Background="{TemplateBinding Background}"
-                            Padding="{TemplateBinding Padding}">
+                    <atom:PixelAlignedBorder Name="PART_Frame"
+                                             BorderThickness="{TemplateBinding BorderThickness}"
+                                             BorderBrush="{TemplateBinding BorderBrush}"
+                                             CornerRadius="{TemplateBinding EffectiveCornerRadius}"
+                                             Background="{TemplateBinding Background}"
+                                             Padding="{TemplateBinding TriggerPadding}">
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                             <atom:ColorBlock Name="PART_ColorIndicator"
                                              SizeType="{TemplateBinding SizeType}"
+                                             Size="{TemplateBinding ColorBlockSize}"
                                              Background="{TemplateBinding ColorBlockBackground}" />
                             <TextBlock Name="PART_ColorText"
                                        IsVisible="{TemplateBinding IsTextVisible}"
                                        Text="{TemplateBinding ColorText}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
-                    </Border>
+                    </atom:PixelAlignedBorder>
                     <atom:Popup Name="PART_Popup"
                                 WindowManagerAddShadowHint="False"
                                 IsLightDismissEnabled="{TemplateBinding IsLightDismissEnabled}"

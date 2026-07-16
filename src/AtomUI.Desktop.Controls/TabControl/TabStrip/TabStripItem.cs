@@ -6,6 +6,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Styling;
@@ -80,6 +81,9 @@ public class TabStripItem : AvaloniaTabStripItem
     internal static readonly StyledProperty<SizeType> SizeTypeProperty =
         SizeTypeControlProperty.SizeTypeProperty.AddOwner<TabStripItem>();
 
+    internal static readonly StyledProperty<bool> IsTabReorderDraggingProperty =
+        AvaloniaProperty.Register<TabStripItem, bool>(nameof(IsTabReorderDragging));
+
     internal static readonly StyledProperty<TabSharp> ShapeProperty =
         AvaloniaProperty.Register<TabStripItem, TabSharp>(nameof(Shape));
 
@@ -93,10 +97,19 @@ public class TabStripItem : AvaloniaTabStripItem
     internal static readonly StyledProperty<bool> HasIconProperty =
         AvaloniaProperty.Register<TabStripItem, bool>(nameof(HasIcon));
 
+    internal static readonly StyledProperty<bool> IsIconSlotReservedProperty =
+        AvaloniaProperty.Register<TabStripItem, bool>(nameof(IsIconSlotReserved));
+
     public SizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
+    }
+
+    internal bool IsTabReorderDragging
+    {
+        get => GetValue(IsTabReorderDraggingProperty);
+        set => SetValue(IsTabReorderDraggingProperty, value);
     }
 
     public TabSharp Shape
@@ -122,13 +135,34 @@ public class TabStripItem : AvaloniaTabStripItem
         get => GetValue(HasIconProperty);
         set => SetValue(HasIconProperty, value);
     }
+
+    internal bool IsIconSlotReserved
+    {
+        get => GetValue(IsIconSlotReservedProperty);
+        set => SetValue(IsIconSlotReservedProperty, value);
+    }
+
     #endregion
 
     private IconButton? _closeButton;
 
     private void ConfigureHasIcon()
     {
-        HasIcon = Icon is not null;
+        var hasIcon = Icon is not null;
+        if (HasIcon == hasIcon)
+        {
+            return;
+        }
+
+        HasIcon = hasIcon;
+        NotifyIconSlotOwner();
+    }
+
+    private void NotifyIconSlotOwner()
+    {
+        var tabStrip = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabStrip ??
+                       Parent as BaseTabStrip;
+        tabStrip?.NotifyTabStripItemIconStateChanged();
     }
 
     private void SetupDefaultCloseIcon()
@@ -159,6 +193,8 @@ public class TabStripItem : AvaloniaTabStripItem
     {
         base.OnAttachedToLogicalTree(e);
         SetupShapeThemeBindings(false);
+        ConfigureHasIcon();
+        NotifyIconSlotOwner();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -247,4 +283,47 @@ public class TabStripItem : AvaloniaTabStripItem
         base.OnLoaded(e);
         this.EnableTransitions();
     }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        var tabStrip = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabStrip;
+        tabStrip?.NotifyTabActivationPointerPressed(this, e);
+        tabStrip?.NotifyTabReorderPointerPressed(this, e);
+
+        base.OnPointerPressed(e);
+
+        tabStrip?.NotifyTabReorderPointerPressCompleted(this, e);
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+        if (ItemsControl.ItemsControlFromItemContainer(this) is BaseTabStrip tabStrip &&
+            tabStrip.NotifyTabReorderPointerMoved(this, e))
+        {
+            PseudoClasses.Set(StdPseudoClass.Pressed, true);
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        var tabStrip = ItemsControl.ItemsControlFromItemContainer(this) as BaseTabStrip;
+        if (tabStrip is not null && tabStrip.NotifyTabReorderPointerReleased(this, e))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        tabStrip?.UpdateSelectionFromEvent(this, e);
+        base.OnPointerReleased(e);
+        tabStrip?.NotifyTabActivationPointerReleased(this, e);
+    }
+
+    internal void SetTabReorderDragging(bool isDragging)
+    {
+        IsTabReorderDragging = isDragging;
+        PseudoClasses.Set(StdPseudoClass.Pressed, isDragging);
+    }
+
 }

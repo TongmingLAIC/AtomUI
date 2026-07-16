@@ -15,7 +15,9 @@ flowchart TD
     Desktop["AtomUI.Desktop.Controls\n桌面主控件包"]
     DataGrid["AtomUI.Desktop.Controls.DataGrid\n独立 DataGrid 包"]
     ColorPicker["AtomUI.Desktop.Controls.ColorPicker\n独立 ColorPicker 包"]
+    Extras["AtomUI.Desktop.Controls.Extras\n稳定补充控件包"]
     Generator["AtomUI.Generator\nToken 与语言源生成器"]
+    GalleryBase["AtomUI.Toolkits.GalleryBase\nGallery 应用底座库"]
     Gallery["AtomUIGallery\n示例与展示宿主"]
 
     Native --> Core
@@ -25,6 +27,7 @@ flowchart TD
     Generator -. analyzer .-> Desktop
     Generator -. analyzer .-> DataGrid
     Generator -. analyzer .-> ColorPicker
+    Generator -. analyzer .-> Extras
     Core --> Shared
     Core --> Icons
     Core --> Fonts
@@ -32,8 +35,11 @@ flowchart TD
     Fonts --> Controls
     Icons --> Controls
     Controls --> Desktop
+    Desktop --> GalleryBase
     Desktop --> DataGrid
     Desktop --> ColorPicker
+    Desktop --> Extras
+    GalleryBase --> Gallery
     Desktop --> Gallery
     DataGrid --> Gallery
     ColorPicker --> Gallery
@@ -46,7 +52,10 @@ AtomUI 应用通常分两步接入：
 1. 在 `AppBuilder` 上调用 `WithAtomUIDefaultOptions()`，应用平台默认配置。
 2. 在 `Application.Initialize()` 内调用 `UseAtomUI(builder => ...)`，注册主题、字体、控件包和可选包。
 
-主题注册链路由 `IThemeManagerBuilder` 收集 Token 类型、主题 Provider、语言 Provider 和初始化回调。`ThemeManagerBuilder.Build()` 创建 `ThemeManager` 后，`ThemeManager.Configure()` 负责扫描主题、创建主题资源、加载语言资源，并把 `ThemeManager` 绑定到 Avalonia 服务定位器。
+主题注册链路由 `IThemeManagerBuilder` 收集生成式 Control descriptor、主题 Provider、算法 descriptor、
+语言 Provider 和初始 ThemeConfig。构建过程先创建 ThemeSchemaRegistry 和 ThemeCatalog，再同步编译首个
+ThemeSnapshot；已经持有有效 snapshot 的 ThemeEngine 和 ThemeManager 随后一次性挂载到 Application。
+完整约束见 [AtomUI 主题系统架构](../modules/core/theme-system.md)。
 
 ## 源码包边界
 
@@ -55,6 +64,8 @@ AtomUI 应用通常分两步接入：
 - `AtomUI.Controls` 提供公共控件和 Primitives，是桌面控件包的基础。
 - `AtomUI.Desktop.Controls` 是桌面主包，负责大多数 Ant Design 桌面控件、Popup/Overlay、Window、Browser 兼容主题。
 - `AtomUI.Desktop.Controls.DataGrid` 和 `AtomUI.Desktop.Controls.ColorPicker` 是按需引入的独立桌面控件包。
+- `AtomUI.Desktop.Controls.Extras` 承载 Ant Design 标准之外、准备作为稳定 API 发布的补充桌面控件。
+- `AtomUI.Toolkits.GalleryBase` 是 Gallery 应用底座库，提供产品中立的 ShowCase 控件、Gallery 主题和运行时辅助能力。
 - `AtomUI.Generator` 以 Analyzer 方式接入多个项目，生成 Token 资源键、ControlToken 类型池、语言资源键和语言 Provider 池。
 
 ## 横切系统
@@ -63,4 +74,6 @@ AtomUI 应用通常分两步接入：
 - 本地化：控件包声明 `LanguageProvider`，源生成器生成 `LanguageProviderPool`，注册时统一交给 `ThemeManager`。
 - 平台适配：`RuntimePlatform.Features.SupportsNativeWindow` 决定桌面/浏览器主题 Provider 和部分 Token 注册。
 - 控件资源：每个控件通常由 C# 控件类、Token 类、AXAML 主题、主题聚合 Provider 和可选本地化 Provider 构成。
+- 边框渲染：控件边框必须遵守 [AtomUI 边框渲染架构](border-rendering.md)，保持 token 设计语义、Avalonia layout rounding 和自绘圆角算法一致。
+- 视觉层与覆盖层：跨普通视觉树绘制时必须遵守 [AtomUI 视觉层规范](visual-layer-guidelines.md)，按局部装饰、作用域覆盖、窗口级反馈、Popup overlay 和窗口模板专用层选择宿主。
 - AOT 兼容：新增绑定、反射、动态数据、ReactiveUI、source generator 和 NativeAOT 发布相关代码前，应遵守 [AOT 编程规范](../engineering/aot-programming-guidelines.md)。

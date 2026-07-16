@@ -1,16 +1,47 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Grid;
 
 [LanguageProvider(LanguageCode.zh_TW, GridShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
     public const string ScenarioBasic = "基礎";
     public const string ScenarioSpacing = "間距";
     public const string ScenarioAlignment = "對齊";
     public const string ScenarioOrder = "排序";
     public const string ScenarioColInfo = "ColInfo";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變量";
+    public const string PageSubtitle = "使用行和列構建響應式 24 柵格佈局。";
+    public const string PageDescription = "Grid 提供行間距、對齊、偏移、排序和斷點級列尺寸控制，適合應用佈局。";
+    public const string ComponentCategory = "佈局";
+    public const string ComponentStatusStable = "穩定";
+    public const string ApiColumnProperty = "屬性";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "類型";
+    public const string ApiColumnDefault = "默認值";
+    public const string ApiPropertyRowGutter = "設置柵格列和換行行之間的水平、垂直間距。";
+    public const string ApiPropertyRowJustify = "控制列在行主軸上的分佈方式。";
+    public const string ApiPropertyRowJustifyInfo = "為不同斷點提供主軸分佈方式。";
+    public const string ApiPropertyRowAlign = "控制列在行交叉軸上的對齊方式。";
+    public const string ApiPropertyRowAlignInfo = "為不同斷點提供交叉軸對齊方式。";
+    public const string ApiPropertyRowIsWrapped = "控制行空間不足時列是否換到下一行。";
+    public const string ApiPropertyColSpan = "設置列在 24 柵格中佔用的單位數。";
+    public const string ApiPropertyColFlex = "設置列填充剩餘空間時的 flex 增長、收縮和基準寬度。";
+    public const string ApiPropertyColOffset = "按柵格單位將列向右偏移。";
+    public const string ApiPropertyColPush = "按柵格單位將列向前推移顯示。";
+    public const string ApiPropertyColPull = "按柵格單位將列向後拉回顯示。";
+    public const string ApiPropertyColOrder = "控制列在行內的視覺順序。";
+    public const string ApiPropertyColBreakpoints = "為不同斷點提供 flex、span、offset、push、pull 和 order 覆蓋。";
+    public const string ApiPropertyColInfo = "可復用的響應式列配置對象。";
+    public const string TokenColumnToken = "變量";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "範圍";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenScopeComponent = "組件";
+    public const string TokenStatusNotApplicable = "不適用";
+    public const string TokenNameNoComponentToken = "Grid 沒有組件級設計變量；它通過子內容使用共享佈局、間距和邊框變量。";
 
     public const string BasicGridTitle = "基礎柵格";
     public const string BasicGridDescription = "基礎的 24 柵格佈局。";
@@ -26,6 +57,8 @@ internal partial class zh_TW : LanguageProvider
     public const string AlignDescription = "子元素在交叉軸上的對齊方式。";
     public const string OrderTitle = "排序";
     public const string OrderDescription = "改變列順序。";
+    public const string FlexTitle = "Flex";
+    public const string FlexDescription = "使用固定基準、auto 和響應式 flex 列填充行內剩餘空間。";
     public const string ColInfoTitle = "ColInfo";
     public const string ColInfoDescription = "使用 ColInfo 進行響應式覆蓋。";
     public const string P2TextCol = "col";
@@ -61,6 +94,15 @@ internal partial class zh_TW : LanguageProvider
     public const string P2TextN4ColOrderResponsive = "4 col-order-responsive";
     public const string P2TextN2ColOrderResponsive = "2 col-order-responsive";
     public const string P2TextN1ColOrderResponsive = "1 col-order-responsive";
+    public const string P2TextPercentageColumns = "比例列";
+    public const string P2TextFillRest = "填充剩餘空間";
+    public const string P2TextResponsiveFlex = "響應式 flex";
+    public const string P2TextColFlex2 = "2 / 5";
+    public const string P2TextColFlex3 = "3 / 5";
+    public const string P2TextCol100Px = "100px";
+    public const string P2TextColFlexAuto = "auto";
+    public const string P2TextColFlexFill = "填充剩餘";
+    public const string P2TextColFlexResponsive = "響應式 flex";
     public const string P2TextBaseMdLgOverrides = "Base + Md/Lg overrides";
     public const string P2TextColN1WithColinfo = "列-1 with ColInfo";
     public const string P2TextColN2WithColinfo = "列-2 with ColInfo";
@@ -72,6 +114,4 @@ internal partial class zh_TW : LanguageProvider
     public const string P2TextResColN3 = "res-col-3";
     public const string P2TextResColN4 = "res-col-4";
 
-    protected override Type GetResourceKindType() => typeof(GridShowCaseLangResourceKind);
 }
-

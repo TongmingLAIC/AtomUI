@@ -1,16 +1,57 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TreeSelect;
 
 [LanguageProvider(LanguageCode.en_US, TreeSelectShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string BasicTitle = "Basic";
     public const string BasicDescription = "The most basic usage.";
     public const string ScenarioBasic = "Basic";
     public const string ScenarioBehavior = "Behavior";
     public const string ScenarioAppearance = "Appearance";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string PageSubtitle = "Select values from hierarchical data in a compact input.";
+    public const string PageDescription = "TreeSelect combines an input selector with tree navigation, making it suitable for hierarchical categories, organization nodes, permissions, and other nested option sets.";
+    public const string ComponentCategory = "Data Entry";
+    public const string ComponentStatusStable = "Stable";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyItemsSource = "Hierarchical options displayed by the selector.";
+    public const string ApiPropertySelectedItem = "Currently selected tree item in single mode. Defaults to two-way binding and supports data validation.";
+    public const string ApiPropertySelectedItems = "Currently selected tree items in multiple or checkable mode. Defaults to two-way binding, supports data validation, and refreshes on in-place collection changes.";
+    public const string ApiPropertyIsMultiple = "Allows selecting multiple tree nodes.";
+    public const string ApiPropertyIsTreeCheckable = "Shows checkboxes in the tree popup.";
+    public const string ApiPropertyIsDefaultExpandAll = "Expands tree nodes by default when the popup opens.";
+    public const string ApiPropertyIsAllowClear = "Displays a clear action when a value is selected.";
+    public const string ApiPropertyIsFilterEnabled = "Allows filtering tree nodes from the input.";
+    public const string ApiPropertyIsShowOverflowTip = "Shows a tooltip with the full selected node text when selected text or tags overflow.";
+    public const string ApiPropertyOverflowTipDelay = "Delay in milliseconds before the overflow tooltip opens.";
+    public const string ApiPropertyOverflowTipPlacement = "Placement of the overflow tooltip relative to the clipped selected node text or tag.";
+    public const string ApiPropertyDataLoader = "Asynchronously loads child nodes when a tree item expands.";
+    public const string ApiPropertyPlacement = "Controls where the popup is placed relative to the input.";
+    public const string ApiPropertyMaxCount = "Maximum number of selected values before more options become disabled.";
+    public const string ApiPropertyStyleVariant = "Input visual variant.";
+    public const string ApiPropertyStatus = "Validation status style of the selector.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
+    public const string TokenNameMinPopupWidth = "Minimum popup width used by TreeSelect.";
+    public const string BindingTitle = "Binding";
+    public const string BindingDescription = "SelectedItem and SelectedItems are two-way bindable by default, including in-place collection changes.";
+    public const string BindingSingleLabel = "Single selected item";
+    public const string BindingMultipleLabel = "Multiple selected items";
+    public const string BindingSetSingleButton = "Select your leaf";
+    public const string BindingSetMultipleButton = "Select two nodes";
+    public const string BindingClearButton = "Clear";
+    public const string BindingViewModelValueLabel = "ViewModel value:";
     public const string MultipleSelectionTitle = "Multiple Selection";
     public const string MultipleSelectionDescription = "Multiple selection usage.";
     public const string GenerateFromTreeDataTitle = "Generate from tree data";
@@ -31,12 +72,18 @@ internal partial class en_US : LanguageProvider
     public const string PrefixAndSuffixDescription = "Custom prefix and suffixIcon.";
     public const string MaxCountTitle = "Max Count";
     public const string MaxCountDescription = "You can set the maxCount prop to control the max number of items can be selected. When the limit is exceeded, the options will become disabled.";
+    public const string SizeTypeTitle = "Sizes";
+    public const string SizeTypeDescription = "TreeSelect supports large, middle, small, and Custom sizes with local height and font overrides.";
     public const string P2PlaceholderTextPleaseSelect = "Please select";
     public const string P2TextPlacement = "Placement:";
     public const string P2ContentTopleft = "Top Left";
     public const string P2ContentTopright = "Top Right";
     public const string P2ContentBottomleft = "Bottom Left";
     public const string P2ContentBottomright = "Bottom Right";
+    public const string P2ContentLarge = "Large";
+    public const string P2ContentDefault = "Default";
+    public const string P2ContentSmall = "Small";
+    public const string P2ContentCustom = "Custom";
 
     public const string P2OnContentShowIcon = "Show icon";
 
@@ -76,5 +123,4 @@ internal partial class en_US : LanguageProvider
     public const string P2HeaderExpandToLoad = "Expand to load";
     public const string P2HeaderTreeNode = "Tree Node";
 
-    protected override Type GetResourceKindType() => typeof(TreeSelectShowCaseLangResourceKind);
 }

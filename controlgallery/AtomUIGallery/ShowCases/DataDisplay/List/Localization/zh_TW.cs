@@ -1,17 +1,67 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.List;
 
 [LanguageProvider(LanguageCode.zh_TW, ListShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變數";
+    public const string ComponentCategory = "資料展示";
+    public const string ComponentStatusStable = ".NET 10";
+    public const string PageSubtitle = "展示一組相關項目，並支持選擇、分組、排序、篩選和分頁。";
+    public const string PageDescription = "List 用緊湊的縱向結構呈現重複信息。它支持 ListView 的分組、選擇指示器、空狀態、篩選、排序和分頁，也覆蓋簡單的 ListBox 用法。";
+    public const string ApiColumnProperty = "屬性";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "類型";
+    public const string ApiColumnDefault = "默認值";
+    public const string ApiPropertyIsSelectable = "控制列表項是否可以被選擇。";
+    public const string ApiPropertySizeType = "控制列表項密度。";
+    public const string ApiPropertyIsBorderless = "移除列表表面邊框。";
+    public const string ApiPropertySelectionMode = "控制單選、多選或切換選擇行為。";
+    public const string ApiPropertySelectedItems = "選中項集合。預設使用 TwoWay 繫結，並參與 Avalonia 資料驗證。";
+    public const string ApiPropertyIsShowSelectedIndicator = "在選中項內部顯示選中指示器。";
+    public const string ApiPropertyIsShowEmptyIndicator = "無項目時顯示空狀態指示。";
+    public const string ApiPropertyIsGroupEnabled = "根據項目的分組值對列表項分組。";
+    public const string ApiPropertyGroupPropertySelector = "選擇用於分組的值。";
+    public const string ApiPropertySortDescriptions = "按一個或多個項目字段排序。";
+    public const string ApiPropertyFilter = "用於判斷項目是否保持可見的篩選器。";
+    public const string ApiPropertyFilterValue = "傳給篩選器的篩選條件。";
+    public const string ApiPropertyFilterValueSelector = "選擇篩選時使用的項目值。";
+    public const string ApiPropertyPaginationVisibility = "控制頂部、底部、兩側或隱藏分頁器。";
+    public const string ApiPropertyPageSize = "每頁顯示的項目數量。";
+    public const string ApiPropertyBottomPagination = "渲染在列表下方的自定義分頁控件。";
+    public const string ApiPropertyFilterHighlightStrategy = "ListBox 篩選文本使用的高亮策略。";
+    public const string TokenColumnToken = "變數";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "範圍";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenNameContentPadding = "列表內容內邊距。";
+    public const string TokenNameItemColor = "列表項文本顏色。";
+    public const string TokenNameItemHoverColor = "列表項懸浮文本顏色。";
+    public const string TokenNameItemSelectedColor = "列表項選中文本顏色。";
+    public const string TokenNameItemDisabledColor = "列表項禁用文本顏色。";
+    public const string TokenNameItemBgColor = "列表項背景色。";
+    public const string TokenNameItemHoverBgColor = "列表項懸浮背景色。";
+    public const string TokenNameItemSelectedBgColor = "列表項選中背景色。";
+    public const string TokenNameItemPadding = "默認列表項內邊距。";
+    public const string TokenNameItemPaddingSM = "小尺寸列表項內邊距。";
+    public const string TokenNameItemPaddingLG = "大尺寸列表項內邊距。";
+    public const string TokenNameItemMargin = "列表項外邊距。";
+    public const string TokenNamePaginationMargin = "ListView 分頁器外邊距。";
+    public const string TokenNameGroupHeaderColor = "分組標題文本顏色。";
+    public const string TokenNameSelectedIndicatorMargin = "選中指示器外邊距。";
+    public const string TokenNameFilterHighlightColor = "ListBox 篩選高亮顏色。";
+    public const string TokenStatusStable = "穩定";
     public const string ScenarioBasic = "基礎";
     public const string ScenarioAdvanced = "進階";
     public const string BasicUsageTitle = "基礎用法";
     public const string BasicUsageDescription = "基礎用法示例。";
     public const string SelectionTitle = "選擇";
     public const string SelectionDescription = "可以設置單選、多選或不可選擇。";
+    public const string SelectedItemsBindingTitle = "SelectedItems 繫結";
+    public const string SelectedItemsBindingDescription = "SelectedItems 不需要顯式設置 Mode=TwoWay；使用者選擇和集合變更都會保持同步。";
     public const string GroupTitle = "分組";
     public const string GroupDescription = "可以根據條件對數據分組。";
     public const string ItemDisabledTitle = "禁用項";
@@ -36,6 +86,10 @@ internal partial class zh_TW : LanguageProvider
     public const string P2ContentSingle = "單選";
     public const string P2ContentMultiple = "多選";
     public const string P2ContentToggle = "切換選擇";
+    public const string P2TextSelectedItems = "已選：";
+    public const string P2TextNoSelection = "無";
+    public const string P2ContentSelectColors = "選擇綠色 / 黃色";
+    public const string P2ContentClearSelection = "清空";
     public const string P2ColorBlue = "藍色";
     public const string P2ColorGreen = "綠色";
     public const string P2ColorRed = "紅色";
@@ -71,6 +125,4 @@ internal partial class zh_TW : LanguageProvider
 
     public const string P2ContentRemoveItem = "移除項";
 
-    protected override Type GetResourceKindType() => typeof(ListShowCaseLangResourceKind);
 }
-

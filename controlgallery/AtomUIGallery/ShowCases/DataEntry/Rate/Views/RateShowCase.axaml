@@ -6,57 +6,134 @@
              xmlns:gallery="https://atomui.net/oss-controls/gallery"
              xmlns:vm="using:AtomUIGallery.ShowCases.Rate"
              x:DataType="vm:RateViewModel">
-    <gallery:ShowCasePanel>
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource BasicTitle}"
-            Description="{gallery:RateShowCaseLangResource BasicDescription}">
-            <atom:Rate/>
-        </gallery:ShowCaseItem>
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="Rate"
+                    Category="{gallery:RateShowCaseLangResource ComponentCategory}"
+                    Status="{gallery:RateShowCaseLangResource ComponentStatusStable}"
+                    Subtitle="{gallery:RateShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:RateShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Desktop.Controls"
+                    Package="AtomUI.Desktop.Controls"
+                    BaseClass="AbstractRate" />
+            </gallery:GalleryStickyTabsHost.Header>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource HalfStarTitle}"
-            Description="{gallery:RateShowCaseLangResource HalfStarDescription}">
-            <atom:Rate DefaultValue="3.5" IsAllowHalf="True"/>
-        </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource ShowCopywritingTitle}"
-            Description="{gallery:RateShowCaseLangResource ShowCopywritingDescription}">
-            <StackPanel Orientation="Vertical" Spacing="10">
-                <atom:Rate Name="ToolTipRate" ValueChanged="HandleValueChanged"/>
-                <TextBlock Text="{Binding ActiveTooltip}"/>
-            </StackPanel>
-        </gallery:ShowCaseItem>
+            <gallery:ShowCasePanel Name="ExamplesContent"
+                                   IsScrollEnabled="False"
+                                   IsDeferredLoadingEnabled="True"
+                                   InitialDeferredLoadItemCount="4"
+                                   DeferredLoadBatchSize="2"
+                                   ContentMargin="28,10,28,28">
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource BasicTitle}"
+        Description="{gallery:RateShowCaseLangResource BasicDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <atom:Rate/>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource ReadOnlyTitle}"
-            Description="{gallery:RateShowCaseLangResource ReadOnlyDescription}">
-            <atom:Rate DefaultValue="2" IsEnabled="False"/>
-        </gallery:ShowCaseItem>
-
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource ClearStarTitle}"
-            Description="{gallery:RateShowCaseLangResource ClearStarDescription}">
-            <StackPanel Spacing="20">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <atom:Rate DefaultValue="3" IsAllowClear="True" />
-                    <TextBlock Text="{gallery:RateShowCaseLangResource P2TextIsallowclearTrue}" />
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource TwoWayBindingTitle}"
+        Description="{gallery:RateShowCaseLangResource TwoWayBindingDescription}"
+        BadgeText="v6.0.8"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+                <StackPanel Orientation="Vertical" Spacing="10">
+                    <atom:Rate Value="{Binding TwoWayValue}" />
+                    <atom:TextBlock Text="{Binding TwoWayValueSummary}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <atom:Button SizeType="Small"
+                                     Command="{Binding SetFourStarsCommand}"
+                                     Content="{gallery:RateShowCaseLangResource P2ContentSetFourStars}" />
+                        <atom:Button SizeType="Small"
+                                     Command="{Binding ClearTwoWayValueCommand}"
+                                     Content="{gallery:RateShowCaseLangResource P2ContentClear}" />
+                    </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <atom:Rate DefaultValue="3" IsAllowClear="False" />
-                    <TextBlock Text="{gallery:RateShowCaseLangResource P2TextIsallowclearFalse}" />
-                </StackPanel>
-            </StackPanel>
-        </gallery:ShowCaseItem>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:RateShowCaseLangResource OtherCharacterTitle}"
-            Description="{gallery:RateShowCaseLangResource OtherCharacterDescription}">
-            <StackPanel Orientation="Vertical" Spacing="10">
-                <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="{antdicons:AntDesignIconProvider HeartOutlined}"/>
-                <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="A"/>
-                <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="秦"/>
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource HalfStarTitle}"
+        Description="{gallery:RateShowCaseLangResource HalfStarDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <atom:Rate DefaultValue="3.5" IsAllowHalf="True"/>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource ShowCopywritingTitle}"
+        Description="{gallery:RateShowCaseLangResource ShowCopywritingDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <StackPanel Orientation="Vertical" Spacing="10">
+            <atom:Rate Name="ToolTipRate"
+                       ToolTips="{Binding Tooltips}"
+                       ValueChanged="HandleValueChanged"/>
+            <TextBlock Text="{Binding ActiveTooltip}"/>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource ReadOnlyTitle}"
+        Description="{gallery:RateShowCaseLangResource ReadOnlyDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <atom:Rate DefaultValue="2" IsEnabled="False"/>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource ClearStarTitle}"
+        Description="{gallery:RateShowCaseLangResource ClearStarDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <StackPanel Spacing="20">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <atom:Rate DefaultValue="3" IsAllowClear="True" />
+                <TextBlock Text="{gallery:RateShowCaseLangResource P2TextIsallowclearTrue}" />
             </StackPanel>
-        </gallery:ShowCaseItem>
-    </gallery:ShowCasePanel>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <atom:Rate DefaultValue="3" IsAllowClear="False" />
+                <TextBlock Text="{gallery:RateShowCaseLangResource P2TextIsallowclearFalse}" />
+            </StackPanel>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:RateShowCaseLangResource OtherCharacterTitle}"
+        Description="{gallery:RateShowCaseLangResource OtherCharacterDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:RateViewModel">
+        <StackPanel Orientation="Vertical" Spacing="10">
+            <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="{antdicons:AntDesignIconProvider HeartOutlined}"/>
+            <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="A"/>
+            <atom:Rate IsAllowHalf="True" IsAllowClear="True" Character="秦"/>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+            </gallery:ShowCasePanel>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
 </UserControl>

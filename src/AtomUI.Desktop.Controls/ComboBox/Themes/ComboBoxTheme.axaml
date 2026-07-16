@@ -15,6 +15,7 @@
                         StyleVariant="{TemplateBinding StyleVariant}"
                         SizeType="{TemplateBinding SizeType}"
                         Status="{TemplateBinding Status}"
+                        DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
                         LeftAddOn="{TemplateBinding LeftAddOn}"
                         LeftAddOnTemplate="{TemplateBinding LeftAddOnTemplate}"
                         RightAddOn="{TemplateBinding RightAddOn}"
@@ -23,14 +24,23 @@
                         ContentLeftAddOn="{TemplateBinding ContentLeftAddOn}"
                         ContentLeftAddOnTemplate="{TemplateBinding ContentLeftAddOnTemplate}">
                         <atom:AddOnDecoratedBox.ContentRightAddOn>
-                             <StackPanel Orientation="Horizontal" Spacing="{atom:SharedTokenResource SpacingXS}">
-                                 <ContentPresenter Name="PART_ContentRightAddOnPresenter" />
+                             <StackPanel Orientation="Horizontal" Spacing="{atom:ComboBoxTokenSharedTokenResource SpacingXS}">
+                                 <ContentPresenter
+                                     Name="PART_ContentRightAddOnPresenter"
+                                     Content="{CompiledBinding $parent[atom:ComboBox].ContentRightAddOn}"
+                                     ContentTemplate="{CompiledBinding $parent[atom:ComboBox].ContentRightAddOnTemplate}"
+                                     IsVisible="{CompiledBinding $parent[atom:ComboBox].ContentRightAddOn, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                  <ContentPresenter
                                      Name="PART_FormFeedBack"
                                      VerticalAlignment="Stretch"
                                      VerticalContentAlignment="Center"
-                                     HorizontalAlignment="Right" />
-                                 <atom:ComboBoxHandle Name="PART_ComboBoxHandle" />
+                                     HorizontalAlignment="Right"
+                                     IsVisible="{CompiledBinding $parent[atom:ComboBox].IsFormFeedbackVisible}"
+                                     Content="{CompiledBinding $parent[atom:ComboBox].FormFeedback}" />
+                                 <atom:ComboBoxHandle
+                                     Name="PART_ComboBoxHandle"
+                                     IsEnabled="{CompiledBinding $parent[atom:ComboBox].IsEnabled}"
+                                     IsMotionEnabled="{CompiledBinding $parent[atom:ComboBox].IsMotionEnabled}" />
                              </StackPanel>
                         </atom:AddOnDecoratedBox.ContentRightAddOn>
                         <Panel>
@@ -47,13 +57,72 @@
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Content="{TemplateBinding SelectionBoxItem}"
-                                ContentTemplate="{TemplateBinding ItemTemplate}" />
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                atom:OverflowTip.IsEnabled="{TemplateBinding IsShowOverflowTip}"
+                                atom:OverflowTip.Text="{TemplateBinding SelectionBoxItem}"
+                                atom:OverflowTip.ShowDelay="{TemplateBinding OverflowTipDelay}"
+                                atom:OverflowTip.Placement="{TemplateBinding OverflowTipPlacement}"
+                                atom:OverflowTip.PlacementTarget="{Binding $parent[atom:AddOnDecoratedBox]}" />
+                            <TextBox
+                                Name="PART_EditableTextBox"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0"
+                                CaretBrush="{atom:ComboBoxTokenSharedTokenResource ColorText}"
+                                SelectionBrush="{atom:ComboBoxTokenSharedTokenResource SelectionBackground}"
+                                SelectionForegroundBrush="{atom:ComboBoxTokenSharedTokenResource SelectionForeground}"
+                                Text="{TemplateBinding Text, Mode=TwoWay}"
+                                PlaceholderText="{TemplateBinding PlaceholderText}"
+                                PlaceholderForeground="{TemplateBinding PlaceholderForeground}"
+                                IsVisible="{TemplateBinding IsEditable}">
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <ScrollViewer
+                                            Name="ScrollViewer"
+                                            Cursor="Ibeam"
+                                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                                            <Panel>
+                                                <atom:TextBlock
+                                                    Name="Placeholder"
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    Text="{TemplateBinding PlaceholderText}"
+                                                    Foreground="{TemplateBinding PlaceholderForeground}"
+                                                    LineHeight="{TemplateBinding LineHeight}"
+                                                    TextAlignment="{TemplateBinding TextAlignment}"
+                                                    TextWrapping="{TemplateBinding TextWrapping}" />
+                                                <atom:InputTextPresenter
+                                                    Name="PART_TextPresenter"
+                                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                    CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                                                    CaretBrush="{TemplateBinding CaretBrush}"
+                                                    CaretIndex="{TemplateBinding CaretIndex}"
+                                                    LineHeight="{TemplateBinding LineHeight}"
+                                                    PasswordChar="{TemplateBinding PasswordChar}"
+                                                    RevealPassword="{TemplateBinding RevealPassword}"
+                                                    SelectionBrush="{TemplateBinding SelectionBrush}"
+                                                    SelectionStart="{TemplateBinding SelectionStart}"
+                                                    SelectionEnd="{TemplateBinding SelectionEnd}"
+                                                    SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                                    Text="{TemplateBinding Text, Mode=TwoWay}"
+                                                    TextAlignment="{TemplateBinding TextAlignment}"
+                                                    TextWrapping="{TemplateBinding TextWrapping}" />
+                                            </Panel>
+                                        </ScrollViewer>
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                            </TextBox>
                         </Panel>
                     </atom:AddOnDecoratedBox>
 
                     <atom:Popup Name="PART_Popup"
                                 WindowManagerAddShadowHint="False"
                                 IsLightDismissEnabled="True"
+                                OverlayDismissEventPassThrough="True"
                                 ShouldUseOverlayLayer="{TemplateBinding ShouldUseOverlayPopup}"
                                 RequestedPlacement="BottomEdgeAlignedLeft"
                                 IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}">
@@ -62,15 +131,28 @@
                             MaxHeight="{TemplateBinding MaxDropDownHeight}"
                             MinWidth="{TemplateBinding EffectivePopupWidth}"
                             Padding="{TemplateBinding PopupContentPadding}">
-                            <atom:ScrollViewer IsScrollChainingEnabled="False"
-                                               IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
-                                               IsLiteMode="{TemplateBinding atom:ScrollViewer.IsLiteMode}"
-                                               AllowAutoHide="{TemplateBinding atom:ScrollViewer.AllowAutoHide}">
-                                <ItemsPresenter
-                                    Name="PART_ItemsPresenter"
-                                    ItemsPanel="{TemplateBinding ItemsPanel}"
-                                    Grid.IsSharedSizeScope="True" />
-                            </atom:ScrollViewer>
+                            <Panel>
+                                <atom:ScrollViewer IsScrollChainingEnabled="False"
+                                                   IsVisible="{TemplateBinding IsEffectiveEmptyVisible, Converter={x:Static BoolConverters.Not}}"
+                                                   IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
+                                                   IsLiteMode="{TemplateBinding atom:ScrollViewer.IsLiteMode}"
+                                                   AllowAutoHide="{TemplateBinding atom:ScrollViewer.AllowAutoHide}">
+                                    <ItemsPresenter
+                                        Name="PART_ItemsPresenter"
+                                        ItemsPanel="{TemplateBinding ItemsPanel}"
+                                        Grid.IsSharedSizeScope="True" />
+                                </atom:ScrollViewer>
+                                <Border
+                                    Name="PART_EmptyIndicator"
+                                    Padding="{atom:ComboBoxTokenSharedTokenResource Padding}"
+                                    IsVisible="{TemplateBinding IsEffectiveEmptyVisible}">
+                                    <atom:Empty
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        SizeType="Small"
+                                        PresetImage="Simple" />
+                                </Border>
+                            </Panel>
                         </Border>
                     </atom:Popup>
                 </Panel>
@@ -81,21 +163,30 @@
         <Setter Property="atom:ScrollViewer.AllowAutoHide" Value="True" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Top" />
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:ComboBoxTokenSharedTokenResource EnableMotion}" />
         <Setter Property="PopupContentPadding" Value="{atom:ComboBoxTokenResource PopupContentPadding}" />
-        <Setter Property="OptionFontSize" Value="{atom:SharedTokenResource FontSize}" />
-        <Setter Property="ItemHeight" Value="{atom:SharedTokenResource ControlHeight}" />
+        <Setter Property="OptionFontSize" Value="{atom:ComboBoxTokenSharedTokenResource FontSize}" />
+        <Setter Property="ItemHeight" Value="{atom:ComboBoxTokenSharedTokenResource ControlHeight}" />
         
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeLG}" />
+            <Setter Property="FontSize" Value="{atom:ComboBoxTokenSharedTokenResource FontSizeLG}" />
         </Style>
-        <Style Selector="^[SizeType=Middle]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+        <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
+            <Setter Property="FontSize" Value="{atom:ComboBoxTokenSharedTokenResource FontSize}" />
         </Style>
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeSM}" />
+            <Setter Property="FontSize" Value="{atom:ComboBoxTokenSharedTokenResource FontSizeSM}" />
             <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
                 <Setter Property="Margin" Value="0, 1, 0, 1" />
+            </Style>
+        </Style>
+
+        <Style Selector="^[IsEditable=True]">
+            <Style Selector="^ /template/ atom|TextBlock#PlaceholderText">
+                <Setter Property="IsVisible" Value="False" />
+            </Style>
+            <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
+                <Setter Property="IsVisible" Value="False" />
             </Style>
         </Style>
 
@@ -105,7 +196,7 @@
             <Setter Property="PopupRootShadow" Value="{atom:PopupHostTokenResource PopupRootShadow}" />
         </Style>
         <Style Selector="^ /template/ Border#PopupFrame">
-            <Setter Property="Background" Value="{atom:SharedTokenResource ColorBgElevated}" />
+            <Setter Property="Background" Value="{atom:ComboBoxTokenSharedTokenResource ColorBgElevated}" />
             <Setter Property="CornerRadius"
                     Value="{atom:PopupHostTokenResource BorderRadius}" />
         </Style>
@@ -114,13 +205,13 @@
             <Style Selector="^:error">
                 <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorErrorText}" />
+                            Value="{atom:ComboBoxTokenSharedTokenResource ColorErrorText}" />
                 </Style>
             </Style>
             <Style Selector="^:warning">
                 <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorWarningText}" />
+                            Value="{atom:ComboBoxTokenSharedTokenResource ColorWarningText}" />
                 </Style>
             </Style>
         </Style>
@@ -129,13 +220,13 @@
             <Style Selector="^:error">
                 <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorErrorText}" />
+                            Value="{atom:ComboBoxTokenSharedTokenResource ColorErrorText}" />
                 </Style>
             </Style>
             <Style Selector="^:warning">
                 <Style Selector="^ /template/ ContentPresenter#SelectedContentPresenter">
                     <Setter Property="Foreground"
-                            Value="{atom:SharedTokenResource ColorWarningText}" />
+                            Value="{atom:ComboBoxTokenSharedTokenResource ColorWarningText}" />
                 </Style>
             </Style>
         </Style>

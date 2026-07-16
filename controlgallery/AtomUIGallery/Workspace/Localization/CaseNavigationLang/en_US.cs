@@ -1,12 +1,15 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 using AtomUIGallery.Workspace.Views;
 
 namespace AtomUIGallery.Workspace.Localization.CaseNavigationLang;
 
 [LanguageProvider(LanguageCode.en_US, CaseNavigation.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
+    public const string Overview = "Overview";
+    public const string Community = "Community";
+    public const string Components = "Components";
+
     public const string General = "General";
     public const string General_AboutUs = "AboutUS";
     public const string General_Palette = "Palette";
@@ -22,6 +25,7 @@ internal partial class en_US : LanguageProvider
     public const string Layout_Grid = "Grid";
     public const string Layout_Space = "Space";
     public const string Layout_Splitter = "Splitter";
+    public const string Layout_Masonry = "Masonry";
 
     public const string Navigation = "Navigation";
     public const string Navigation_Breadcrumb = "Breadcrumb";
@@ -91,5 +95,8 @@ internal partial class en_US : LanguageProvider
     public const string Feedback_Spin = "Spin";
     public const string Feedback_Watermark = "Watermark";
 
-    protected override Type GetResourceKindType() => typeof(CaseNavigationLangResourceKind);
+    public const string Other = "Other";
+    public const string Other_BorderBeam = "BorderBeam";
+    public const string Other_Splash = "Splash";
+
 }

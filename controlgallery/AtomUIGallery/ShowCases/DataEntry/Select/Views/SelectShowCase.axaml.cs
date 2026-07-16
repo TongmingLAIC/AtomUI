@@ -7,7 +7,6 @@ using AtomUI.Data;
 using AtomUI.Desktop.Controls;
 using AtomUI.Theme.Language;
 using Avalonia;
-using Avalonia.Controls;
 using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Select;
@@ -15,12 +14,6 @@ namespace AtomUIGallery.ShowCases.Select;
 public partial class SelectShowCase : GalleryReactiveUserControl<SelectViewModel>
 {
     public const string LanguageId = nameof(SelectShowCase);
-
-    private const string BasicScenario      = "Basic";
-    private const string OptionsScenario    = "Options";
-    private const string AppearanceScenario = "Appearance";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
 
     public SelectShowCase()
     {
@@ -54,59 +47,32 @@ public partial class SelectShowCase : GalleryReactiveUserControl<SelectViewModel
                     viewModel.PrefixSuffixOptions      = null;
                     viewModel.RandomOptions            = null;
                     viewModel.MaxTagCountOptions       = null;
+                    viewModel.DefaultSelectedOption    = null;
                     viewModel.DefaultSelectedOptions   = null;
+                    viewModel.BoundSelectedOption      = null;
+                    viewModel.BoundSelectedOptions     = null;
                 }).DisposeWith(disposables);
             }
         });
+
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
+    private void HandleCustomSearchSelectAttached(object? sender, VisualTreeAttachmentEventArgs args)
     {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+        if (sender is AtomUISelect CustomSearchSelect)
         {
-            content.DataContext = DataContext;
+            CustomSearchSelect.Filter = new CustomFilter();
         }
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    private void HandleSizeTypeChanged(object? sender, OptionCheckedChangedEventArgs e)
     {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (DataContext is SelectViewModel viewModel &&
+            e.CheckedOption.Tag is CustomizableSizeType sizeType)
         {
-            return;
+            viewModel.SelectSizeType = sizeType;
         }
-
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
-    }
-
-    private static Control CreateScenarioContent(string scenario)
-    {
-        return scenario switch
-        {
-            BasicScenario      => new SelectBasicShowCase(),
-            OptionsScenario    => new SelectOptionsShowCase(),
-            AppearanceScenario => new SelectAppearanceShowCase(),
-            _                  => throw new InvalidOperationException($"Unknown Select scenario: {scenario}")
-        };
     }
 
     private void RefreshLocalizedOptions(SelectViewModel viewModel)
@@ -133,7 +99,15 @@ public partial class SelectShowCase : GalleryReactiveUserControl<SelectViewModel
             Option(SelectShowCaseLangResourceKind.P2HeaderDisabled, "Disabled", "disabled", isEnabled: false)
         ];
         viewModel.SingleLucyOptions = [Option(SelectShowCaseLangResourceKind.P2HeaderLucy, "Lucy", "lucy")];
+        viewModel.DefaultSelectedOption  = viewModel.BasicSelectedOptions[2];
         viewModel.DefaultSelectedOptions = [viewModel.BasicSelectedOptions[2]];
+        viewModel.BoundSelectedOption    = viewModel.BasicSelectedOptions[1];
+        viewModel.BoundSelectedOptions =
+            new System.Collections.ObjectModel.ObservableCollection<ISelectOption>
+            {
+                viewModel.BasicSelectedOptions[0],
+                viewModel.BasicSelectedOptions[2]
+            };
     }
 
     private static void InitializeSearchOptions(SelectViewModel viewModel)
@@ -323,7 +297,6 @@ public partial class SelectShowCase : GalleryReactiveUserControl<SelectViewModel
             Emoji       = emoji
         };
     }
-
 }
 
 public record CustomOption : SelectOption

@@ -6,27 +6,57 @@ using System.Reactive.Linq;
 using AtomUI.Controls;
 using AtomUI.Data;
 using AtomUI.Theme;
-using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Metadata;
 
 namespace AtomUI.Desktop.Controls;
 
 public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareControl
 {
     #region 公共属性定义
-    public static readonly StyledProperty<IList<string>?> ItemsSourceProperty =
-        AvaloniaProperty.Register<AbstractImagePreviewer, IList<string>?>(nameof(ItemsSource));
+    public static readonly StyledProperty<IImagePreviewSource?> SourceProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IImagePreviewSource?>(nameof(Source));
 
-    public static readonly StyledProperty<string?> FallbackImageSrcProperty =
-        AvaloniaProperty.Register<AbstractImagePreviewer, string?>(nameof(FallbackImageSrc));
+    public static readonly StyledProperty<IList<IImagePreviewSource>?> SourcesProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IList<IImagePreviewSource>?>(nameof(Sources));
+
+    public static readonly StyledProperty<IImagePreviewSource?> FallbackSourceProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IImagePreviewSource?>(nameof(FallbackSource));
+
+    public static readonly StyledProperty<string?> PreviewTitleProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, string?>(nameof(PreviewTitle));
+
+    public static readonly StyledProperty<PathIcon?> PreviewTitleIconProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, PathIcon?>(nameof(PreviewTitleIcon));
+
+    public static readonly StyledProperty<IImagePreviewTitleResolver?> PreviewTitleResolverProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IImagePreviewTitleResolver?>(
+            nameof(PreviewTitleResolver),
+            DefaultImagePreviewTitleResolver.Instance);
+
+    public static readonly StyledProperty<object?> LoadingContentProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, object?>(nameof(LoadingContent));
+
+    public static readonly StyledProperty<IDataTemplate?> LoadingContentTemplateProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IDataTemplate?>(nameof(LoadingContentTemplate));
+
+    public static readonly StyledProperty<object?> ErrorContentProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, object?>(nameof(ErrorContent));
+
+    public static readonly StyledProperty<IDataTemplate?> ErrorContentTemplateProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, IDataTemplate?>(nameof(ErrorContentTemplate));
 
     public static readonly StyledProperty<bool> IsOpenProperty =
-        AvaloniaProperty.Register<AbstractImagePreviewer, bool>(nameof(IsOpen));
+        AvaloniaProperty.Register<AbstractImagePreviewer, bool>(
+            nameof(IsOpen),
+            defaultBindingMode: BindingMode.TwoWay);
 
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<AbstractImagePreviewer>();
@@ -38,18 +68,89 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         AvaloniaProperty.Register<AbstractImagePreviewer, double>(nameof(CoverHeight), double.NaN);
 
     public static readonly StyledProperty<int> CurrentIndexProperty =
-        AvaloniaProperty.Register<AbstractImagePreviewer, int>(nameof(CurrentIndex), 0);
+        AvaloniaProperty.Register<AbstractImagePreviewer, int>(
+            nameof(CurrentIndex),
+            0,
+            defaultBindingMode: BindingMode.TwoWay);
 
-    public IList<string>? ItemsSource
+    public static readonly StyledProperty<int> CoverIndexProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, int>(
+            nameof(CoverIndex),
+            0,
+            coerce: CoerceNonNegativeValue);
+
+    public static readonly StyledProperty<int> MaxConcurrentLoadsProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, int>(
+            nameof(MaxConcurrentLoads),
+            4,
+            coerce: CoercePositiveValue);
+
+    public static readonly StyledProperty<int> PreloadCountProperty =
+        AvaloniaProperty.Register<AbstractImagePreviewer, int>(
+            nameof(PreloadCount),
+            1,
+            coerce: CoerceNonNegativeValue);
+
+    public IImagePreviewSource? Source
     {
-        get => GetValue(ItemsSourceProperty);
-        set => SetValue(ItemsSourceProperty, value);
+        get => GetValue(SourceProperty);
+        set => SetValue(SourceProperty, value);
     }
 
-    public string? FallbackImageSrc
+    public IList<IImagePreviewSource>? Sources
     {
-        get => GetValue(FallbackImageSrcProperty);
-        set => SetValue(FallbackImageSrcProperty, value);
+        get => GetValue(SourcesProperty);
+        set => SetValue(SourcesProperty, value);
+    }
+
+    public IImagePreviewSource? FallbackSource
+    {
+        get => GetValue(FallbackSourceProperty);
+        set => SetValue(FallbackSourceProperty, value);
+    }
+
+    public string? PreviewTitle
+    {
+        get => GetValue(PreviewTitleProperty);
+        set => SetValue(PreviewTitleProperty, value);
+    }
+
+    public PathIcon? PreviewTitleIcon
+    {
+        get => GetValue(PreviewTitleIconProperty);
+        set => SetValue(PreviewTitleIconProperty, value);
+    }
+
+    public IImagePreviewTitleResolver? PreviewTitleResolver
+    {
+        get => GetValue(PreviewTitleResolverProperty);
+        set => SetValue(PreviewTitleResolverProperty, value);
+    }
+
+    [DependsOn(nameof(LoadingContentTemplate))]
+    public object? LoadingContent
+    {
+        get => GetValue(LoadingContentProperty);
+        set => SetValue(LoadingContentProperty, value);
+    }
+
+    public IDataTemplate? LoadingContentTemplate
+    {
+        get => GetValue(LoadingContentTemplateProperty);
+        set => SetValue(LoadingContentTemplateProperty, value);
+    }
+
+    [DependsOn(nameof(ErrorContentTemplate))]
+    public object? ErrorContent
+    {
+        get => GetValue(ErrorContentProperty);
+        set => SetValue(ErrorContentProperty, value);
+    }
+
+    public IDataTemplate? ErrorContentTemplate
+    {
+        get => GetValue(ErrorContentTemplateProperty);
+        set => SetValue(ErrorContentTemplateProperty, value);
     }
 
     public bool IsOpen
@@ -80,6 +181,24 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
     {
         get => GetValue(CurrentIndexProperty);
         set => SetValue(CurrentIndexProperty, value);
+    }
+
+    public int CoverIndex
+    {
+        get => GetValue(CoverIndexProperty);
+        set => SetValue(CoverIndexProperty, value);
+    }
+
+    public int MaxConcurrentLoads
+    {
+        get => GetValue(MaxConcurrentLoadsProperty);
+        set => SetValue(MaxConcurrentLoadsProperty, value);
+    }
+
+    public int PreloadCount
+    {
+        get => GetValue(PreloadCountProperty);
+        set => SetValue(PreloadCountProperty, value);
     }
 
     #endregion
@@ -152,18 +271,18 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
 
     #region 内部属性定义
 
-    internal static readonly DirectProperty<AbstractImagePreviewer, IList<PreviewImageSource>?> EffectiveSourcesProperty =
-        AvaloniaProperty.RegisterDirect<AbstractImagePreviewer, IList<PreviewImageSource>?>(
-            nameof(EffectiveSources),
-            o => o.EffectiveSources,
-            (o, v) => o.EffectiveSources = v);
+    internal static readonly DirectProperty<AbstractImagePreviewer, IList<ImagePreviewItem>?> EffectiveItemsProperty =
+        AvaloniaProperty.RegisterDirect<AbstractImagePreviewer, IList<ImagePreviewItem>?>(
+            nameof(EffectiveItems),
+            o => o.EffectiveItems,
+            (o, v) => o.EffectiveItems = v);
 
-    private IList<PreviewImageSource>? _effectiveSources;
+    private IList<ImagePreviewItem>? _effectiveItems;
 
-    internal IList<PreviewImageSource>? EffectiveSources
+    internal IList<ImagePreviewItem>? EffectiveItems
     {
-        get => _effectiveSources;
-        set => SetAndRaise(EffectiveSourcesProperty, ref _effectiveSources, value);
+        get => _effectiveItems;
+        set => SetAndRaise(EffectiveItemsProperty, ref _effectiveItems, value);
     }
 
     #endregion
@@ -173,6 +292,10 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
     private IDisposable? _modalSubscription;
     private bool _dialogOpening;
     private bool _dialogClosing;
+    private readonly IImageSourceLoader _imageSourceLoader;
+    private readonly ImagePreviewLoadScheduler _imageLoadScheduler;
+
+    private protected IImageSourceLoader ImageSourceLoader => _imageSourceLoader;
 
     static AbstractImagePreviewer()
     {
@@ -180,115 +303,406 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         IsOpenProperty.Changed.AddClassHandler<AbstractImagePreviewer>((x, e) => x.HandleIsOpenChanged(e));
     }
 
-    public AbstractImagePreviewer()
+    private static int CoercePositiveValue(AvaloniaObject sender, int value)
     {
-        this.RegisterTokenResourceScope(ImagePreviewerToken.ScopeProvider);
+        return Math.Max(1, value);
+    }
+
+    private static int CoerceNonNegativeValue(AvaloniaObject sender, int value)
+    {
+        return Math.Max(0, value);
+    }
+
+    public AbstractImagePreviewer()
+        : this(new DefaultImageSourceLoader())
+    {
+    }
+
+    internal AbstractImagePreviewer(IImageSourceLoader imageSourceLoader)
+    {
+        _imageSourceLoader   = imageSourceLoader;
+        _imageLoadScheduler  = new ImagePreviewLoadScheduler(
+            imageSourceLoader,
+            () => MaxConcurrentLoads,
+            HandleItemLoadSettled);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == ItemsSourceProperty)
+        if (change.Property == SourceProperty ||
+            change.Property == SourcesProperty)
         {
             HandleSourceChanged();
         }
-    }
-
-    internal PreviewImageSource LoadImageSource(string filePath)
-    {
-        using var stream  = AssetsLoader.OpenStream(filePath);
-        if (IsSvgImage(filePath))
+        else if (change.Property == FallbackSourceProperty)
         {
-            return PreviewImageSource.CreateSvg(stream);
+            HandleFallbackSourceChanged();
         }
-        return PreviewImageSource.CreateBitmap(stream);
+        else if (change.Property == CurrentIndexProperty ||
+                 change.Property == PreloadCountProperty ||
+                 change.Property == MaxConcurrentLoadsProperty)
+        {
+            if (IsOpen)
+            {
+                RequestPreviewLoads();
+            }
+        }
     }
 
     private protected virtual void HandleSourceChanged()
     {
-        MaterializeEffectiveSourcesFromItemsSource();
+        MaterializeEffectiveItemsFromSources();
     }
 
-    private protected void MaterializeEffectiveSourcesFromItemsSource()
+    private protected virtual void HandleFallbackSourceChanged()
     {
-        var itemsSource = ItemsSource;
-        if (itemsSource == null || itemsSource.Count == 0)
+        if (ShouldMaterializeFallbackEffectiveSource())
         {
-            ClearEffectiveSources();
+            MaterializeFallbackEffectiveSource();
+        }
+    }
+
+    private protected void MaterializeEffectiveItemsFromSources()
+    {
+        var sources = ResolveSources();
+        if (sources.Count == 0)
+        {
+            ClearEffectiveItems();
             return;
         }
 
-        var effectiveSources = new List<PreviewImageSource>(itemsSource.Count);
-        foreach (var source in itemsSource)
+        var items = CreateEffectiveItems(sources);
+        if (HasSameItems(EffectiveItems, items))
         {
-            try
-            {
-                effectiveSources.Add(LoadImageSource(source));
-            }
-            catch (Exception)
-            {
-                // TODO 这个错误直接抛出还是忽略
-            }
+            return;
         }
 
-        SetEffectiveSources(effectiveSources);
+        SetEffectiveItems(items, items);
     }
 
     private protected void MaterializeFallbackEffectiveSource()
     {
-        if (FallbackImageSrc != null)
+        var fallbackSource = ResolveFallbackSource();
+        if (fallbackSource != null)
         {
-            try
-            {
-                SetEffectiveSources(new[] { LoadImageSource(FallbackImageSrc) });
-            }
-            catch (Exception)
-            {
-                ClearEffectiveSources();
-            }
+            var item = new ImagePreviewItem(fallbackSource);
+            SetEffectiveItems(new[] { item });
+            RequestItemLoad(item, ImagePreviewLoadPriority.Cover);
         }
         else
         {
-            ClearEffectiveSources();
+            ClearEffectiveItems();
         }
     }
 
-    private protected void ClearEffectiveSources()
+    private protected void ClearEffectiveItems()
     {
-        SetEffectiveSources(Array.Empty<PreviewImageSource>());
+        SetEffectiveItems(Array.Empty<ImagePreviewItem>());
     }
 
-    private void SetEffectiveSources(IList<PreviewImageSource> effectiveSources)
+    private List<ImagePreviewItem> CreateEffectiveItems(IReadOnlyList<IImagePreviewSource> sources)
     {
-        var oldSources = EffectiveSources;
-        if (ReferenceEquals(oldSources, effectiveSources))
+        var reusableItems = CreateReusableItemMap(EffectiveItems);
+        var items         = new List<ImagePreviewItem>(sources.Count);
+        foreach (var source in sources)
         {
-            return;
+            items.Add(TryTakeReusableItem(reusableItems, source) ?? new ImagePreviewItem(source));
         }
 
-        SetCurrentValue(EffectiveSourcesProperty, effectiveSources);
-        DisposeSources(oldSources);
+        return items;
     }
 
-    private static void DisposeSources(IList<PreviewImageSource>? sources)
+    private static Dictionary<object, Queue<ImagePreviewItem>> CreateReusableItemMap(IList<ImagePreviewItem>? items)
     {
-        if (sources != null)
+        var reusableItems = new Dictionary<object, Queue<ImagePreviewItem>>();
+        if (items is null)
         {
-            foreach (var source in sources)
+            return reusableItems;
+        }
+
+        foreach (var item in items)
+        {
+            var identity = ResolveSourceIdentity(item.Source);
+            if (!reusableItems.TryGetValue(identity, out var queue))
             {
-                source.Dispose();
+                queue = new Queue<ImagePreviewItem>();
+                reusableItems.Add(identity, queue);
             }
+
+            queue.Enqueue(item);
         }
+
+        return reusableItems;
     }
 
-    private bool IsSvgImage(string filePath)
+    private static ImagePreviewItem? TryTakeReusableItem(Dictionary<object, Queue<ImagePreviewItem>> reusableItems,
+                                                        IImagePreviewSource source)
     {
-        if (string.IsNullOrWhiteSpace(filePath))
+        if (reusableItems.TryGetValue(ResolveSourceIdentity(source), out var queue) && queue.Count > 0)
+        {
+            var item = queue.Dequeue();
+            item.UpdateSource(source);
+            return item;
+        }
+
+        return null;
+    }
+
+    private static object ResolveSourceIdentity(IImagePreviewSource source)
+    {
+        if (source is IImagePreviewSourceIdentity identitySource &&
+            identitySource.Identity is { } identity)
+        {
+            return identity;
+        }
+
+        return source;
+    }
+
+    private static bool HasSameSourceIdentity(IImagePreviewSource first, IImagePreviewSource second)
+    {
+        return Equals(ResolveSourceIdentity(first), ResolveSourceIdentity(second));
+    }
+
+    private static bool HasSameItems(IList<ImagePreviewItem>? oldItems, IList<ImagePreviewItem> newItems)
+    {
+        if (oldItems is null || oldItems.Count != newItems.Count)
         {
             return false;
         }
 
-        return string.Equals(Path.GetExtension(filePath), ".svg", StringComparison.OrdinalIgnoreCase);
+        for (var i = 0; i < oldItems.Count; i++)
+        {
+            if (!ReferenceEquals(oldItems[i], newItems[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void SetEffectiveItems(IList<ImagePreviewItem> effectiveItems,
+                                   IReadOnlyCollection<ImagePreviewItem>? preservedItems = null)
+    {
+        var oldItems = EffectiveItems;
+        if (ReferenceEquals(oldItems, effectiveItems))
+        {
+            return;
+        }
+
+        CancelImageLoads();
+        UnsubscribeItems(oldItems);
+        SetCurrentValue(EffectiveItemsProperty, effectiveItems);
+        SubscribeItems(effectiveItems);
+        if (preservedItems is null)
+        {
+            DisposeItems(oldItems);
+        }
+        else
+        {
+            DisposeItemsExcept(oldItems, preservedItems);
+        }
+    }
+
+    private static void DisposeItems(IList<ImagePreviewItem>? items)
+    {
+        if (items != null)
+        {
+            foreach (var item in items)
+            {
+                item.Dispose();
+            }
+        }
+    }
+
+    private IReadOnlyList<IImagePreviewSource> ResolveSources()
+    {
+        if (Sources is { Count: > 0 })
+        {
+            return Sources.Where(source => source is not null).ToList();
+        }
+
+        return Source is null ? [] : [Source];
+    }
+
+    private IImagePreviewSource? ResolveFallbackSource()
+    {
+        return FallbackSource;
+    }
+
+    private bool ShouldMaterializeFallbackEffectiveSource()
+    {
+        var sources = ResolveSources();
+        if (sources.Count == 0)
+        {
+            return true;
+        }
+
+        var fallbackSource = ResolveFallbackSource();
+        if (fallbackSource is null)
+        {
+            return false;
+        }
+
+        if (EffectiveItems is not { Count: > 0 } items)
+        {
+            return false;
+        }
+
+        if (items.Count == 1 &&
+            sources.All(source => !HasSameSourceIdentity(source, items[0].Source)))
+        {
+            return true;
+        }
+
+        return items.All(item => item.IsFailed);
+    }
+
+    private void CancelImageLoads()
+    {
+        _imageLoadScheduler.Reset();
+    }
+
+    internal void RequestPreviewLoads()
+    {
+        CancelImageLoads();
+        if (EffectiveItems is not { Count: > 0 } effectiveItems)
+        {
+            return;
+        }
+
+        var currentIndex = ClampIndex(CurrentIndex, effectiveItems.Count);
+        RequestItemLoad(effectiveItems[currentIndex], ImagePreviewLoadPriority.Current);
+        RequestItemLoad(effectiveItems[ClampIndex(CoverIndex, effectiveItems.Count)], ImagePreviewLoadPriority.Cover);
+
+        var preloadCount = PreloadCount;
+        for (var offset = 1; offset <= preloadCount; offset++)
+        {
+            var previousIndex = currentIndex - offset;
+            if (previousIndex >= 0)
+            {
+                RequestItemLoad(effectiveItems[previousIndex], ImagePreviewLoadPriority.Preload);
+            }
+
+            var nextIndex = currentIndex + offset;
+            if (nextIndex < effectiveItems.Count)
+            {
+                RequestItemLoad(effectiveItems[nextIndex], ImagePreviewLoadPriority.Preload);
+            }
+        }
+    }
+
+    private protected void RequestItemLoad(ImagePreviewItem item, ImagePreviewLoadPriority priority)
+    {
+        _imageLoadScheduler.Enqueue(item, priority);
+    }
+
+    private protected virtual void RequestClosedStateLoads()
+    {
+    }
+
+    private protected static int ClampIndex(int index, int count)
+    {
+        if (count <= 0)
+        {
+            return 0;
+        }
+
+        if (index < 0)
+        {
+            return 0;
+        }
+
+        return index >= count ? count - 1 : index;
+    }
+
+    private void SubscribeItems(IList<ImagePreviewItem>? items)
+    {
+        if (items == null)
+        {
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            item.PropertyChanged += HandleEffectiveItemPropertyChanged;
+        }
+    }
+
+    private void UnsubscribeItems(IList<ImagePreviewItem>? items)
+    {
+        if (items == null)
+        {
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            item.PropertyChanged -= HandleEffectiveItemPropertyChanged;
+        }
+    }
+
+    private void HandleEffectiveItemPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(ImagePreviewItem.State))
+        {
+            CompleteCurrentLoadBatchIfReady();
+        }
+    }
+
+    private void HandleItemLoadSettled(ImagePreviewItem item)
+    {
+        CompleteCurrentLoadBatchIfReady();
+    }
+
+    private void CompleteCurrentLoadBatchIfReady()
+    {
+        if (EffectiveItems is not { Count: > 0 } items ||
+            items.Any(item => item.IsLoading || item.State == ImagePreviewItemState.Pending))
+        {
+            return;
+        }
+
+        var loadedItems = items.Where(item => item.IsLoaded).ToList();
+        if (loadedItems.Count == 0)
+        {
+            var fallbackSource = ResolveFallbackSource();
+            if (fallbackSource is not null &&
+                items.Any(item => !HasSameSourceIdentity(item.Source, fallbackSource)))
+            {
+                MaterializeFallbackEffectiveSource();
+            }
+            return;
+        }
+
+        if (loadedItems.Count == items.Count)
+        {
+            return;
+        }
+
+        UnsubscribeItems(items);
+        SetCurrentValue(EffectiveItemsProperty, loadedItems);
+        SubscribeItems(loadedItems);
+        DisposeItemsExcept(items, loadedItems);
+    }
+
+    private static void DisposeItemsExcept(IList<ImagePreviewItem>? items,
+                                           IReadOnlyCollection<ImagePreviewItem> preservedItems)
+    {
+        if (items is null)
+        {
+            return;
+        }
+
+        foreach (var item in items)
+        {
+            if (!preservedItems.Contains(item))
+            {
+                item.Dispose();
+            }
+        }
     }
 
     protected override void OnLoaded(RoutedEventArgs args)
@@ -297,9 +711,15 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         HandleLoadedFallbackSource();
     }
 
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        CancelImageLoads();
+    }
+
     private protected virtual void HandleLoadedFallbackSource()
     {
-        if (EffectiveSources == null || EffectiveSources?.Count == 0)
+        if (EffectiveItems == null || EffectiveItems?.Count == 0)
         {
             MaterializeFallbackEffectiveSource();
         }
@@ -336,6 +756,12 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         }
 
         PrepareDialogOpen();
+        if (EffectiveItems is not { Count: > 0 })
+        {
+            return;
+        }
+        RequestPreviewLoads();
+
         _dialogOpening = true;
         var placementTarget = this;
         Debug.Assert(placementTarget != null);
@@ -533,6 +959,14 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
 
     private protected virtual void PrepareDialogOpen()
     {
+        if (ResolveSources().Count > 0)
+        {
+            MaterializeEffectiveItemsFromSources();
+        }
+        else
+        {
+            MaterializeFallbackEffectiveSource();
+        }
     }
 
     protected virtual void CloseDialog()
@@ -564,6 +998,8 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
 
         _modalSubscription?.Dispose();
         _modalSubscription = null;
+        CancelImageLoads();
+        RequestClosedStateLoads();
         using (BeginIgnoringIsOpen())
         {
             SetCurrentValue(IsOpenProperty, false);
@@ -576,10 +1012,21 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         disposables.Add(BindUtils.RelayBind(this, ImageScaleStepProperty, dialogHost, ImagePreviewerDialog.ScaleStepProperty));
         disposables.Add(BindUtils.RelayBind(this, ImageMinScaleProperty, dialogHost, ImagePreviewerDialog.MinScaleProperty));
         disposables.Add(BindUtils.RelayBind(this, ImageMaxScaleProperty, dialogHost, ImagePreviewerDialog.MaxScaleProperty));
-        disposables.Add(BindUtils.RelayBind(this, EffectiveSourcesProperty, dialogHost, ImagePreviewerDialog.ItemsSourceProperty));
+        disposables.Add(BindUtils.RelayBind(this, EffectiveItemsProperty, dialogHost, ImagePreviewerDialog.ItemsSourceProperty));
+        disposables.Add(BindUtils.RelayBind(this, LoadingContentProperty, dialogHost, ImagePreviewerDialog.LoadingContentProperty));
+        disposables.Add(BindUtils.RelayBind(this, LoadingContentTemplateProperty, dialogHost, ImagePreviewerDialog.LoadingContentTemplateProperty));
+        disposables.Add(BindUtils.RelayBind(this, ErrorContentProperty, dialogHost, ImagePreviewerDialog.ErrorContentProperty));
+        disposables.Add(BindUtils.RelayBind(this, ErrorContentTemplateProperty, dialogHost, ImagePreviewerDialog.ErrorContentTemplateProperty));
         disposables.Add(BindUtils.RelayBind(this, IsMotionEnabledProperty, dialogHost, ImagePreviewerDialog.IsMotionEnabledProperty));
         disposables.Add(BindUtils.RelayBind(this, IsDialogModalProperty, dialogHost, ImagePreviewerDialog.IsModalProperty));
-        disposables.Add(BindUtils.RelayBind(this, CurrentIndexProperty, dialogHost, ImagePreviewerDialog.CurrentIndexProperty));
+        disposables.Add(BindUtils.RelayBind(this,
+            CurrentIndexProperty,
+            dialogHost,
+            ImagePreviewerDialog.CurrentIndexProperty,
+            BindingMode.TwoWay));
+        disposables.Add(BindUtils.RelayBind(this, PreviewTitleProperty, dialogHost, Window.TitleProperty));
+        disposables.Add(BindUtils.RelayBind(this, PreviewTitleIconProperty, dialogHost, ImagePreviewerDialog.TitleIconProperty));
+        disposables.Add(BindUtils.RelayBind(this, PreviewTitleResolverProperty, dialogHost, ImagePreviewerDialog.PreviewTitleResolverProperty));
     }
 
     private void RelayOverlayHostBindings(CompositeDisposable disposables, ImagePreviewerOverlayHost overlayHost)
@@ -588,10 +1035,18 @@ public abstract class AbstractImagePreviewer : TemplatedControl, IMotionAwareCon
         disposables.Add(BindUtils.RelayBind(this, ImageScaleStepProperty, overlayHost, ImagePreviewerOverlayHost.ScaleStepProperty));
         disposables.Add(BindUtils.RelayBind(this, ImageMinScaleProperty, overlayHost, ImagePreviewerOverlayHost.MinScaleProperty));
         disposables.Add(BindUtils.RelayBind(this, ImageMaxScaleProperty, overlayHost, ImagePreviewerOverlayHost.MaxScaleProperty));
-        disposables.Add(BindUtils.RelayBind(this, EffectiveSourcesProperty, overlayHost, ImagePreviewerOverlayHost.ItemsSourceProperty));
+        disposables.Add(BindUtils.RelayBind(this, EffectiveItemsProperty, overlayHost, ImagePreviewerOverlayHost.ItemsSourceProperty));
+        disposables.Add(BindUtils.RelayBind(this, LoadingContentProperty, overlayHost, ImagePreviewerOverlayHost.LoadingContentProperty));
+        disposables.Add(BindUtils.RelayBind(this, LoadingContentTemplateProperty, overlayHost, ImagePreviewerOverlayHost.LoadingContentTemplateProperty));
+        disposables.Add(BindUtils.RelayBind(this, ErrorContentProperty, overlayHost, ImagePreviewerOverlayHost.ErrorContentProperty));
+        disposables.Add(BindUtils.RelayBind(this, ErrorContentTemplateProperty, overlayHost, ImagePreviewerOverlayHost.ErrorContentTemplateProperty));
         disposables.Add(BindUtils.RelayBind(this, IsMotionEnabledProperty, overlayHost, ImagePreviewerOverlayHost.IsMotionEnabledProperty));
         disposables.Add(BindUtils.RelayBind(this, IsDialogModalProperty, overlayHost, ImagePreviewerOverlayHost.IsModalProperty));
-        disposables.Add(BindUtils.RelayBind(this, CurrentIndexProperty, overlayHost, ImagePreviewerOverlayHost.CurrentIndexProperty));
+        disposables.Add(BindUtils.RelayBind(this,
+            CurrentIndexProperty,
+            overlayHost,
+            ImagePreviewerOverlayHost.CurrentIndexProperty,
+            BindingMode.TwoWay));
     }
 
     private void RootTemplateApplied(object? sender, TemplateAppliedEventArgs e)

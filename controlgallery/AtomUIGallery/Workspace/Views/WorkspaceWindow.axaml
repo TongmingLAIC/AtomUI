@@ -1,29 +1,25 @@
 <atom:Window xmlns="https://github.com/avaloniaui"
-             xmlns:rxui="http://reactiveui.net"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:atom="https://atomui.net"
              xmlns:gallery="https://atomui.net/oss-controls/gallery"
+             xmlns:antdicons="https://atomui.net/icons/antdesign"
              xmlns:workspaceviews="using:AtomUIGallery.Workspace.Views"
              xmlns:vm="using:AtomUIGallery.Workspace.ViewModels"
              x:Class="AtomUIGallery.Workspace.Views.WorkspaceWindow"
              x:DataType="vm:WorkspaceWindowViewModel"
              Icon="/Assets/AtomUIGallery.ico"
-             Title="{gallery:WorkspaceWindowLangResource WindowTitle}"
+             Title="{x:Null}"
              IsPinCaptionButtonVisible="True"
              IsFullScreenCaptionButtonVisible="True"
              WindowState="Normal"
              WindowStartupLocation="CenterScreen"
              Height="900"
+             MinWidth="520"
              Width="1300">
-    <atom:Window.LogoTemplate>
-        <DataTemplate>
-            <Image Source="/Assets/gallery-logo.png" />
-        </DataTemplate>
-    </atom:Window.LogoTemplate>
-    <DockPanel LastChildFill="True"
-               Margin="0 0 2 0">
-        <atom:Menu DockPanel.Dock="Top" Margin="4, 0, 4, 0">
-            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemSettings}">
+    <atom:Window.Resources>
+        <atom:Menu x:Key="WorkspaceTitleBarMenu">
+            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemSettings}"
+                           Icon="{antdicons:AntDesignIconProvider Kind=SettingOutlined}">
                 <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemWindowOptions}">
                     <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemEnableFullScreen}"
                                    ToggleType="CheckBox"
@@ -51,7 +47,8 @@
                                    Tag="{x:Static workspaceviews:WindowMenuItemKind.Resize}" />
                 </atom:MenuItem>
             </atom:MenuItem>
-            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemTheme}">
+            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemTheme}"
+                           Icon="{antdicons:AntDesignIconProvider Kind=BulbOutlined}">
                 <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemDarkMode}"
                                ToggleType="CheckBox"
                                Tag="{x:Static workspaceviews:WindowMenuItemKind.DarkMode}" />
@@ -67,7 +64,8 @@
                                IsChecked="True"
                                Tag="{x:Static workspaceviews:WindowMenuItemKind.WaveSpirit}" />
             </atom:MenuItem>
-            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemLanguage}">
+            <atom:MenuItem Header="{gallery:WorkspaceWindowLangResource MenuItemLanguage}"
+                           Icon="{antdicons:AntDesignIconProvider Kind=GlobalOutlined}">
                 <atom:MenuItem Header="简体中文"
                                ToggleType="Radio"
                                IsChecked="{Binding IsZhCN}"
@@ -82,7 +80,13 @@
                                Tag="{x:Static workspaceviews:WindowMenuItemKind.LanguageEnUS}" />
             </atom:MenuItem>
         </atom:Menu>
-        <workspaceviews:CaseNavigation Name="ShowCaseNavigation" DockPanel.Dock="Left" />
-        <rxui:RoutedViewHost Name="RoutedViewHost" PageTransition="{x:Null}" ClipToBounds="True" />
-    </DockPanel>
+    </atom:Window.Resources>
+    <Grid>
+        <Grid Name="ShellHost" />
+        <Border Name="TitleBarBottomSeparator"
+                Height="1"
+                VerticalAlignment="Top"
+                Background="{atom:SharedTokenResource ColorBorderSecondary}"
+                IsHitTestVisible="False" />
+    </Grid>
 </atom:Window>

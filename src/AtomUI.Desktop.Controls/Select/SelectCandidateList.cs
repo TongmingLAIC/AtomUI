@@ -1,4 +1,3 @@
-using System.Collections;
 using AtomUI.Controls;
 using AtomUI.Controls.Data;
 using AtomUI.Desktop.Controls.Primitives;
@@ -154,6 +153,9 @@ internal class SelectCandidateList : ListView, ICandidateList
     {
         base.PrepareListViewItem(listItem, item, index);
         listItem[!SelectCandidateListItem.IsHideSelectedOptionsProperty] = this[!IsHideSelectedOptionsProperty];
+        listItem.SetCurrentValue(
+            SelectCandidateListItem.IsCandidateSelectedProperty,
+            Equals(item, CandidateSelectedItem));
     }
 
     private void ResetScrollViewer()
@@ -486,25 +488,32 @@ internal class SelectCandidateList : ListView, ICandidateList
         }
 
         var localIndex = GlobalIndexLocalIndex(index);
+        if (localIndex < 0 || localIndex >= ItemCount)
+        {
+            return false;
+        }
+
+        var candidateItem = Items[localIndex];
+        if (candidateItem is IGroupListItemData groupListItemData && groupListItemData.IsGroupItem)
+        {
+            return false;
+        }
+
         if (ItemsPanelRoot is CandidateVirtualizingStackPanel virtualizingStackPanel)
         {
             virtualizingStackPanel.ScrollCandidateItemIntoView(localIndex);
         }
 
+        SetCurrentValue(CandidateSelectedItemProperty, candidateItem);
+        SetCurrentValue(CandidateSelectedIndexProperty, index);
+
         for (var i = 0; i < ItemCount; i++)
         {
             if (ContainerFromIndex(i) is SelectCandidateListItem childContainer)
             {
-                if (i == localIndex)
-                {
-                    childContainer.SetCurrentValue(SelectCandidateListItem.IsCandidateSelectedProperty, true);
-                    SetCurrentValue(CandidateSelectedItemProperty, Items[i]);
-                    SetCurrentValue(CandidateSelectedIndexProperty, GlobalIndex(i));
-                }
-                else
-                {
-                    childContainer.SetCurrentValue(SelectCandidateListItem.IsCandidateSelectedProperty, false);
-                }
+                childContainer.SetCurrentValue(
+                    SelectCandidateListItem.IsCandidateSelectedProperty,
+                    i == localIndex);
             }
         }
         return true;

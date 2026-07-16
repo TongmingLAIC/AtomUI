@@ -1,19 +1,66 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Button;
 
 [LanguageProvider(LanguageCode.zh_CN, ButtonShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ComponentCategory = "通用";
+    public const string ComponentStatusStable = "稳定";
+    public const string PageSubtitle = "触发操作，并通过清晰的视觉层级表达操作意图。";
+    public const string PageDescription = "Button 是 AtomUI 中最基础的动作控件。通过类型、形状、尺寸、图标和加载状态，可以构建可预期的操作流程，同时保持 Ant Design 的交互模型。";
+    public const string ExampleGroupBasicTitle = "按钮类型";
+    public const string ExampleGroupBasicDescription = "通过按钮类型表达当前区域内操作的优先级。";
+    public const string ExampleGroupShapeTitle = "形状与图标";
+    public const string ExampleGroupShapeDescription = "圆角、圆形和图标按钮可以让紧凑操作更容易识别。";
+    public const string ExampleGroupSizeTitle = "尺寸";
+    public const string ExampleGroupSizeDescription = "在大号、默认和小号之间切换，以匹配不同信息密度。";
+    public const string ExampleGroupStateTitle = "状态";
+    public const string ExampleGroupStateDescription = "加载、禁用、危险和幽灵状态用于表达可用性和风险。";
+    public const string ApiTitle = "API";
+    public const string ApiDescription = "这里列出 Gallery 示例中最常用的 Button 属性。完整继承成员可以继续参考 AtomUI 按钮控件 API。";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyButtonType = "设置按钮的视觉类型，例如主要、默认、虚线、文本或链接。";
+    public const string ApiPropertySizeType = "控制按钮高度和内间距密度。";
+    public const string ApiPropertyShape = "设置按钮形状，可在默认、圆角和圆形之间切换。";
+    public const string ApiPropertyIcon = "在内容前或内容后显示图标，也可以作为纯图标按钮使用。";
+    public const string ApiPropertyIconPlacement = "设置图标显示在内容起始侧还是结束侧。";
+    public const string ApiPropertyLoading = "显示加载指示，表达当前操作正在执行。";
+    public const string ApiPropertyDanger = "为删除或高风险动作应用危险样式。";
+    public const string ApiPropertyColor = "设置 Color 和 Variant 模型使用的语义颜色。";
+    public const string ApiPropertyVariant = "设置视觉变体，例如实心、描边、虚线、填充、文本或链接。";
+    public const string ApiPropertyCustomBackground = "为非危险实心按钮设置受控的普通态自定义背景覆层。";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenNameColorPrimary = "主要按钮和聚焦交互状态使用的主色。";
+    public const string TokenNameControlHeight = "大号、默认和小号按钮共用的控件高度刻度。";
+    public const string TokenNameButtonToken = "从共享 Token 派生 Button 视觉值的组件 Token 映射。";
+    public const string TokenScopeShared = "共享";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
+    public const string TokenStatusMapped = "映射";
     public const string TypeTitle = "按钮类型";
     public const string TypeDescription = "Ant Design 中包含主按钮、默认按钮、虚线按钮、文本按钮和链接按钮。";
+    public const string ColorVariantTitle = "颜色与变体";
+    public const string ColorVariantDescription = "组合语义颜色和视觉变体，用于创建主要、危险和预设色按钮。";
+    public const string GradientButtonTitle = "渐变按钮";
+    public const string GradientButtonDescription = "通过 CustomBackground 为实心按钮自定义渐变背景。";
     public const string ButtonShapeTitle = "按钮形状";
     public const string ButtonShapeDescription = "展示支持的按钮形状，例如主按钮、默认按钮、虚线按钮和文本按钮等。";
     public const string SizeTitle = "按钮尺寸";
     public const string SizeDescription = "AtomUI 支持小号、默认和大号三种按钮尺寸。需要大号或小号按钮时可设置 size 属性；省略 size 属性时使用默认尺寸。";
     public const string IconTitle = "图标";
-    public const string IconDescription = "可以通过 icon 属性添加图标，并使用 iconPosition 调整图标位置。";
+    public const string IconDescription = "可以通过 Icon 属性添加图标，并使用 IconPlacement 调整图标位置。";
+    public const string IconPlacementTitle = "按钮图标位置";
+    public const string IconPlacementDescription = "通过设置 IconPlacement 为 Start 或 End 分别设置按钮图标的位置。";
     public const string LoadingTitle = "加载状态";
     public const string LoadingDescription = "通过设置 Button 的 loading 属性，可以为按钮添加加载指示。";
     public const string BlockButtonTitle = "通栏按钮";
@@ -31,12 +78,27 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentLinkButton = "链接按钮";
     public const string P2ContentPrimary = "主要";
     public const string P2ContentDefault = "默认";
+    public const string P2ContentSolid = "实心";
+    public const string P2ContentOutlined = "描边";
+    public const string P2ContentFilled = "填充";
     public const string P2ContentText = "文本";
     public const string P2ContentLink = "链接";
+    public const string P2ContentGradient = "渐变按钮";
+    public const string P2ContentWarmGradient = "暖色渐变";
+    public const string P2ColorDefault = "默认";
+    public const string P2ColorPrimary = "主要";
+    public const string P2ColorDanger = "危险";
+    public const string P2ColorPink = "粉色";
+    public const string P2ColorPurple = "紫色";
+    public const string P2ColorCyan = "青色";
     public const string P2ContentAa = "AA";
     public const string P2TextExpandDirection = "按钮尺寸：";
+    public const string P2TextIconPlacement = "图标位置：";
     public const string P2ContentLarge = "大号";
     public const string P2ContentSmall = "小号";
+    public const string P2ContentCustom = "自定义";
+    public const string P2ContentStart = "start";
+    public const string P2ContentEnd = "end";
     public const string P2ContentDownload = "下载";
     public const string P2ContentSearch = "搜索";
     public const string P2ContentLoading = "加载中";
@@ -58,5 +120,4 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentGhost = "幽灵";
     public const string P2ContentGhostDisabled = "幽灵（禁用）";
 
-    protected override Type GetResourceKindType() => typeof(ButtonShowCaseLangResourceKind);
 }

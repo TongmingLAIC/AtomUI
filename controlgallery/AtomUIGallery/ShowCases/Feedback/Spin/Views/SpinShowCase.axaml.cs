@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Spin;
 
 public partial class SpinShowCase : GalleryReactiveUserControl<SpinViewModel>
@@ -9,4 +8,5 @@ public partial class SpinShowCase : GalleryReactiveUserControl<SpinViewModel>
     {
         InitializeComponent();
     }
+
 }

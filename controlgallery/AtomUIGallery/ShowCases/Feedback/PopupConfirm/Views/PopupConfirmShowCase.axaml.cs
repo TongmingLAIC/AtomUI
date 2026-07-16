@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.PopupConfirm;
 
 public partial class PopupConfirmShowCase : GalleryReactiveUserControl<PopupConfirmViewModel>
@@ -8,5 +7,11 @@ public partial class PopupConfirmShowCase : GalleryReactiveUserControl<PopupConf
     public PopupConfirmShowCase()
     {
         InitializeComponent();
+    }
+
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
     }
 }

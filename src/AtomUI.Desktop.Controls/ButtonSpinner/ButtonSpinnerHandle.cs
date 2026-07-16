@@ -1,6 +1,7 @@
 using AtomUI.Controls;
 using AtomUI.Controls.Utils;
 using AtomUI.Media;
+using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -15,6 +16,9 @@ internal class ButtonSpinnerHandle : TemplatedControl
     
     public static readonly StyledProperty<ButtonSpinnerLocation> ButtonSpinnerLocationProperty =
         ButtonSpinner.ButtonSpinnerLocationProperty.AddOwner<ButtonSpinnerHandle>();
+
+    public static readonly StyledProperty<InputControlStyleVariant> StyleVariantProperty =
+        InputControlStyleVariantProperty.StyleVariantProperty.AddOwner<ButtonSpinnerHandle>();
 
     public static readonly DirectProperty<ButtonSpinnerHandle, Thickness> SpinnerBorderThicknessProperty =
         AvaloniaProperty.RegisterDirect<ButtonSpinnerHandle, Thickness>(nameof(SpinnerBorderThickness),
@@ -31,6 +35,12 @@ internal class ButtonSpinnerHandle : TemplatedControl
     {
         get => GetValue(ButtonSpinnerLocationProperty);
         set => SetValue(ButtonSpinnerLocationProperty, value);
+    }
+
+    public InputControlStyleVariant StyleVariant
+    {
+        get => GetValue(StyleVariantProperty);
+        set => SetValue(StyleVariantProperty, value);
     }
 
     private Thickness _spinnerBorderThickness;
@@ -51,7 +61,13 @@ internal class ButtonSpinnerHandle : TemplatedControl
 
     static ButtonSpinnerHandle()
     {
-        AffectsRender<ButtonSpinnerHandle>(ButtonSpinnerLocationProperty, CornerRadiusProperty, BackgroundProperty, BorderBrushProperty);
+        AffectsRender<ButtonSpinnerHandle>(
+            ButtonSpinnerLocationProperty,
+            CornerRadiusProperty,
+            BackgroundProperty,
+            BorderBrushProperty,
+            SpinnerBorderThicknessProperty,
+            UseLayoutRoundingProperty);
     }
     
     public ButtonSpinnerHandle()
@@ -69,7 +85,9 @@ internal class ButtonSpinnerHandle : TemplatedControl
     
     public override void Render(DrawingContext context)
     {
-        var          lineWidth = SpinnerBorderThickness.Left;
+        var          spinnerBorderThickness = BorderUtils.BuildRenderScaleAwareThickness(this, SpinnerBorderThickness);
+        var          lineWidth = spinnerBorderThickness.Left;
+        var          lineCenterOffset = lineWidth / 2;
         CornerRadius cornerRadius;
         if (ButtonSpinnerLocation == ButtonSpinnerLocation.Left)
         {
@@ -103,8 +121,8 @@ internal class ButtonSpinnerHandle : TemplatedControl
             
             {
                 // 画竖线
-                var startPoint = new Point(lineWidth, lineWidth);
-                var endPoint   = new Point(lineWidth, Bounds.Height - lineWidth);
+                var startPoint = new Point(lineCenterOffset, lineWidth);
+                var endPoint   = new Point(lineCenterOffset, Bounds.Height - lineWidth);
                 PenUtils.TryModifyOrCreate(ref _handlePen, BorderBrush, lineWidth);
                 if (_handlePen is not null)
                 {

@@ -17,21 +17,18 @@
         <Setter Property="CornerRadius" Value="{atom:NavMenuTokenResource ItemBorderRadius}" />
         <Setter Property="Foreground"
                 Value="{atom:NavMenuTokenResource ItemColor}" />
-        <Setter Property="Background" Value="{atom:NavMenuTokenResource ItemBg}" />
+        <Setter Property="Background" Value="Transparent" />
 
-        <Style Selector="^[HasSubMenu=False]">
+        <Style Selector="^[HasSubMenu=False]:not(^[IsSelected=True]):not(^[IsInSelectedPath=True])">
             <Style Selector="^:pointerover">
                 <Setter Property="Foreground"
                         Value="{atom:NavMenuTokenResource ItemHoverColor}" />
-                <Setter Property="Background" Value="{atom:NavMenuTokenResource ItemHoverBg}" />
             </Style>
         </Style>
         
         <Style Selector="^[IsSelected=True]">
             <Setter Property="Foreground"
                     Value="{atom:NavMenuTokenResource ItemSelectedColor}" />
-            <Setter Property="Background"
-                    Value="{atom:NavMenuTokenResource ItemSelectedBg}" />
         </Style>
         
         <Style Selector="^[IsInSelectedPath=True]">
@@ -39,25 +36,45 @@
                     Value="{atom:NavMenuTokenResource ItemSelectedColor}" />
         </Style>
         
+        <Style Selector="^[HasSubMenu=True]:not(^[IsSelected=True]):not(^[IsInSelectedPath=True])">
+            <Style Selector="^:pointerover">
+                <Setter Property="Foreground"
+                        Value="{atom:NavMenuTokenResource ItemHoverColor}" />
+            </Style>
+        </Style>
+
+        <Style Selector="^[HasSubMenu=False]">
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="{atom:NavMenuTokenResource ItemHoverBg}" />
+            </Style>
+        </Style>
+
+        <Style Selector="^[IsSelected=True]">
+            <Setter Property="Background"
+                    Value="{atom:NavMenuTokenResource ItemSelectedBg}" />
+        </Style>
+
         <Style Selector="^[HasSubMenu=True]">
             <Style Selector="^:pointerover">
                 <Setter Property="Background" Value="{atom:NavMenuTokenResource ItemHoverBg}" />
             </Style>
         </Style>
 
+        <Style Selector="^[IsKeyboardActive=True]:not(^[IsSelected=True])">
+            <Setter Property="Background"
+                    Value="{atom:NavMenuTokenResource ItemActiveBg}" />
+        </Style>
+
         <Style Selector="^[IsDarkStyle=True]">
             <Setter Property="Foreground"
                     Value="{atom:NavMenuTokenResource DarkItemColor}" />
-            <Setter Property="Background" Value="{atom:NavMenuTokenResource DarkItemBg}" />
-            <Style Selector="^[HasSubMenu=False]">
+            <Style Selector="^[HasSubMenu=False]:not(^[IsSelected=True]):not(^[IsInSelectedPath=True])">
                 <Style Selector="^:pointerover">
                     <Setter Property="Foreground"
                             Value="{atom:NavMenuTokenResource DarkItemHoverColor}" />
-                    <Setter Property="Background"
-                            Value="{atom:NavMenuTokenResource DarkItemHoverBg}" />
                 </Style>
             </Style>
-            <Style Selector="^[HasSubMenu=True]">
+            <Style Selector="^[HasSubMenu=True]:not(^[IsSelected=True]):not(^[IsInSelectedPath=True])">
                 <Style Selector="^:pointerover">
                     <Setter Property="Foreground"
                             Value="{atom:NavMenuTokenResource DarkItemHoverColor}" />
@@ -67,13 +84,35 @@
             <Style Selector="^[IsSelected=True]">
                 <Setter Property="Foreground"
                         Value="{atom:NavMenuTokenResource DarkItemSelectedColor}" />
-                <Setter Property="Background"
-                        Value="{atom:NavMenuTokenResource DarkItemSelectedBg}" />
             </Style>
             
             <Style Selector="^[IsInSelectedPath=True]">
                 <Setter Property="Foreground"
                         Value="{atom:NavMenuTokenResource DarkItemSelectedColor}" />
+            </Style>
+
+            <Setter Property="Background" Value="{atom:NavMenuTokenResource DarkItemBg}" />
+            <Style Selector="^[HasSubMenu=False]">
+                <Style Selector="^:pointerover">
+                    <Setter Property="Background"
+                            Value="{atom:NavMenuTokenResource DarkItemHoverBg}" />
+                </Style>
+            </Style>
+            <Style Selector="^[HasSubMenu=True]">
+                <Style Selector="^:pointerover">
+                    <Setter Property="Background"
+                            Value="{atom:NavMenuTokenResource DarkItemHoverBg}" />
+                </Style>
+            </Style>
+
+            <Style Selector="^[IsSelected=True]">
+                <Setter Property="Background"
+                        Value="{atom:NavMenuTokenResource DarkItemSelectedBg}" />
+            </Style>
+
+            <Style Selector="^[IsKeyboardActive=True]:not(^[IsSelected=True])">
+                <Setter Property="Background"
+                        Value="{atom:NavMenuTokenResource DarkItemHoverBg}" />
             </Style>
         </Style>
 

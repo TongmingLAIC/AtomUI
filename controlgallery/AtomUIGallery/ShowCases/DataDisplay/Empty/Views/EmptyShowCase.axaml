@@ -5,40 +5,82 @@
              xmlns:gallery="https://atomui.net/oss-controls/gallery"
              xmlns:vm="using:AtomUIGallery.ShowCases.Empty"
              x:DataType="vm:EmptyViewModel">
-    <gallery:ShowCasePanel>
-        <gallery:ShowCaseItem
-            Title="{gallery:EmptyShowCaseLangResource BasicTitle}"
-            Description="{gallery:EmptyShowCaseLangResource BasicDescription}">
-            <atom:Empty PresetImage="Default" />
-        </gallery:ShowCaseItem>
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="Empty"
+                    Category="{gallery:EmptyShowCaseLangResource ComponentCategory}"
+                    Status="{gallery:EmptyShowCaseLangResource ComponentStatusStable}"
+                    Subtitle="{gallery:EmptyShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:EmptyShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Desktop.Controls"
+                    Package="AtomUI.Desktop.Controls"
+                    BaseClass="TemplatedControl" />
+            </gallery:GalleryStickyTabsHost.Header>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:EmptyShowCaseLangResource SizeTitle}"
-            Description="{gallery:EmptyShowCaseLangResource SizeDescription}">
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal" Spacing="10">
-                    <atom:Empty PresetImage="Simple" SizeType="Small" />
-                    <atom:Empty PresetImage="Simple" SizeType="Middle" />
-                    <atom:Empty PresetImage="Simple" SizeType="Large" />
-                </StackPanel>
-            </StackPanel>
-        </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:EmptyShowCaseLangResource CustomizeTitle}"
-            Description="{gallery:EmptyShowCaseLangResource CustomizeDescription}">
-            <StackPanel Orientation="Vertical" Spacing="10">
-                <atom:Empty ImagePath="avares://AtomUIGallery/Assets/EmptyShowCase/empty.svg"
-                                     SizeType="Large"
-                                     Description="{gallery:EmptyShowCaseLangResource P2DescriptionCustomizeDescription}" />
-                <atom:Button HorizontalAlignment="Center" ButtonType="Primary" Content="{gallery:EmptyShowCaseLangResource P2ContentCreateNow}" />
-            </StackPanel>
-        </gallery:ShowCaseItem>
+            <gallery:ShowCasePanel Name="ExamplesContent"
+                                   IsScrollEnabled="False"
+                                   IsDeferredLoadingEnabled="True"
+                                   InitialDeferredLoadItemCount="4"
+                                   DeferredLoadBatchSize="2"
+                                   ContentMargin="28,10,28,28">
+                <gallery:ShowCaseItem
+                    Title="{gallery:EmptyShowCaseLangResource BasicTitle}"
+                    Description="{gallery:EmptyShowCaseLangResource BasicDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:EmptyViewModel">
+                    <atom:Empty PresetImage="Default" />
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:EmptyShowCaseLangResource NoDescriptionTitle}"
-            Description="{gallery:EmptyShowCaseLangResource NoDescriptionDescription}">
-            <atom:Empty PresetImage="Default" IsDescriptionVisible="False" />
-        </gallery:ShowCaseItem>
-    </gallery:ShowCasePanel>
+                <gallery:ShowCaseItem
+                    Title="{gallery:EmptyShowCaseLangResource SizeTitle}"
+                    Description="{gallery:EmptyShowCaseLangResource SizeDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:EmptyViewModel">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <atom:Empty PresetImage="Simple" SizeType="Small" />
+                            <atom:Empty PresetImage="Simple" SizeType="Middle" />
+                            <atom:Empty PresetImage="Simple" SizeType="Large" />
+                        </StackPanel>
+                    </StackPanel>
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+
+                <gallery:ShowCaseItem
+                    Title="{gallery:EmptyShowCaseLangResource CustomizeTitle}"
+                    Description="{gallery:EmptyShowCaseLangResource CustomizeDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:EmptyViewModel">
+                    <StackPanel Orientation="Vertical" Spacing="10">
+                        <atom:Empty ImagePath="avares://AtomUIGallery/Assets/EmptyShowCase/empty.svg"
+                                             SizeType="Large"
+                                             Description="{gallery:EmptyShowCaseLangResource P2DescriptionCustomizeDescription}" />
+                        <atom:Button HorizontalAlignment="Center" ButtonType="Primary" Content="{gallery:EmptyShowCaseLangResource P2ContentCreateNow}" />
+                    </StackPanel>
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+
+                <gallery:ShowCaseItem
+                    Title="{gallery:EmptyShowCaseLangResource NoDescriptionTitle}"
+                    Description="{gallery:EmptyShowCaseLangResource NoDescriptionDescription}"
+                    IsDeferredContentEnabled="True">
+                    <gallery:ShowCaseItem.DeferredContentTemplate>
+                        <DataTemplate x:DataType="vm:EmptyViewModel">
+                    <atom:Empty PresetImage="Default" IsDescriptionVisible="False" />
+                        </DataTemplate>
+                    </gallery:ShowCaseItem.DeferredContentTemplate>
+                </gallery:ShowCaseItem>
+            </gallery:ShowCasePanel>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
 </UserControl>

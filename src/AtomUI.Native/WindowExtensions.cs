@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using AtomUI.Native.Windows;
+using Avalonia;
 using Avalonia.Controls;
 
 namespace AtomUI.Native;
@@ -20,10 +20,6 @@ internal static class WindowExtensions
         {
             WindowUtilsMacOS.SetWindowIgnoreMouseEventsMacOS(handle.Value, flag);
         }
-        else if (OperatingSystem.IsLinux())
-        {
-            WindowUtilsLinux.SetWindowIgnoreMouseEventsLinux(handle.Value, flag);
-        }
         else
         {
             throw new PlatformNotSupportedException($"Unsupported platform: {RuntimeInformation.OSDescription}");
@@ -41,10 +37,6 @@ internal static class WindowExtensions
         if (OperatingSystem.IsMacOS())
         {
             return WindowUtilsMacOS.IsWindowIgnoreMouseEventsMacOS(handle.Value);
-        }
-        if (OperatingSystem.IsLinux())
-        {
-            return WindowUtilsLinux.IsWindowIgnoreMouseEventsLinux(handle.Value);
         }
         throw new PlatformNotSupportedException($"Unsupported platform: {RuntimeInformation.OSDescription}");
     }
@@ -70,67 +62,24 @@ internal static class WindowExtensions
         }
         return null;
     }
-    
-    [SupportedOSPlatform("windows")]
-    public static void InitializeWinWindow(this Window window)
-    {
-        Win32Properties.AddWndProcHookCallback(window, window.WinWndProcHook);
-        window.ApplyWinDwmShadow();
-
-        var hwnd = window.TryGetPlatformHandle()!.Handle;
-        WindowUtilsInterop.SetWindowPos(hwnd, IntPtr.Zero,
-            0, 0, 0, 0,
-            WindowUtilsInterop.SWP_FRAMECHANGED |
-            WindowUtilsInterop.SWP_NOSIZE |
-            WindowUtilsInterop.SWP_NOMOVE |
-            WindowUtilsInterop.SWP_NOZORDER |
-            WindowUtilsInterop.SWP_NOACTIVATE);
-    }
 
     [SupportedOSPlatform("windows")]
-    public static void ApplyWinDwmShadow(this Window window)
+    public static void SetWindowsCsdFrameDarkMode(this WindowBase window, bool isDarkMode)
     {
-        var handle = window.TryGetPlatformHandle();
-        if (handle is null || handle.HandleDescriptor != "HWND")
+        if (!OperatingSystem.IsWindows())
         {
             return;
         }
-        WindowUtilsWindows.ApplyDwmShadow(handle.Handle);
-    }
-    
-    [SupportedOSPlatform("windows")]
-    public static IntPtr WinWndProcHook(this Window window, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        switch (msg)
-        {
-            case WindowUtilsInterop.WM_NCCALCSIZE when wParam != IntPtr.Zero:
-                WindowUtilsWindows.HandleNcCalcSize(hWnd, lParam);
-                handled = true;
-                return IntPtr.Zero;
 
-            case WindowUtilsInterop.WM_NCHITTEST:
-                return window.HandleNcHitTest(hWnd, lParam, ref handled);
-        }
-        return IntPtr.Zero;
-    }
-    
-    [SupportedOSPlatform("windows")]
-    private static IntPtr HandleNcHitTest(this Window window, IntPtr hWnd, IntPtr lParam, ref bool handled)
-    {
-        if (window.WindowState is WindowState.FullScreen or WindowState.Maximized)
-            return IntPtr.Zero;
-
-        var borderWidth = (int)(4 * window.RenderScaling);
-        var hitTest     = WindowUtilsWindows.HitTestBorder(hWnd, lParam, borderWidth);
-        if (hitTest != 0)
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.Handle == IntPtr.Zero)
         {
-            handled = true;
-            return (IntPtr)hitTest;
+            return;
         }
 
-        return IntPtr.Zero;
+        WindowUtilsWindows.SetWindowFrameDarkModeWindows(handle.Handle, isDarkMode);
     }
-
+    
     /// <summary>
     /// 窗体输入区域 (X11 SHAPE input region) 控制扩展。
     /// 将窗体的输入区域设置为指定矩形（device pixel 坐标），矩形外的鼠标事件将穿透到下层窗口。
@@ -163,5 +112,90 @@ internal static class WindowExtensions
         var handle = window.PlatformImpl?.Handle?.Handle;
         Debug.Assert(handle is not null);
         WindowUtilsLinux.ResetInputRegion(handle.Value, width, height);
+    }
+
+    [SupportedOSPlatform("linux")]
+    public static void ConfigureLinuxInitialWindowGeometry(
+        this Window window,
+        PixelPoint position,
+        Size clientSize,
+        double scaling)
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var handle = window.PlatformImpl?.Handle?.Handle;
+        Debug.Assert(handle is not null);
+
+        scaling = Math.Max(1, scaling);
+        var width    = ToPixelLength(clientSize.Width, scaling);
+        var height   = ToPixelLength(clientSize.Height, scaling);
+        var minWidth = ToPixelLength(window.MinWidth, scaling);
+        var minHeight = ToPixelLength(window.MinHeight, scaling);
+        var maxWidth = ToOptionalPixelLength(window.MaxWidth, scaling);
+        var maxHeight = ToOptionalPixelLength(window.MaxHeight, scaling);
+
+        WindowUtilsLinux.ConfigureInitialWindowGeometry(
+            handle.Value,
+            position.X,
+            position.Y,
+            width,
+            height,
+            minWidth,
+            minHeight,
+            maxWidth,
+            maxHeight);
+    }
+
+    [SupportedOSPlatform("linux")]
+    public static void SetLinuxX11CsdFrameExtents(this Window window, Thickness frameExtents)
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return;
+        }
+
+        var handle = window.TryGetPlatformHandle();
+        if (handle is null || handle.HandleDescriptor != "XID")
+        {
+            return;
+        }
+
+        var scaling = window.RenderScaling <= 0 ? 1.0 : window.RenderScaling;
+        WindowUtilsLinux.SetX11CsdFrameExtents(
+            handle.Handle,
+            ToPixelMargin(frameExtents.Left, scaling),
+            ToPixelMargin(frameExtents.Top, scaling),
+            ToPixelMargin(frameExtents.Right, scaling),
+            ToPixelMargin(frameExtents.Bottom, scaling));
+    }
+
+    private static int ToPixelLength(double value, double scaling)
+    {
+        if (!double.IsFinite(value) || value <= 0)
+        {
+            return 1;
+        }
+        return Math.Max(1, (int)(value * scaling));
+    }
+
+    private static int? ToOptionalPixelLength(double value, double scaling)
+    {
+        if (!double.IsFinite(value) || value <= 0 || value > 100_000)
+        {
+            return null;
+        }
+        return ToPixelLength(value, scaling);
+    }
+
+    private static int ToPixelMargin(double value, double scaling)
+    {
+        if (!double.IsFinite(value) || value <= 0)
+        {
+            return 0;
+        }
+        return Math.Max(0, (int)Math.Ceiling(value * scaling));
     }
 }

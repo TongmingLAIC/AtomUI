@@ -24,6 +24,7 @@ public enum ButtonSpinnerLocation
 public class ButtonSpinner : Spinner,
                              IMotionAwareControl,
                              ICompactSpaceAware,
+                             ICustomizableSizeTypeAware,
                              IInputControlStatusAware,
                              IInputControlStyleVariantAware
 {
@@ -61,8 +62,8 @@ public class ButtonSpinner : Spinner,
     public static readonly StyledProperty<IDataTemplate?> InnerRightContentTemplateProperty =
         AvaloniaProperty.Register<ButtonSpinner, IDataTemplate?>(nameof(InnerRightContentTemplate));
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<ButtonSpinner>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<ButtonSpinner>();
 
     public static readonly StyledProperty<InputControlStyleVariant> StyleVariantProperty =
         InputControlStyleVariantProperty.StyleVariantProperty.AddOwner<ButtonSpinner>();
@@ -146,7 +147,7 @@ public class ButtonSpinner : Spinner,
         set => SetValue(InnerRightContentTemplateProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -228,7 +229,6 @@ public class ButtonSpinner : Spinner,
     
     public ButtonSpinner()
     {
-        this.RegisterTokenResourceScope(ButtonSpinnerToken.ScopeProvider);
     }
     
     private IconButton? _decreaseButton;
@@ -300,12 +300,27 @@ public class ButtonSpinner : Spinner,
         {
             _spinnerHandle.ButtonsCreated -= HandleButtonCreated;
         }
+        _spinnerHandle = null;
         DecoratedBox = e.NameScope.Find<ButtonSpinnerDecoratedBox>("PART_DecoratedBox");
         base.OnApplyTemplate(e);
-        if (DecoratedBox?.SpinnerContent is ButtonSpinnerHandle spinnerHandle)
+        var increaseButton = e.NameScope.Find<IconButton>("PART_IncreaseButton");
+        var decreaseButton = e.NameScope.Find<IconButton>("PART_DecreaseButton");
+        if (increaseButton is not null || decreaseButton is not null)
+        {
+            IncreaseButton = increaseButton;
+            DecreaseButton = decreaseButton;
+        }
+        else if (DecoratedBox?.SpinnerContent is ButtonSpinnerHandle spinnerHandle)
         {
             _spinnerHandle                =  spinnerHandle;
             _spinnerHandle.ButtonsCreated += HandleButtonCreated;
+            IncreaseButton                =  _spinnerHandle.IncreaseButton;
+            DecreaseButton                =  _spinnerHandle.DecreaseButton;
+        }
+        else
+        {
+            IncreaseButton = null;
+            DecreaseButton = null;
         }
         SetButtonUsage();
         ConfigureAddOns();

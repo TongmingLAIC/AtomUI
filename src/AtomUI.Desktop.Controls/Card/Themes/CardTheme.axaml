@@ -9,17 +9,17 @@
         <Setter Property="Template">
             <ControlTemplate>
                 <Panel>
-                    <Border Name="Frame"
-                            BorderThickness="{TemplateBinding EffectiveBorderThickness}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            CornerRadius="{TemplateBinding EffectiveCornerRadius}"
-                            Background="{TemplateBinding Background}"
-                            ClipToBounds="False"
-                            BoxShadow="{TemplateBinding BoxShadow}">
-                    </Border>
+                    <atom:PixelAlignedBorder Name="Frame"
+                                             BorderThickness="{TemplateBinding EffectiveBorderThickness}"
+                                             BorderBrush="{TemplateBinding BorderBrush}"
+                                             CornerRadius="{TemplateBinding EffectiveCornerRadius}"
+                                             Background="{TemplateBinding Background}"
+                                             ClipToBounds="False"
+                                             BoxShadow="{TemplateBinding BoxShadow}">
+                    </atom:PixelAlignedBorder>
                     <DockPanel LastChildFill="True">
-                        <Border Name="HeaderFrame" DockPanel.Dock="Top"
-                                BorderThickness="{TemplateBinding HeaderBorderThickness}">
+                        <atom:PixelAlignedBorder Name="HeaderFrame" DockPanel.Dock="Top"
+                                                 BorderThickness="{TemplateBinding HeaderBorderThickness}">
                             <DockPanel LastChildFill="True">
                                 <ContentPresenter Name="HeaderExtra" DockPanel.Dock="Right" VerticalAlignment="Center"
                                                   Content="{TemplateBinding Extra}"
@@ -29,7 +29,7 @@
                                                   ContentTemplate="{TemplateBinding HeaderTemplate}"
                                                   VerticalAlignment="Center" />
                             </DockPanel>
-                        </Border>
+                        </atom:PixelAlignedBorder>
                         <atom:CardActionPanel Name="PART_ActionPanel"
                                               DockPanel.Dock="Bottom"
                                               CornerRadius="{TemplateBinding CornerRadius}"
@@ -64,35 +64,35 @@
         </Setter>
         
         <Setter Property="ClipToBounds" Value="False" />
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
-        <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusLG}" />
-        <Setter Property="BorderBrush" Value="{atom:SharedTokenResource ColorBorderSecondary}" />
-        <Setter Property="BorderThickness" Value="{atom:SharedTokenResource BorderThickness}" />
-        <Setter Property="Background" Value="{atom:SharedTokenResource ColorBgContainer}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:CardTokenSharedTokenResource EnableMotion}" />
+        <Setter Property="CornerRadius" Value="{atom:CardTokenSharedTokenResource BorderRadiusLG}" />
+        <Setter Property="BorderBrush" Value="{atom:CardTokenSharedTokenResource ColorBorderSecondary}" />
+        <Setter Property="BorderThickness" Value="{atom:CardTokenSharedTokenResource BorderThickness}" />
+        <Setter Property="Background" Value="{atom:CardTokenSharedTokenResource ColorBgContainer}" />
 
         <Style Selector="^:headerless">
-            <Style Selector="^ /template/ Border#HeaderFrame">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
                 <Setter Property="IsVisible" Value="False" />
             </Style>
         </Style>
         <Setter Property="BoxShadow" Value="0 1 2 -1 #00000000, 0 3 6 0 #00000000, 0 5 12 4 #00000000" />
         <Style Selector="^[StyleVariant=Borderless]">
-            <Setter Property="BoxShadow" Value="{atom:SharedTokenResource BoxShadowsTertiary}" />
+            <Setter Property="BoxShadow" Value="{atom:CardTokenSharedTokenResource BoxShadowsTertiary}" />
         </Style>
 
-        <Style Selector="^ /template/ Border#HeaderFrame">
+        <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
             <Setter Property="Background" Value="{atom:CardTokenResource HeaderBg}" />
             <Setter Property="BorderBrush"
-                    Value="{atom:SharedTokenResource ColorBorderSecondary}" />
+                    Value="{atom:CardTokenSharedTokenResource ColorBorderSecondary}" />
         </Style>
 
         <Style Selector="^ /template/ ContentPresenter#TitlePresenter">
             <Setter Property="TextElement.FontWeight"
-                    Value="{atom:SharedTokenResource FontWeightStrong}" />
+                    Value="{atom:CardTokenSharedTokenResource FontWeightStrong}" />
         </Style>
 
         <Style Selector="^[SizeType=Large]">
-            <Style Selector="^ /template/ Border#HeaderFrame">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
                 <Setter Property="MinHeight" Value="{atom:CardTokenResource HeaderHeightLG}" />
                 <Setter Property="Padding" Value="{atom:CardTokenResource HeaderPaddingLG}" />
                 <Setter Property="TextElement.FontSize"
@@ -101,7 +101,7 @@
         </Style>
 
         <Style Selector="^[SizeType=Middle]">
-            <Style Selector="^ /template/ Border#HeaderFrame">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
                 <Setter Property="MinHeight" Value="{atom:CardTokenResource HeaderHeight}" />
                 <Setter Property="Padding" Value="{atom:CardTokenResource HeaderPadding}" />
                 <Setter Property="TextElement.FontSize"
@@ -110,7 +110,7 @@
         </Style>
 
         <Style Selector="^[SizeType=Small]">
-            <Style Selector="^ /template/ Border#HeaderFrame">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
                 <Setter Property="MinHeight" Value="{atom:CardTokenResource HeaderHeightSM}" />
                 <Setter Property="Padding" Value="{atom:CardTokenResource HeaderPaddingSM}" />
                 <Setter Property="TextElement.FontSize"
@@ -122,8 +122,8 @@
         </Style>
 
         <Style Selector="^[IsInnerMode=True]">
-            <Style Selector="^ /template/ Border#HeaderFrame">
-                <Setter Property="Background" Value="{atom:SharedTokenResource ColorFillAlter}" />
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#HeaderFrame">
+                <Setter Property="Background" Value="{atom:CardTokenSharedTokenResource ColorFillAlter}" />
             </Style>
         </Style>
 

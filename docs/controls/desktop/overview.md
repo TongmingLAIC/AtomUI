@@ -1,6 +1,6 @@
 # 桌面控件文档入口
 
-桌面控件文档按 Ant Design/Gallery 的使用分类组织。每个具体控件文档应说明控件用途、核心 API、主题 Token、数据流、常见坑和源码索引。
+桌面控件文档按 AtomUI Gallery 的使用分类组织。每个具体控件文档应说明控件用途、核心 API、主题 Token、数据流、常见坑和源码索引。
 
 ## 建议分类
 
@@ -12,6 +12,7 @@ docs/controls/desktop/
 ├── data-entry/     # LineEdit、Select、TreeSelect、DatePicker、ColorPicker、Upload、Form 等
 ├── data-display/   # List、TreeView、DataGrid、Card、Descriptions 等
 ├── feedback/       # Dialog、Message、Notification、Tooltip、PopupConfirm、Spin 等
+├── other/          # App、ConfigProvider、Util、BorderBeam 等
 └── window/         # Window、WindowTitleBar、ImagePreviewer 等
 ```
 

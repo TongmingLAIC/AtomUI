@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using AtomUI.Native.Windows;
 using Avalonia.Controls;
@@ -8,6 +7,9 @@ namespace AtomUI.Native;
 [SupportedOSPlatform("windows")]
 internal static class WindowUtilsWindows
 {
+    private const int Windows10DarkFrameMinimumBuild = 17763;
+    private const int Windows10DarkFrame20H1AttributeBuild = 18985;
+
     public static void SetWindowIgnoreMouseEventsWindows(IntPtr handle, bool flag)
     {
         if (handle == IntPtr.Zero)
@@ -56,68 +58,62 @@ internal static class WindowUtilsWindows
         return margin.Top > 0 ? margin.Top : null;
     }
 
-    public static unsafe void ApplyDwmShadow(IntPtr hwnd)
+    public static void SetWindowFrameDarkModeWindows(IntPtr handle, bool isDarkMode)
     {
-        var policy = WindowUtilsInterop.DWMNCRP_ENABLED;
-        WindowUtilsInterop.DwmSetWindowAttribute(hwnd,
-            WindowUtilsInterop.DWMWA_NCRENDERING_POLICY, &policy, sizeof(int));
-
-        var margins = new WindowUtilsInterop.MARGINS
+        if (handle == IntPtr.Zero ||
+            !OperatingSystem.IsWindowsVersionAtLeast(10, 0, Windows10DarkFrameMinimumBuild) ||
+            OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
         {
-            cxLeftWidth = -1,
-            cxRightWidth = -1,
-            cyTopHeight = -1,
-            cyBottomHeight = -1
-        };
-        WindowUtilsInterop.DwmExtendFrameIntoClientArea(hwnd, ref margins);
-
-        if (Environment.OSVersion.Version.Build >= 22000)
-        {
-            var round = WindowUtilsInterop.DWMWCP_ROUND;
-            WindowUtilsInterop.DwmSetWindowAttribute(hwnd,
-                WindowUtilsInterop.DWMWA_WINDOW_CORNER_PREFERENCE, &round, sizeof(int));
+            return;
         }
+
+        var value = isDarkMode ? 1 : 0;
+        if (!TrySetWindowFrameDarkMode(handle, SelectDarkModeAttribute(), value) &&
+            !TrySetWindowFrameDarkMode(handle, SelectFallbackDarkModeAttribute(), value))
+        {
+            return;
+        }
+
+        ReapplyActiveNonClientFrame(handle);
     }
 
-    public static void HandleNcCalcSize(IntPtr hWnd, IntPtr lParam)
+    private static int SelectDarkModeAttribute()
     {
-        var style = WindowUtilsInterop.GetWindowLongPtr(hWnd, WindowUtilsInterop.GWL_STYLE);
-        if ((style & WindowUtilsInterop.WS_MAXIMIZE) != 0)
-        {
-            var nccsp = Marshal.PtrToStructure<WindowUtilsInterop.NCCALCSIZE_PARAMS>(lParam);
-            var borderX = WindowUtilsInterop.GetSystemMetrics(WindowUtilsInterop.SM_CXSIZEFRAME)
-                        + WindowUtilsInterop.GetSystemMetrics(WindowUtilsInterop.SM_CXPADDEDBORDER);
-            var borderY = WindowUtilsInterop.GetSystemMetrics(WindowUtilsInterop.SM_CYSIZEFRAME)
-                        + WindowUtilsInterop.GetSystemMetrics(WindowUtilsInterop.SM_CXPADDEDBORDER);
-            nccsp.rgrc0.left += borderX;
-            nccsp.rgrc0.top += borderY;
-            nccsp.rgrc0.right -= borderX;
-            nccsp.rgrc0.bottom -= borderY;
-            Marshal.StructureToPtr(nccsp, lParam, false);
-        }
+        return Environment.OSVersion.Version.Build >= Windows10DarkFrame20H1AttributeBuild
+            ? WindowUtilsInterop.DWMWA_USE_IMMERSIVE_DARK_MODE
+            : WindowUtilsInterop.DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1;
     }
 
-    public static int HitTestBorder(IntPtr hWnd, IntPtr lParam, int borderWidth)
+    private static int SelectFallbackDarkModeAttribute()
     {
-        var screenX = WindowUtilsInterop.GetXLParam(lParam);
-        var screenY = WindowUtilsInterop.GetYLParam(lParam);
+        return Environment.OSVersion.Version.Build >= Windows10DarkFrame20H1AttributeBuild
+            ? WindowUtilsInterop.DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1
+            : WindowUtilsInterop.DWMWA_USE_IMMERSIVE_DARK_MODE;
+    }
 
-        WindowUtilsInterop.GetWindowRect(hWnd, out var rc);
+    private static bool TrySetWindowFrameDarkMode(IntPtr handle, int attribute, int value)
+    {
+        return WindowUtilsInterop.DwmSetWindowAttribute(
+            handle,
+            attribute,
+            ref value,
+            sizeof(int)) == WindowUtilsInterop.S_OK;
+    }
 
-        var left   = screenX - rc.left;
-        var right  = rc.right - screenX;
-        var top    = screenY - rc.top;
-        var bottom = rc.bottom - screenY;
-
-        if (top <= borderWidth && left <= borderWidth)    return WindowUtilsInterop.HTTOPLEFT;
-        if (top <= borderWidth && right <= borderWidth)   return WindowUtilsInterop.HTTOPRIGHT;
-        if (bottom <= borderWidth && left <= borderWidth) return WindowUtilsInterop.HTBOTTOMLEFT;
-        if (bottom <= borderWidth && right <= borderWidth)return WindowUtilsInterop.HTBOTTOMRIGHT;
-        if (top <= borderWidth)                           return WindowUtilsInterop.HTTOP;
-        if (bottom <= borderWidth)                        return WindowUtilsInterop.HTBOTTOM;
-        if (left <= borderWidth)                          return WindowUtilsInterop.HTLEFT;
-        if (right <= borderWidth)                         return WindowUtilsInterop.HTRIGHT;
-
-        return 0;
+    private static void ReapplyActiveNonClientFrame(IntPtr handle)
+    {
+        // Avalonia suppresses default non-client activation handling for CSD windows.
+        // Let Windows repaint the active non-client frame once so the Win10 DWM
+        // dark-frame attribute is reflected immediately instead of after focus changes.
+        WindowUtilsInterop.DefWindowProc(
+            handle,
+            WindowUtilsInterop.WM_NCACTIVATE,
+            IntPtr.Zero,
+            IntPtr.Zero);
+        WindowUtilsInterop.DefWindowProc(
+            handle,
+            WindowUtilsInterop.WM_NCACTIVATE,
+            new IntPtr(1),
+            IntPtr.Zero);
     }
 }

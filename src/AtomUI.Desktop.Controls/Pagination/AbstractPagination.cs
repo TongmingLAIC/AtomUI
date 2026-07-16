@@ -1,31 +1,38 @@
 using AtomUI.Controls;
 using Avalonia;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 
 namespace AtomUI.Desktop.Controls;
 
-public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMotionAwareControl
+public abstract class AbstractPagination : TemplatedControl, ICustomizableSizeTypeAware, IMotionAwareControl
 {
+    #region 公共属性定义
+
     public const int DefaultPageSize = 10;
     public const int DefaultCurrentPage = 1;
-    
-    #region 公共属性定义
-    
+
     public static readonly StyledProperty<bool> IsHideOnSinglePageProperty =
         AvaloniaProperty.Register<AbstractPagination, bool>(nameof(IsHideOnSinglePage));
     
     public static readonly StyledProperty<PaginationAlign> AlignProperty =
         AvaloniaProperty.Register<AbstractPagination, PaginationAlign>(nameof(Align));
     
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractPagination>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractPagination>();
     
     public static readonly StyledProperty<int> CurrentPageProperty =
-        AvaloniaProperty.Register<AbstractPagination, int>(nameof(CurrentPage), DefaultCurrentPage,
+        AvaloniaProperty.Register<AbstractPagination, int>(
+            nameof(CurrentPage),
+            DefaultCurrentPage,
+            defaultBindingMode: BindingMode.TwoWay,
             validate:v => v > 0);
     
     public static readonly StyledProperty<int> PageSizeProperty =
-        AvaloniaProperty.Register<AbstractPagination, int>(nameof(PageSize), DefaultPageSize,
+        AvaloniaProperty.Register<AbstractPagination, int>(
+            nameof(PageSize),
+            DefaultPageSize,
+            defaultBindingMode: BindingMode.TwoWay,
             validate:PageSizeValidator);
     
     public static readonly StyledProperty<int> TotalProperty =
@@ -51,7 +58,7 @@ public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMo
         set => SetValue(AlignProperty, value);
     }
     
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -92,7 +99,9 @@ public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMo
     #endregion
     
     #region 公共事件定义
+
     public event EventHandler<PageChangedEventArgs>? CurrentPageChanged;
+
     #endregion
     
     #region 内部属性定义
@@ -110,12 +119,6 @@ public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMo
         set => SetAndRaise(IsEffectiveVisibleProperty, ref _isEffectiveVisible, value);
     }
 
-    private static bool PageSizeValidator(int pageSize)
-    {
-        int[] allowPageSizes = [0, 10, 20, 50, 100];
-        return allowPageSizes.Contains(pageSize);
-    }
-    
     #endregion
     
     protected bool TemplateConfigured = false;
@@ -162,7 +165,7 @@ public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMo
         var pageSize    = PageSize <= 0 ? DefaultPageSize : PageSize;
         var pageCount   = (int)Math.Ceiling(total / (double)pageSize);
         var currentPage = Math.Max(1, Math.Min(CurrentPage, pageCount));
-        CurrentPage = currentPage;
+        SetCurrentValue(CurrentPageProperty, currentPage);
         PageCount = pageCount;
         NotifyPageConditionChanged(currentPage, pageCount, pageSize, total);
     }
@@ -175,5 +178,10 @@ public abstract class AbstractPagination : TemplatedControl, ISizeTypeAware, IMo
     protected void EmitCurrentPageChanged(int currentPage, int pageCount, int pageSize)
     {
         CurrentPageChanged?.Invoke(this, new PageChangedEventArgs(currentPage, pageCount, pageSize));
+    }
+
+    private static bool PageSizeValidator(int pageSize)
+    {
+        return pageSize >= 0;
     }
 }

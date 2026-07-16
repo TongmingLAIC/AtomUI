@@ -1,7 +1,6 @@
 ﻿using AtomUI.Controls.Utils;
 using AtomUI.Desktop.Controls.Primitives;
 using AtomUI.Icons.AntDesign;
-using AtomUI.Media;
 using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
@@ -39,11 +38,15 @@ public class TimePicker : InfoPickerInput
 
     public static readonly StyledProperty<TimeSpan?> SelectedTimeProperty =
         AvaloniaProperty.Register<TimePicker, TimeSpan?>(nameof(SelectedTime),
+            defaultBindingMode: BindingMode.TwoWay,
             enableDataValidation: true);
 
     public static readonly StyledProperty<TimeSpan?> DefaultTimeProperty =
         AvaloniaProperty.Register<TimePicker, TimeSpan?>(nameof(DefaultTime),
             enableDataValidation: true);
+
+    public static readonly StyledProperty<TimeSpan?> PickerDisplayTimeProperty =
+        AvaloniaProperty.Register<TimePicker, TimeSpan?>(nameof(PickerDisplayTime));
 
     public bool IsNeedConfirm
     {
@@ -87,6 +90,12 @@ public class TimePicker : InfoPickerInput
         set => SetValue(DefaultTimeProperty, value);
     }
 
+    public TimeSpan? PickerDisplayTime
+    {
+        get => GetValue(PickerDisplayTimeProperty);
+        set => SetValue(PickerDisplayTimeProperty, value);
+    }
+
     #endregion
 
     #region 内部属性定义
@@ -119,11 +128,12 @@ public class TimePicker : InfoPickerInput
     
     #endregion
 
+    private const string AntDesignDefaultInputWidthReferenceText = "Select time";
+
     private TimePickerPresenter? _pickerPresenter;
 
     public TimePicker()
     {
-        this.RegisterTokenResourceScope(TimePickerToken.ScopeProvider);
     }
 
     static TimePicker()
@@ -139,6 +149,7 @@ public class TimePicker : InfoPickerInput
         timePickerPresenter[!TimePickerPresenter.SecondIncrementProperty]  = this[!SecondIncrementProperty];
         timePickerPresenter[!TimePickerPresenter.ClockIdentifierProperty]  = this[!ClockIdentifierProperty];
         timePickerPresenter[!TimePickerPresenter.SelectedTimeProperty]     = this[!SelectedTimeProperty];
+        timePickerPresenter[!TimePickerPresenter.PickerDisplayTimeProperty] = this[!PickerDisplayTimeProperty];
         timePickerPresenter[!TimePickerPresenter.IsNeedConfirmProperty]    = this[!IsNeedConfirmProperty];
         timePickerPresenter[!TimePickerPresenter.IsShowNowProperty]        = this[!IsShowNowProperty];
 
@@ -165,6 +176,7 @@ public class TimePicker : InfoPickerInput
             _pickerPresenter.ChoosingStatusChanged += HandleChoosingStatusChanged;
             _pickerPresenter.HoverTimeChanged      += HandleHoverTimeChanged;
             _pickerPresenter.Confirmed             += HandleConfirmed;
+            _pickerPresenter.ResetOpenPanelState();
         }
     }
 
@@ -247,25 +259,38 @@ public class TimePicker : InfoPickerInput
         {
             Text = DateTimeUtils.FormatTimeSpan(SelectedTime,
                 ClockIdentifier == ClockIdentifierType.HourClock12, AmText, PmText);
+            CalculatePreferredWidth();
         }
-        else if (change.Property == AmTextProperty ||
-                 change.Property == PmTextProperty)
+        else if (IsFormattedTextAffectingProperty(change.Property))
         {
             Text = DateTimeUtils.FormatTimeSpan(SelectedTime,
                 ClockIdentifier == ClockIdentifierType.HourClock12, AmText, PmText);
             CalculatePreferredWidth();
         }
-        else if (change.Property == FontSizeProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontFamilyProperty ||
-                 change.Property == FontStyleProperty ||
-                 change.Property == ClockIdentifierProperty ||
-                 change.Property == MinWidthProperty ||
-                 change.Property == WidthProperty ||
-                 change.Property == MaxWidthProperty)
+        else if (IsPreferredWidthAffectingProperty(change.Property))
         {
             CalculatePreferredWidth();
         }
+    }
+
+    private static bool IsFormattedTextAffectingProperty(AvaloniaProperty property)
+    {
+        return property == ClockIdentifierProperty ||
+               property == AmTextProperty ||
+               property == PmTextProperty;
+    }
+
+    private static bool IsPreferredWidthAffectingProperty(AvaloniaProperty property)
+    {
+        return property == FontSizeProperty ||
+               property == FontFamilyProperty ||
+               property == FontStyleProperty ||
+               property == FontWeightProperty ||
+               property == SizeTypeProperty ||
+               property == MinWidthProperty ||
+               property == WidthProperty ||
+               property == MaxWidthProperty ||
+               property == HorizontalAlignmentProperty;
     }
 
     private static int CoerceMinuteIncrement(AvaloniaObject sender, int value)
@@ -296,16 +321,8 @@ public class TimePicker : InfoPickerInput
         }
         else
         {
-            var preferredInputWidth = DateTimeUtils.CalculateWidestFormattedTimeSpanSize(
-                ClockIdentifier == ClockIdentifierType.HourClock12,
-                AmText, PmText,
-                FontSize, FontFamily, FontStyle, FontWeight).Width;
-            if (PlaceholderText != null)
-            {
-                preferredInputWidth = Math.Max(preferredInputWidth, TextUtils.CalculateTextSize(PlaceholderText, FontSize, FontFamily, FontStyle, FontWeight).Width);
-            }
+            var preferredInputWidth = CalculateContentPreferredWidth();
 
-            preferredInputWidth *= 1.1;
             if (!double.IsNaN(MinWidth))
             {
                 preferredInputWidth = Math.Max(MinWidth, preferredInputWidth);
@@ -317,6 +334,18 @@ public class TimePicker : InfoPickerInput
             }
             PreferredInputWidth = preferredInputWidth;
         }
+    }
+
+    private double CalculateContentPreferredWidth()
+    {
+        var formatWidth = DateTimeUtils.CalculateWidestFormattedTimeSpanSize(
+            ClockIdentifier == ClockIdentifierType.HourClock12,
+            AmText, PmText,
+            FontSize, FontFamily, FontStyle, FontWeight).Width;
+        var defaultInputBaselineWidth = DatePickerFormattingHelper.CalculateAntDesignInputBaselineWidth(
+            FontSize, FontFamily, FontStyle, FontWeight, AntDesignDefaultInputWidthReferenceText);
+
+        return Math.Max(formatWidth, defaultInputBaselineWidth);
     }
 
     protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)

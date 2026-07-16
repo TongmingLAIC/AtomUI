@@ -1,6 +1,5 @@
 using AtomUI;
 using AtomUI.Controls;
-using AtomUI.Desktop.Controls;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 
@@ -8,14 +7,14 @@ namespace AtomUIGallery.ShowCases.Form;
 
 public class Captcha : TemplatedControl,
                        IMotionAwareControl,
-                       ISizeTypeAware,
+                       ICustomizableSizeTypeAware,
                        IFormItemAware,
                        IInputControlStatusAware,
                        IInputControlStyleVariantAware
 {
     #region 公共属性定义
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<Captcha>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<Captcha>();
     
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<Captcha>();
@@ -29,7 +28,7 @@ public class Captcha : TemplatedControl,
     public static readonly StyledProperty<InputControlStatus> StatusProperty =
         InputControlStatusProperty.StatusProperty.AddOwner<Captcha>();
     
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);

@@ -1,9 +1,10 @@
 using System.Reactive;
 using AtomUI.Desktop.Controls;
+using AtomUI.Toolkits.GalleryBase.Shell;
 using AtomUIGallery.Workspace.ViewModels;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using ReactiveUI;
 using MenuItem = AtomUI.Desktop.Controls.MenuItem;
 
 namespace AtomUIGallery.Workspace.Views;
@@ -28,6 +29,8 @@ internal enum WindowMenuItemKind
 public partial class WorkspaceWindow : ReactiveWindow<WorkspaceWindowViewModel>
 {
     public const string LanguageId = nameof(WorkspaceWindow);
+    private const string TitleBarMenuResourceKey = "WorkspaceTitleBarMenu";
+    private GalleryShellView? _shellView;
 
     public WorkspaceWindow()
     {
@@ -36,8 +39,34 @@ public partial class WorkspaceWindow : ReactiveWindow<WorkspaceWindowViewModel>
 
         if (ViewModel is not null)
         {
-            RoutedViewHost.Router       = ViewModel.Router;
-            ShowCaseNavigation.ViewModel = ViewModel.CaseNavigation;
+            var showCaseNavigation = new CaseNavigation
+            {
+                Name      = "ShowCaseNavigation",
+                ViewModel = ViewModel.CaseNavigation
+            };
+            _shellView = new GalleryShellView(
+                AtomUIGalleryModule.GetConfiguration(),
+                showCaseNavigation,
+                ViewModel.Router);
+            ShellHost.Children.Add(_shellView);
+        }
+    }
+
+    protected override WindowTitleBar? NotifyCreateTitleBar(WindowTitleBar? oldTitleBar)
+    {
+        return new GalleryWindowTitleBar
+        {
+            Name = "PART_TitleBar"
+        };
+    }
+
+    protected override void NotifyConfigureTitleBar(WindowTitleBar titleBar)
+    {
+        base.NotifyConfigureTitleBar(titleBar);
+        if (titleBar is GalleryWindowTitleBar galleryTitleBar &&
+            Resources.TryGetValue(TitleBarMenuResourceKey, out var titleBarMenu))
+        {
+            galleryTitleBar.Menu = titleBarMenu as Control;
         }
     }
 
@@ -45,6 +74,15 @@ public partial class WorkspaceWindow : ReactiveWindow<WorkspaceWindowViewModel>
     {
         base.OnLoaded(e);
         AddHandler(MenuItem.ClickEvent, HandleMenuItemClick);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        RemoveHandler(MenuItem.ClickEvent, HandleMenuItemClick);
+        _shellView?.Dispose();
+        _shellView = null;
+        ViewModel?.Dispose();
+        base.OnDetachedFromVisualTree(e);
     }
 
     private void HandleMenuItemClick(object? sender, RoutedEventArgs e)

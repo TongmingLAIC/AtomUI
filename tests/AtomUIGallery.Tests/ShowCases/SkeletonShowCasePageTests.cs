@@ -1,0 +1,206 @@
+using System;
+using System.IO;
+using System.Linq;
+using Shouldly;
+using Xunit;
+
+namespace AtomUIGallery.Tests.ShowCases;
+
+public class SkeletonShowCasePageTests
+{
+    [Fact]
+    public void Skeleton_ShowCase_Uses_Document_Layout_With_Examples_And_Tables()
+    {
+        var source = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonShowCase.axaml");
+
+        source.ShouldContain("SkeletonShowCaseLangResource PageSubtitle");
+        source.ShouldContain("SkeletonShowCaseLangResource PageDescription");
+        source.ShouldNotContain("SkeletonShowCaseLangResource InfoNamespaceLabel");
+        source.ShouldNotContain("SkeletonShowCaseLangResource InfoPackageLabel");
+        source.ShouldNotContain("SkeletonShowCaseLangResource InfoBaseClassLabel");
+        source.ShouldContain("SkeletonShowCaseLangResource ComponentCategory");
+        source.ShouldContain("SkeletonShowCaseLangResource ComponentStatusStable");
+        source.ShouldNotContain("SkeletonShowCaseLangResource ScenarioExamples");
+        source.ShouldNotContain("SkeletonShowCaseLangResource ScenarioApi");
+        source.ShouldNotContain("SkeletonShowCaseLangResource ScenarioDesignToken");
+        source.ShouldNotContain("Tag=\"Examples\"");
+        source.ShouldNotContain("Tag=\"Api\"");
+        source.ShouldNotContain("Tag=\"DesignToken\"");
+        source.ShouldContain("<gallery:GalleryStickyTabsHost");
+        source.ShouldContain("StickyContentPadding=\"28,0,28,0\"");
+        source.ShouldNotContain("<atom:TabStrip Name=\"ScenarioTabs\"");
+        source.ShouldNotContain("<ContentControl Name=\"ScenarioContentHost\">");
+        source.ShouldContain("Name=\"ExamplesContent\"");
+        source.ShouldContain("IsScrollEnabled=\"False\"");
+        source.ShouldContain("ContentMargin=\"28,10,28,28\"");
+        source.ShouldNotContain("Selector=\"atom|TextBlock.info-label\"");
+        source.ShouldNotContain("Selector=\"atom|TextBlock.info-value\"");
+        CountOccurrences(source, "Classes=\"info-label\"").ShouldBe(0);
+        CountOccurrences(source, "Classes=\"info-value\"").ShouldBe(0);
+        source.ShouldNotContain("LineHeight=\"22\"");
+        source.ShouldContain("Description=\"{gallery:SkeletonShowCaseLangResource PageDescription}\"");
+        source.ShouldContain("<gallery:ShowCaseItem");
+        source.ShouldContain("SkeletonShowCaseLangResource BasicTitle");
+        source.ShouldContain("SkeletonShowCaseLangResource ComplexCombinationTitle");
+        source.ShouldContain("SkeletonShowCaseLangResource ActiveAnimationTitle");
+        source.ShouldContain("SkeletonShowCaseLangResource ButtonAvatarInputImageNodeTitle");
+        source.ShouldContain("SkeletonShowCaseLangResource ContainsSubComponentTitle");
+        source.ShouldNotContain("<atom:TabControl");
+        source.ShouldNotContain("<atom:DataGrid");
+        source.ShouldNotContain(">Gallery<");
+    }
+
+    [Fact]
+    public void Skeleton_ShowCase_Lazy_Loads_Api_And_DesignToken_DataGrids()
+    {
+        var pageSource       = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonShowCase.axaml");
+        var codeBehindSource = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonShowCase.axaml.cs");
+        var apiSource        = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonApiDataGrid.axaml");
+        var apiCodeSource    = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonApiDataGrid.axaml.cs");
+        var tokenSource      = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonDesignTokenDataGrid.axaml");
+        var tokenCodeSource  = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonDesignTokenDataGrid.axaml.cs");
+
+        pageSource.ShouldNotContain("<atom:TabStrip Name=\"ScenarioTabs\"");
+        pageSource.ShouldNotContain("Name=\"ScenarioContentHost\"");
+        pageSource.ShouldNotContain("Tag=\"Api\"");
+        pageSource.ShouldNotContain("Tag=\"DesignToken\"");
+        pageSource.ShouldNotContain("ItemsSource=\"{Binding ApiRows}\"");
+        pageSource.ShouldNotContain("ItemsSource=\"{Binding DesignTokenRows}\"");
+
+        codeBehindSource.ShouldNotContain("new GalleryShowCaseScenarioController");
+        codeBehindSource.ShouldNotContain("_scenarioController.Attach(DataContext)");
+        codeBehindSource.ShouldNotContain("_scenarioController.UpdateDataContext(DataContext)");
+        codeBehindSource.ShouldNotContain("new SkeletonApiDataGrid()");
+        codeBehindSource.ShouldNotContain("new SkeletonDesignTokenDataGrid()");
+
+        apiSource.ShouldContain("<atom:DataGrid");
+        apiSource.ShouldContain("x:DataType=\"viewModels:SkeletonApiRow\"");
+        apiSource.ShouldContain("GridLinesVisibility=\"Horizontal\"");
+        apiSource.ShouldContain("IsFrameBorderVisible=\"True\"");
+        apiSource.ShouldContain("PaginationVisibility=\"None\"");
+        apiSource.ShouldContain("LeftFrozenColumnCount=\"1\"");
+        apiSource.ShouldContain("Margin=\"28,10,28,28\"");
+        apiSource.ShouldContain("HorizontalAlignment=\"Stretch\"");
+        apiSource.ShouldContain("VerticalAlignment=\"Top\"");
+        apiSource.ShouldContain("SkeletonShowCaseLangResource ApiColumnProperty");
+        apiSource.ShouldContain("SkeletonShowCaseLangResource ApiColumnDescription");
+        apiSource.ShouldContain("SkeletonShowCaseLangResource ApiColumnType");
+        apiSource.ShouldContain("SkeletonShowCaseLangResource ApiColumnDefault");
+        apiSource.ShouldContain("MinWidth=\"520\"");
+        apiSource.ShouldContain("Width=\"*\"");
+        apiCodeSource.ShouldContain("viewModel.EnsureApiRows()");
+        apiCodeSource.ShouldContain("ApiDataGrid.ItemsSource = viewModel.ApiRows");
+
+        tokenSource.ShouldContain("<atom:DataGrid");
+        tokenSource.ShouldContain("x:DataType=\"viewModels:SkeletonDesignTokenRow\"");
+        tokenSource.ShouldContain("GridLinesVisibility=\"Horizontal\"");
+        tokenSource.ShouldContain("IsFrameBorderVisible=\"True\"");
+        tokenSource.ShouldContain("PaginationVisibility=\"None\"");
+        tokenSource.ShouldContain("LeftFrozenColumnCount=\"1\"");
+        tokenSource.ShouldContain("Margin=\"28,10,28,28\"");
+        tokenSource.ShouldContain("HorizontalAlignment=\"Stretch\"");
+        tokenSource.ShouldContain("VerticalAlignment=\"Top\"");
+        tokenSource.ShouldContain("SkeletonShowCaseLangResource TokenColumnToken");
+        tokenSource.ShouldContain("SkeletonShowCaseLangResource TokenColumnDescription");
+        tokenSource.ShouldContain("SkeletonShowCaseLangResource TokenColumnScope");
+        tokenSource.ShouldContain("SkeletonShowCaseLangResource TokenColumnStatus");
+        tokenSource.ShouldContain("MinWidth=\"520\"");
+        tokenSource.ShouldContain("Width=\"*\"");
+        tokenCodeSource.ShouldContain("viewModel.EnsureDesignTokenRows()");
+        tokenCodeSource.ShouldContain("DesignTokenDataGrid.ItemsSource = viewModel.DesignTokenRows");
+    }
+
+    [Fact]
+    public void Skeleton_ShowCase_Localization_Includes_Page_And_Api_Copy()
+    {
+        var en   = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Localization/en_US.cs");
+        var zhCn = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Localization/zh_CN.cs");
+        var zhTw = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Localization/zh_TW.cs");
+
+        foreach (var source in new[] { en, zhCn, zhTw })
+        {
+            source.ShouldContain("ScenarioExamples");
+            source.ShouldContain("ScenarioApi");
+            source.ShouldContain("ScenarioDesignToken");
+            source.ShouldContain("PageSubtitle");
+            source.ShouldNotContain("InfoNamespaceLabel");
+            source.ShouldContain("ApiPropertyIsLoading");
+            source.ShouldContain("ApiPropertyIsActive");
+            source.ShouldContain("ApiPropertyParagraphRows");
+            source.ShouldContain("ApiPropertyContent");
+            source.ShouldContain("TokenNameTitleHeight");
+            source.ShouldContain("TokenNameBlockRadius");
+            source.ShouldContain("TokenNameLoadingMotionDuration");
+        }
+    }
+
+    [Fact]
+    public void Skeleton_ShowCase_Examples_Match_Approved_Control_Demo_Content()
+    {
+        var source   = ReadRepoFile("controlgallery/AtomUIGallery/ShowCases/Feedback/Skeleton/Views/SkeletonShowCase.axaml");
+        var approved = ReadRepoFile("tests/AtomUIGallery.Tests/ShowCases/SkeletonShowCaseExamples.snapshot");
+
+        NormalizeMarkup(ExtractSkeletonExampleItems(source))
+            .ShouldBe(NormalizeMarkup(approved));
+    }
+
+    private static string ExtractSkeletonExampleItems(string source)
+    {
+        const string firstItemMarker  = "<gallery:ShowCaseItem";
+        const string panelCloseMarker = "</gallery:ShowCasePanel>";
+
+        var firstItemStart = source.IndexOf(firstItemMarker, StringComparison.Ordinal);
+        firstItemStart.ShouldBeGreaterThanOrEqualTo(0);
+
+        var panelCloseStart = source.IndexOf(panelCloseMarker, firstItemStart, StringComparison.Ordinal);
+        panelCloseStart.ShouldBeGreaterThan(firstItemStart);
+
+        return source[firstItemStart..panelCloseStart];
+    }
+
+    private static string NormalizeMarkup(string source)
+    {
+        return ShowCaseSnapshotMarkup.Normalize(source);
+    }
+
+    private static int CountOccurrences(string source, string value)
+    {
+        var count      = 0;
+        var startIndex = 0;
+        while (true)
+        {
+            var matchIndex = source.IndexOf(value, startIndex, StringComparison.Ordinal);
+            if (matchIndex < 0)
+            {
+                return count;
+            }
+
+            count++;
+            startIndex = matchIndex + value.Length;
+        }
+    }
+
+    private static string ReadRepoFile(string relativePath)
+    {
+        var path = GetRepoFile(relativePath);
+        File.Exists(path).ShouldBeTrue($"Expected repository file to exist: {relativePath}");
+        return File.ReadAllText(path);
+    }
+
+    private static string GetRepoFile(string relativePath)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, relativePath);
+    }
+}

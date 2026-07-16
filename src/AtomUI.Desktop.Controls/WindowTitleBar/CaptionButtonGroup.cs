@@ -1,14 +1,11 @@
 using System.Reactive.Disposables;
-using System.Runtime.Versioning;
 using AtomUI.Controls;
 using AtomUI.Data;
-using AtomUI.Native.Windows;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -122,6 +119,12 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
             nameof(IsMaximizeButtonEffectivelyVisible),
             o => o.IsMaximizeButtonEffectivelyVisible,
             (o, v) => o.IsMaximizeButtonEffectivelyVisible = v);
+
+    internal static readonly DirectProperty<CaptionButtonGroup, bool> IsPinButtonEffectivelyVisibleProperty =
+        AvaloniaProperty.RegisterDirect<CaptionButtonGroup, bool>(
+            nameof(IsPinButtonEffectivelyVisible),
+            o => o.IsPinButtonEffectivelyVisible,
+            (o, v) => o.IsPinButtonEffectivelyVisible = v);
     
     internal bool IsMotionEnabled
     {
@@ -176,12 +179,30 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
         get => _isMaximizeButtonEffectivelyVisible;
         set => SetAndRaise(IsMaximizeButtonEffectivelyVisibleProperty, ref _isMaximizeButtonEffectivelyVisible, value);
     }
+
+    private bool _isPinButtonEffectivelyVisible;
+
+    internal bool IsPinButtonEffectivelyVisible
+    {
+        get => _isPinButtonEffectivelyVisible;
+        set => SetAndRaise(IsPinButtonEffectivelyVisibleProperty, ref _isPinButtonEffectivelyVisible, value);
+    }
     
     protected Window? HostWindow { get; private set; }
 
     #endregion
+
+    #region 内部协作 API
+
+    internal static bool IsPinSupportedForBackend(LinuxWindowingBackend backend)
+    {
+        return backend != LinuxWindowingBackend.Wayland;
+    }
+
+    #endregion
     
     private WindowState? _originWindowState;
+    private WindowState? _lastWindowState;
     private CaptionButton? _fullScreenButton;
     private CaptionButton? _pinButton;
     private CaptionButton? _minimizeButton;
@@ -197,6 +218,7 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
         IsWindowMaximizedProperty.Changed.AddClassHandler<CaptionButtonGroup>((group, _) => group.UpdateFullScreenButtonVisibility());
         IsMinimizeCaptionButtonVisibleProperty.Changed.AddClassHandler<CaptionButtonGroup>((group, _) => group.UpdateMinimizeButtonVisibility());
         IsMaximizeCaptionButtonVisibleProperty.Changed.AddClassHandler<CaptionButtonGroup>((group, _) => group.UpdateMaximizeButtonVisibility());
+        IsPinCaptionButtonVisibleProperty.Changed.AddClassHandler<CaptionButtonGroup>((group, _) => group.UpdatePinButtonVisibility());
         IsWindowFullScreenProperty.Changed.AddClassHandler<CaptionButtonGroup>((group, _) =>
         {
             group.UpdateMinimizeButtonVisibility();
@@ -219,27 +241,22 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
 
         HostWindow = hostWindow;
         
-        _disposables = new CompositeDisposable(7);
+        _disposables = new CompositeDisposable(8);
+        hostWindow.Opened += HandleHostWindowOpened;
+        _disposables.Add(Disposable.Create(() => hostWindow.Opened -= HandleHostWindowOpened));
         _disposables.Add(BindUtils.RelayBind(hostWindow, Window.IsFullScreenCaptionButtonVisibleProperty, this, IsFullScreenCaptionButtonVisibleProperty));
         _disposables.Add(BindUtils.RelayBind(hostWindow, Window.IsPinCaptionButtonVisibleProperty, this, IsPinCaptionButtonVisibleProperty));
         _disposables.Add(BindUtils.RelayBind(hostWindow, Window.CanMaximizeProperty, this, IsMaximizeCaptionButtonVisibleProperty));
         _disposables.Add(BindUtils.RelayBind(hostWindow, Window.CanMinimizeProperty, this, IsMinimizeCaptionButtonVisibleProperty));
         _disposables.Add(BindUtils.RelayBind(hostWindow, Window.IsCloseCaptionButtonVisibleProperty, this, IsCloseCaptionButtonVisibleProperty));
         _disposables.Add(HostWindow.GetObservable(Window.WindowStateProperty)
-                                   .Subscribe(x =>
-                                   {
-                                       PseudoClasses.Set(StdPseudoClass.Minimized, x == WindowState.Minimized);
-                                       PseudoClasses.Set(StdPseudoClass.Normal, x == WindowState.Normal);
-                                       PseudoClasses.Set(StdPseudoClass.Maximized, x == WindowState.Maximized);
-                                       PseudoClasses.Set(StdPseudoClass.Fullscreen, x == WindowState.FullScreen);
-                                       IsWindowMaximized  = x == WindowState.Maximized;
-                                       IsWindowFullScreen = x == WindowState.FullScreen;
-                                   }));
+                                   .Subscribe(HandleWindowStateChanged));
         _disposables.Add(HostWindow.GetObservable(Window.TopmostProperty)
                                    .Subscribe(x =>
                                    {
                                        IsWindowPinned = HostWindow.Topmost;
                                    }));
+        UpdatePinButtonVisibility();
     }
 
     public virtual void Detach()
@@ -250,8 +267,10 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
         }
         _disposables.Dispose();
         DisposeTemplateHandlers();
-        _disposables = null;
-        HostWindow   = null;
+        _disposables    = null;
+        HostWindow      = null;
+        _lastWindowState = null;
+        UpdatePinButtonVisibility();
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -276,8 +295,6 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
         {
             _maximizeButton.Click += HandleMaximizeButtonClicked;
             _disposeActions.Add(() => _maximizeButton.Click -= HandleMaximizeButtonClicked);
-            // TODO 目前有点问题暂时关闭
-            // EnableWindowsSnapLayout(_maximizeButton);
         }
 
         if (_fullScreenButton != null)
@@ -304,6 +321,47 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
         UpdateFullScreenButtonVisibility();
         UpdateMinimizeButtonVisibility();
         UpdateMaximizeButtonVisibility();
+        UpdatePinButtonVisibility();
+    }
+
+    private void HandleWindowStateChanged(WindowState windowState)
+    {
+        var stateChanged = _lastWindowState.HasValue && _lastWindowState.Value != windowState;
+        _lastWindowState = windowState;
+
+        PseudoClasses.Set(StdPseudoClass.Minimized, windowState == WindowState.Minimized);
+        PseudoClasses.Set(StdPseudoClass.Normal, windowState == WindowState.Normal);
+        PseudoClasses.Set(StdPseudoClass.Maximized, windowState == WindowState.Maximized);
+        PseudoClasses.Set(StdPseudoClass.Fullscreen, windowState == WindowState.FullScreen);
+        IsWindowMaximized  = windowState == WindowState.Maximized;
+        IsWindowFullScreen = windowState == WindowState.FullScreen;
+
+        if (stateChanged)
+        {
+            InvalidateWindowsCaptionButtonPointerOverVisualStates();
+        }
+    }
+
+    private void InvalidateWindowsCaptionButtonPointerOverVisualStates()
+    {
+        InvalidateWindowsCaptionButtonPointerOverVisualState(_fullScreenButton);
+        InvalidateWindowsCaptionButtonPointerOverVisualState(_pinButton);
+        InvalidateWindowsCaptionButtonPointerOverVisualState(_minimizeButton);
+        InvalidateWindowsCaptionButtonPointerOverVisualState(_maximizeButton);
+        InvalidateWindowsCaptionButtonPointerOverVisualState(_closeButton);
+    }
+
+    private static void InvalidateWindowsCaptionButtonPointerOverVisualState(CaptionButton? button)
+    {
+        if (button is WindowsCaptionButton windowsCaptionButton)
+        {
+            windowsCaptionButton.InvalidatePointerOverVisualState();
+        }
+    }
+
+    private void HandleHostWindowOpened(object? sender, EventArgs args)
+    {
+        UpdatePinButtonVisibility();
     }
 
     private void UpdateFullScreenButtonVisibility()
@@ -319,6 +377,27 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
     private void UpdateMaximizeButtonVisibility()
     {
         IsMaximizeButtonEffectivelyVisible = IsMaximizeCaptionButtonVisible && !IsWindowFullScreen;
+    }
+
+    private void UpdatePinButtonVisibility()
+    {
+        IsPinButtonEffectivelyVisible = IsPinCaptionButtonVisible && IsPinSupportedByCurrentBackend();
+    }
+
+    private bool IsPinSupportedByCurrentBackend()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            return true;
+        }
+
+        var configuredPlatform = AvaloniaLocator.Current.GetService<AtomUIWindowingPlatformOptions>()?.Platform;
+        var platformImpl       = HostWindow?.PlatformImpl;
+        var backend = LinuxWindowChromeManager.ResolveBackend(
+            configuredPlatform,
+            platformImpl?.Handle?.HandleDescriptor,
+            platformImpl?.GetType().Assembly.GetName().Name);
+        return IsPinSupportedForBackend(backend);
     }
 
     private void DisposeTemplateHandlers()
@@ -382,85 +461,12 @@ internal class CaptionButtonGroup : TemplatedControl, IOperationSystemAware
 
     private void HandlePinButtonClicked(object? sender, RoutedEventArgs args)
     {
-        if (HostWindow == null || !HostWindow.IsPinCaptionButtonVisible)
+        if (HostWindow == null || !IsPinButtonEffectivelyVisible)
         {
             return;
         }
         HostWindow.Topmost = !HostWindow.Topmost;
         IsWindowPinned = HostWindow.Topmost;
-    }
-    
-    // Referenced from https://github.com/kikipoulet/SukiUI project
-    [SupportedOSPlatform("windows")]
-    private void EnableWindowsSnapLayout(CaptionButton maximizeButton)
-    {
-        if (HostWindow == null)
-        {
-            return;
-        }
-
-        var pointerOnButton = false;
-        var pointerOverSetter = typeof(CaptionButton).GetProperty(nameof(IsPointerOver));
-        if (pointerOverSetter is null)
-        {
-            throw new NullReferenceException($"Unable to find Button.{nameof(IsPointerOver)} property.");
-        }
-
-        nint ProcHookCallback(nint hWnd, uint msg, nint wParam, nint lParam, ref bool handled)
-        {
-            if (!maximizeButton.IsVisible) return 0;
-
-            if (msg == WindowUtilsInterop.WM_NCHITTEST)
-            {
-                var point = new PixelPoint((short)(ToInt32(lParam) & 0xffff), (short)(ToInt32(lParam) >> 16));
-
-                var buttonSize = maximizeButton.DesiredSize;
-
-                var buttonLeftTop = maximizeButton.PointToScreen(FlowDirection == FlowDirection.LeftToRight
-                                                           ? new Point(buttonSize.Width, 0)
-                                                           : new Point(0, 0));
-
-                var x = (buttonLeftTop.X - point.X) / HostWindow.RenderScaling;
-                var y = (point.Y - buttonLeftTop.Y) / HostWindow.RenderScaling;
-
-                if (new Rect(default, buttonSize).Contains(new Point(x, y)))
-                {
-                    handled = true;
-
-                    if (pointerOnButton == false)
-                    {
-                        pointerOnButton = true;
-                        pointerOverSetter.SetValue(maximizeButton, true);
-                    }
-                    return WindowUtilsInterop.HTMAXBUTTON;
-                }
-                if (pointerOnButton)
-                {
-                    pointerOnButton = false;
-                    pointerOverSetter.SetValue(maximizeButton, false);
-                }
-            }
-            else if (msg == WindowUtilsInterop.WM_CAPTURECHANGED)
-            {
-                if (pointerOnButton && HostWindow.CanMaximize)
-                {
-                    HostWindow.WindowState = HostWindow.WindowState == WindowState.Maximized
-                                  ? WindowState.Normal
-                                  : WindowState.Maximized;
-
-                    pointerOverSetter.SetValue(maximizeButton, false);
-                }
-            }
-
-            return 0;
-        }
-
-        static int ToInt32(IntPtr ptr) => IntPtr.Size == 4 ? ptr.ToInt32() : (int)(ptr.ToInt64() & 0xffffffff);
-        
-        var wndProcHookCallback = new Win32Properties.CustomWndProcHookCallback(ProcHookCallback);
-        Win32Properties.AddWndProcHookCallback(HostWindow, wndProcHookCallback);
-
-        _disposeActions.Add(() => Win32Properties.RemoveWndProcHookCallback(HostWindow, wndProcHookCallback));
     }
     
     void IOperationSystemAware.SetOsType(OsType osType)

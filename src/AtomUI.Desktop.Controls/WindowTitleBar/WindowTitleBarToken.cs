@@ -11,7 +11,6 @@ namespace AtomUI.Desktop.Controls;
 internal class WindowTitleBarToken : AbstractControlDesignToken
 {
     public const string ID = "WindowTitleBar";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
     
     /// <summary>
     /// Hover 的背景色
@@ -62,6 +61,11 @@ internal class WindowTitleBarToken : AbstractControlDesignToken
     /// 标题按钮的大小
     /// </summary>
     public double CaptionButtonIconSize {  get; set; }
+
+    /// <summary>
+    /// Windows caption glyph size aligned with Avalonia's native-style window decorations.
+    /// </summary>
+    public double WindowsCaptionIconSize { get; set; }
     
     /// <summary>
     /// 应用程序图标大小
@@ -157,8 +161,9 @@ internal class WindowTitleBarToken : AbstractControlDesignToken
         HoverBackgroundColor        = SharedToken.ColorBgTextHover;
         PressedBackgroundColor      = SharedToken.ColorBgTextActive;
         LogoAndTitleSpacing         = SharedToken.SizeUnit * 2;
-        TitleBarPadding             = new Thickness(LogoAndTitleSpacing * 1.8, LogoAndTitleSpacing);
-        CaptionButtonIconSize       = SharedToken.IconSizeSM;
+        TitleBarPadding             = new Thickness(LogoAndTitleSpacing * 1.8, 0);
+        CaptionButtonIconSize       = SharedToken.IconSize;
+        WindowsCaptionIconSize      = 11;
         LogoSize                    = SharedToken.SizeUnit * 4;
         
         ActiveColor   = SharedToken.ColorTextSecondary;

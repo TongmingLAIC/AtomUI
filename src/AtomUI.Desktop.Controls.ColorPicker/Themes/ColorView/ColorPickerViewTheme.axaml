@@ -26,12 +26,13 @@
                             PaletteGroup="{TemplateBinding PaletteGroup}"
                             IsVisible="{TemplateBinding IsPaletteGroupEnabled}"
                             IsMotionEnabled="{TemplateBinding IsMotionEnabled}" />
-                        <Rectangle Name="Separator"
-                                   VerticalAlignment="Stretch" Width="1"
-                                   IsVisible="{TemplateBinding IsPaletteGroupEnabled}" />
+                        <atom:PixelAlignedBorder Name="Separator"
+                                                 VerticalAlignment="Stretch"
+                                                 Width="1"
+                                                 IsVisible="{TemplateBinding IsPaletteGroupEnabled}" />
                         <StackPanel Orientation="Vertical"
                                     ClipToBounds="False"
-                                    Spacing="{atom:SharedTokenResource SpacingXS}">
+                                    Spacing="{atom:ColorPickerTokenSharedTokenResource SpacingXS}">
                             <atom:ColorBlock Name="PART_ClearColor"
                                              HorizontalAlignment="Right"
                                              IsEmptyColorMode="True"

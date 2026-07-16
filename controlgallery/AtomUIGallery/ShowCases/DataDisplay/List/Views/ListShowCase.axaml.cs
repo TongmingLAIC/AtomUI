@@ -1,6 +1,5 @@
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
-using AtomUI;
 using AtomUI.Controls;
 using AtomUI.Controls.Data;
 using AtomUI.Data;
@@ -19,11 +18,6 @@ public partial class ListShowCase : GalleryReactiveUserControl<ListViewModel>
 {
     public const string LanguageId = nameof(ListShowCase);
 
-    private const string BasicScenario    = "Basic";
-    private const string AdvancedScenario = "Advanced";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
-
     public ListShowCase()
     {
         this.WhenActivated(disposables =>
@@ -31,7 +25,8 @@ public partial class ListShowCase : GalleryReactiveUserControl<ListViewModel>
             if (DataContext is ListViewModel viewModel)
             {
                 RefreshLocalizedListItems(viewModel);
-                viewModel.SelectionMode = SelectionMode.Single;
+                viewModel.SelectionMode            = SelectionMode.Single;
+                viewModel.OrderedSortDescriptions  = [ListSortDescription.FromPath(nameof(IListItemData.Content))];
 
                 var themeManager = Application.Current?.GetThemeManager();
                 if (themeManager != null)
@@ -53,57 +48,65 @@ public partial class ListShowCase : GalleryReactiveUserControl<ListViewModel>
                     viewModel.OrderedGroupListItems  = null;
                     viewModel.BasicListBoxItems      = null;
                     viewModel.PaginationListItems    = null;
+                    viewModel.OrderedSortDescriptions = null;
+                    viewModel.SearchFilterValue       = null;
+                    viewModel.ClearBoundSelectedItems();
                 }).DisposeWith(disposables);
             }
         });
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
+    private void HandleSelectionModeOptionCheckedChanged(object? sender, OptionCheckedChangedEventArgs e)
     {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+        if (DataContext is ListViewModel viewModel &&
+            e.CheckedOption.IsChecked == true &&
+            e.CheckedOption.Tag is SelectionMode selectionMode)
         {
-            content.DataContext = DataContext;
+            viewModel.SelectionMode = selectionMode;
         }
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    private void HandleAddEmptyItemClicked(object? sender, RoutedEventArgs e)
     {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (DataContext is not ListViewModel viewModel)
         {
             return;
         }
 
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
+        var items = viewModel.EmptyDemoItems != null
+            ? new List<IListItemData>(viewModel.EmptyDemoItems)
+            : new List<IListItemData>();
 
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
+        items.Add(CreateDynamicItem());
+        viewModel.EmptyDemoItems = items;
     }
 
-    private static Control CreateScenarioContent(string scenario)
+    private void HandleRemoveEmptyItemClicked(object? sender, RoutedEventArgs e)
     {
-        return scenario switch
+        if (DataContext is not ListViewModel viewModel)
         {
-            BasicScenario    => new ListBasicShowCase(),
-            AdvancedScenario => new ListAdvancedShowCase(),
-            _                => throw new InvalidOperationException($"Unknown List scenario: {scenario}")
-        };
+            return;
+        }
+
+        if (viewModel.EmptyDemoItems is null || viewModel.EmptyDemoItems.Count <= 1)
+        {
+            viewModel.EmptyDemoItems = [];
+            return;
+        }
+
+        var items = new List<IListItemData>(viewModel.EmptyDemoItems);
+        items.RemoveAt(items.Count - 1);
+        viewModel.EmptyDemoItems = items;
+    }
+
+    private void HandleFilterListBoxClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is SearchEdit searchEdit &&
+            DataContext is ListViewModel viewModel)
+        {
+            viewModel.SearchFilterValue = searchEdit.Text?.Trim();
+        }
     }
 
     private void RefreshLocalizedListItems(ListViewModel viewModel)
@@ -155,6 +158,7 @@ public partial class ListShowCase : GalleryReactiveUserControl<ListViewModel>
     private void InitSelectionListItems(ListViewModel viewModel)
     {
         viewModel.SelectionListItems = BuildBasicListItems();
+        viewModel.ResetBoundSelectedItems();
     }
 
     private void InitializeDisabledItems(ListViewModel viewModel)

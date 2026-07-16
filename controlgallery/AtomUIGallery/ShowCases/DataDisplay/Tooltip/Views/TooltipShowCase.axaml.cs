@@ -1,5 +1,4 @@
-using System.Reactive.Disposables;
-using System.Reactive.Disposables.Fluent;
+using Avalonia.Controls;
 
 namespace AtomUIGallery.ShowCases.Tooltip;
 
@@ -9,17 +8,14 @@ public partial class TooltipShowCase : GalleryReactiveUserControl<TooltipViewMod
 
     public TooltipShowCase()
     {
-        this.WhenActivated(disposables =>
-        {
-            if (DataContext is TooltipViewModel viewModel)
-            {
-                ArrowSegmented.SelectionChanged += viewModel.HandleSelectionChanged;
-                Disposable.Create(() =>
-                {
-                    ArrowSegmented.SelectionChanged -= viewModel.HandleSelectionChanged;
-                }).DisposeWith(disposables);
-            }
-        });
         InitializeComponent();
+    }
+
+    private void HandleArrowSegmentedSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    {
+        if (DataContext is TooltipViewModel viewModel)
+        {
+            viewModel.HandleSelectionChanged(sender, args);
+        }
     }
 }

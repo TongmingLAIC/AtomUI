@@ -1,0 +1,57 @@
+# NumericUpDown Changelog
+
+本文档记录 NumericUpDown 控件级设计、API、主题契约、Token 和实现结构的变化。它用于维护控件设计历史，不替代仓库根目录 `CHANGELOG.md`，也不作为正式版本发布说明。
+
+记录原则：
+
+- 只记录会影响 NumericUpDown 设计理解、兼容边界、实现架构或维护方式的变化。
+- 不记录临时讨论、纯格式化或没有长期价值的实现细节。
+- 架构文档始终描述最新设计状态；历史变化记录在本文档。
+
+## 2026-07-02
+
+- Implementation
+  - Relay inherited `ShowButtonSpinner` into both NumericUpDown templates so input mode floating handles and spinner mode inline action segments respect the user setting.
+  - Add regression coverage for `ShowButtonSpinner=false` in input and spinner modes, including runtime visibility changes.
+- Docs
+  - Document `ShowButtonSpinner` as an inherited NumericUpDown contract consumed by both AtomUI display modes.
+
+## 2026-06-26
+
+- Docs
+  - Add LLMS metadata, semantic parts and export source mapping for `NumericUpDown`.
+  - Align generated output paths with `controls/numeric-up-down/index-cn.md` and `controls/numeric-up-down/semantic-cn.md`.
+
+## 2026-06-21
+
+- Docs
+  - Align NumericUpDown documentation with `ICustomizableSizeTypeAware`, `CustomizableSizeType.Custom` and `IsCustomFontSize` contracts.
+  - Clarify template ownership for spinner mode action buttons and the lifecycle of NumericUpDown relay bindings.
+  - Document custom size validation points for `ButtonSpinner`, the inner `TextBox`, floating Handle and spinner actions.
+- Implementation
+  - Reorder `ICompactSpaceAware` and `IFormItemAware` contract regions after constructors without changing public API.
+  - Consolidate template part event subscriptions and relay bindings into paired part setters and `SetupTemplatePartBindings`.
+  - Centralize string mode synchronization flag enter/exit paths with paired helpers.
+
+## 2026-06-19
+
+- Docs
+  - Add `implementation.md` for NumericUpDown value synchronization, string mode, on-demand template switching, ButtonSpinner integration and maintenance invariants.
+  - Refactor `overview.md` to focus on data-entry semantics, public contracts, behavior state, visual theme model and validation entry points.
+  - Add NumericUpDown implementation documentation to the Data Entry category entry.
+
+## 2026-06-18
+
+- Docs
+  - Establish NumericUpDown desktop architecture documentation under `docs/controls/desktop/data-entry/numeric-up-down/overview.md`.
+  - Add dedicated NumericUpDown Token design documentation under `docs/controls/desktop/data-entry/numeric-up-down/token.md`.
+  - Introduce per-control changelog under `docs/controls/desktop/data-entry/numeric-up-down/changelog.md`.
+  - Document the NumericUpDown composition model based on Avalonia NumericUpDown, ButtonSpinner, TextBox, clear button and AddOnDecoratedBox.
+  - Document the string mode, floating Handle and Form integration models.
+  - Document NumericUpDown compatibility invariants, template parts, Token scope and validation strategy.
+  - Document `NumericUpDownMode` / `Mode=Spinner` design, on-demand template switching, zero-cost default path and spinner mode Token reuse.
+- Implementation
+  - Add public `NumericUpDownMode` and `Mode` API with `Input` as the default value.
+  - Implement `Mode=Spinner` with an independent NumericUpDown template containing inline decrease and increase buttons.
+  - Reuse `ButtonSpinner` spin handling for the spinner template so min/max, `AllowSpin`, keyboard and wheel semantics remain shared.
+  - Add Gallery API metadata and a NumberUpDown spinner mode showcase.

@@ -1,15 +1,18 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TabStrip;
 
 [LanguageProvider(LanguageCode.zh_TW, TabStripShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
     public const string TabStripBasicTitle = "基礎用法";
     public const string TabStripBasicDescription = "默認激活第一個標籤項。";
     public const string TabStripItemsSourceTitle = "通過 ItemSource 生成 TabStripItem";
     public const string TabStripItemsSourceDescription = "基於數據源和項目模板添加 TabStripItem。";
+    public const string TabStripReorderTitle = "拖曳排序";
+    public const string TabStripReorderDescription = "透過 IsTabReorderEnabled 開啟拖曳排序。排序後選中狀態會跟隨同一個邏輯標籤項。";
+    public const string TabStripReorderPlacementTitle = "不同位置的拖曳排序";
+    public const string TabStripReorderPlacementDescription = "切換 TabStripPlacement，驗證水平與垂直標籤軌道下的拖曳排序效果。";
     public const string TabStripDisabledTitle = "禁用標籤";
     public const string TabStripDisabledDescription = "禁用某個標籤項。";
     public const string TabStripCenteredTitle = "居中顯示";
@@ -30,6 +33,54 @@ internal partial class zh_TW : LanguageProvider
     public const string TabStripSizeDescription = "大尺寸標籤通常用於頁頭，小尺寸可用於模態框。";
     public const string TabStripAddCloseTitle = "新增和關閉標籤";
     public const string TabStripAddCloseDescription = "隱藏默認加號圖標，並為自定義觸發器綁定事件。";
+    public const string PageSubtitle = "將標籤頭與選中內容分離呈現。";
+    public const string PageDescription = "TabStrip 和 CardTabStrip 為自訂內容宿主提供輕量標籤導航，支援資料模板標籤、可關閉標籤、位置控制以及新增標籤操作。";
+    public const string ComponentCategory = "導航";
+    public const string ComponentStatusStable = "穩定";
+    public const string ScenarioExamples = "範例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變數";
+    public const string ApiColumnProperty = "屬性";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "型別";
+    public const string ApiColumnDefault = "預設值";
+    public const string ApiPropertySelectedIndex = "取得或設定目前啟用標籤的索引。";
+    public const string ApiPropertySelectedItem = "取得或設定目前啟用的標籤項。";
+    public const string ApiPropertyItemsSource = "提供用於建立標籤項的資料集合。";
+    public const string ApiPropertyItemTemplate = "定義透過資料來源呈現標籤頭的模板。";
+    public const string ApiPropertyTabStripPlacement = "控制標籤列位於頂部、底部、左側或右側。";
+    public const string ApiPropertyTabAlignmentCenter = "讓標籤頭在可用標籤列區域內置中。";
+    public const string ApiPropertyIsTabReorderEnabled = "啟用標籤項拖曳排序。";
+    public const string ApiPropertyTabActivationTrigger = "控制標籤在滑鼠按下時啟用，或在同一標籤上放開時啟用。";
+    public const string ApiPropertySizeType = "控制小號、中號或大號標籤尺寸。";
+    public const string ApiPropertyIsTabClosable = "為允許關閉的標籤啟用關閉按鈕。";
+    public const string ApiPropertyIsTabAutoHideCloseButton = "僅在標籤懸浮或聚焦時顯示關閉按鈕。";
+    public const string ApiPropertyHeaderStartExtraContent = "在標籤頭之前加入額外內容。";
+    public const string ApiPropertyHeaderEndExtraContent = "在標籤頭之後加入額外內容。";
+    public const string ApiPropertyIsShowAddTabButton = "在卡片式標籤列上顯示新增標籤按鈕。";
+    public const string ApiPropertyAddTabRequest = "點擊卡片式標籤列新增按鈕請求建立新標籤時觸發。";
+    public const string ApiEventTabReordering = "拖曳排序提交前觸發。將 Cancel 設為 true 可保留原順序。";
+    public const string ApiEventTabReordered = "拖曳排序提交到邏輯集合後觸發。";
+    public const string TokenColumnToken = "變數";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "範圍";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenNameCardBg = "卡片式標籤背景色。";
+    public const string TokenNameCardSize = "卡片式標籤高度。";
+    public const string TokenNameCardPadding = "卡片式標籤內距。";
+    public const string TokenNameTitleFontSize = "預設標籤標題字號。";
+    public const string TokenNameInkBarColor = "選中標籤指示條顏色。";
+    public const string TokenNameHorizontalItemGutter = "橫向標籤項之間的間距。";
+    public const string TokenNameHorizontalItemPadding = "橫向標籤項內距。";
+    public const string TokenNameVerticalItemPadding = "縱向標籤項內距。";
+    public const string TokenNameItemColor = "預設標籤文字顏色。";
+    public const string TokenNameItemSelectedColor = "選中標籤文字顏色。";
+    public const string TokenNameCardGutter = "卡片式標籤項之間的間距。";
+    public const string TokenNameAddTabButtonMarginHorizontal = "橫向新增標籤按鈕外距。";
+    public const string TokenNameCloseIconMargin = "關閉圖標外距。";
+    public const string TokenNameTabAndContentGutter = "標籤列與選中內容之間的間距。";
+    public const string TokenScopeComponent = "元件";
+    public const string TokenStatusStable = "穩定";
     public const string P2TextTabPosition = "標籤位置：";
     public const string P2ContentTop = "頂部";
     public const string P2ContentBottom = "底部";
@@ -64,6 +115,4 @@ internal partial class zh_TW : LanguageProvider
     public const string P2ContentNewTabFormat = "新增標籤 {0}";
     public const string P2TextTabContent = "標籤內容";
 
-    protected override Type GetResourceKindType() => typeof(TabStripShowCaseLangResourceKind);
 }
-

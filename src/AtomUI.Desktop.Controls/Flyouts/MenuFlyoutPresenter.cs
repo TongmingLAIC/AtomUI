@@ -15,7 +15,7 @@ namespace AtomUI.Desktop.Controls;
 public class MenuFlyoutPresenter : MenuBase,
                                    IArrowAwareShadowMaskInfoProvider,
                                    IMotionAwareControl,
-                                   ISizeTypeAware
+                                   ICustomizableSizeTypeAware
 {
     #region 公共属性定义
 
@@ -33,8 +33,8 @@ public class MenuFlyoutPresenter : MenuBase,
             nameof(MenuItemClicked),
             RoutingStrategies.Bubble);
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<MenuFlyoutPresenter>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<MenuFlyoutPresenter>();
 
     public static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<MenuFlyoutPresenter>();
@@ -60,7 +60,7 @@ public class MenuFlyoutPresenter : MenuBase,
         set => SetValue(DisplayPageSizeProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -121,17 +121,20 @@ public class MenuFlyoutPresenter : MenuBase,
     public MenuFlyoutPresenter()
         : base(new DefaultMenuInteractionHandler(true))
     {
-        this.RegisterTokenResourceScope(MenuToken.ScopeProvider);
     }
 
     public MenuFlyoutPresenter(IMenuInteractionHandler menuInteractionHandler)
         : base(menuInteractionHandler)
     {
-        this.RegisterTokenResourceScope(MenuToken.ScopeProvider);
     }
 
     public override void Close()
     {
+        if (InteractionHandler is DefaultMenuInteractionHandler interactionHandler)
+        {
+            interactionHandler.CancelPendingHoverOperations();
+        }
+
         // DefaultMenuInteractionHandler calls this
         var host = this.FindLogicalAncestorOfType<Popup>();
         if (host != null)

@@ -27,6 +27,9 @@ public class Drawer : Control,
     public static readonly StyledProperty<IDataTemplate?> ContentTemplateProperty =
         AvaloniaProperty.Register<Drawer, IDataTemplate?>(nameof(ContentTemplate));
 
+    public static readonly StyledProperty<Thickness> ContentPaddingProperty =
+        AvaloniaProperty.Register<Drawer, Thickness>(nameof(ContentPadding));
+
     public static readonly StyledProperty<bool> IsOpenProperty = 
         AvaloniaProperty.Register<Drawer, bool>(nameof(IsOpen), false, false, BindingMode.TwoWay);
 
@@ -84,6 +87,12 @@ public class Drawer : Control,
     {
         get => GetValue(ContentTemplateProperty);
         set => SetValue(ContentTemplateProperty, value);
+    }
+
+    public Thickness ContentPadding
+    {
+        get => GetValue(ContentPaddingProperty);
+        set => SetValue(ContentPaddingProperty, value);
     }
 
     public bool IsOpen
@@ -217,7 +226,6 @@ public class Drawer : Control,
 
     public Drawer()
     {
-        this.RegisterTokenResourceScope(DrawerToken.ScopeProvider);
         this.ConfigureMotionBindingStyle();
         TokenResourceBinder.CreateTokenBinding(this, PushOffsetPercentProperty, DrawerTokenKind.PushOffsetPercent);
         ApplyDialogSizeTokenBinding();
@@ -381,6 +389,7 @@ public class Drawer : Control,
         DetachOpenOnSizeChanged();
         var layer = ScopeAwareAdornerLayer.GetLayer(this);
         Debug.Assert(layer != null);
+        _container?.CloseActiveChildDrawer();
         NotifyBeforeClose(layer);
         _container?.Close(layer);
     }
@@ -537,7 +546,7 @@ public class Drawer : Control,
         {
             if (OpenOn != null)
             {
-                var containerSize = OpenOn.Bounds.Size;
+                var containerSize = TopLevelMarginBinder.GetCsdContentSize(OpenOn);
                 if (Placement == DrawerPlacement.Top || Placement == DrawerPlacement.Bottom)
                 {
                     SetCurrentValue(EffectiveDialogSizeProperty, DialogSize.Resolve(containerSize.Height));

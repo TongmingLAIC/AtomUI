@@ -1,15 +1,18 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TabStrip;
 
 [LanguageProvider(LanguageCode.en_US, TabStripShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string TabStripBasicTitle = "Basic";
     public const string TabStripBasicDescription = "Default activate first tab.";
     public const string TabStripItemsSourceTitle = "Items from ItemSource datasource";
     public const string TabStripItemsSourceDescription = "Add TabStripItem based on data source and item template.";
+    public const string TabStripReorderTitle = "Draggable tabs";
+    public const string TabStripReorderDescription = "Enable drag sorting with IsTabReorderEnabled. The selected item follows the same logical tab after sorting.";
+    public const string TabStripReorderPlacementTitle = "Draggable tabs with placement";
+    public const string TabStripReorderPlacementDescription = "Switch TabStripPlacement to verify drag sorting on horizontal and vertical tab tracks.";
     public const string TabStripDisabledTitle = "Disabled";
     public const string TabStripDisabledDescription = "Disabled a tab.";
     public const string TabStripCenteredTitle = "Centered";
@@ -30,6 +33,54 @@ internal partial class en_US : LanguageProvider
     public const string TabStripSizeDescription = "Large size tabs are usually used in page header, and small size could be used in Modal.";
     public const string TabStripAddCloseTitle = "Add and close tab";
     public const string TabStripAddCloseDescription = "Hide default plus icon, and bind event for customized trigger.";
+    public const string PageSubtitle = "Render tab headers independently from selected content.";
+    public const string PageDescription = "TabStrip and CardTabStrip provide lightweight tab navigation for custom content hosts, including item-template tabs, closable tabs, placement control, and add-tab actions.";
+    public const string ComponentCategory = "Navigation";
+    public const string ComponentStatusStable = "Stable";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertySelectedIndex = "Gets or sets the active tab index.";
+    public const string ApiPropertySelectedItem = "Gets or sets the active tab strip item.";
+    public const string ApiPropertyItemsSource = "Provides data items used to create tab strip items.";
+    public const string ApiPropertyItemTemplate = "Defines the template used to render item-source tab headers.";
+    public const string ApiPropertyTabStripPlacement = "Controls whether the tab strip is placed on the top, bottom, left, or right.";
+    public const string ApiPropertyTabAlignmentCenter = "Centers the tab headers within the available strip area.";
+    public const string ApiPropertyIsTabReorderEnabled = "Enables drag sorting for tab strip items.";
+    public const string ApiPropertyTabActivationTrigger = "Controls whether a tab strip item activates on pointer press or on release over the same item.";
+    public const string ApiPropertySizeType = "Controls the small, middle, or large tab size.";
+    public const string ApiPropertyIsTabClosable = "Enables close buttons for tabs that allow closing.";
+    public const string ApiPropertyIsTabAutoHideCloseButton = "Shows the close button only during tab hover or focus.";
+    public const string ApiPropertyHeaderStartExtraContent = "Adds extra content before the tab headers.";
+    public const string ApiPropertyHeaderEndExtraContent = "Adds extra content after the tab headers.";
+    public const string ApiPropertyIsShowAddTabButton = "Shows the add-tab button on card tab strips.";
+    public const string ApiPropertyAddTabRequest = "Raised when the card tab strip add button requests a new tab.";
+    public const string ApiEventTabReordering = "Raised before a drag sort is committed. Set Cancel to true to keep the original order.";
+    public const string ApiEventTabReordered = "Raised after a drag sort commits to the logical item collection.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenNameCardBg = "Card tab background color.";
+    public const string TokenNameCardSize = "Card tab height.";
+    public const string TokenNameCardPadding = "Card tab padding.";
+    public const string TokenNameTitleFontSize = "Default tab title font size.";
+    public const string TokenNameInkBarColor = "Selected tab indicator color.";
+    public const string TokenNameHorizontalItemGutter = "Spacing between horizontal tab items.";
+    public const string TokenNameHorizontalItemPadding = "Padding for horizontal tab items.";
+    public const string TokenNameVerticalItemPadding = "Padding for vertical tab items.";
+    public const string TokenNameItemColor = "Default tab text color.";
+    public const string TokenNameItemSelectedColor = "Selected tab text color.";
+    public const string TokenNameCardGutter = "Spacing between card tab items.";
+    public const string TokenNameAddTabButtonMarginHorizontal = "Horizontal add-tab button margin.";
+    public const string TokenNameCloseIconMargin = "Close icon margin.";
+    public const string TokenNameTabAndContentGutter = "Spacing between the tab strip and selected content.";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
     public const string P2TextTabPosition = "Tab position:";
     public const string P2ContentTop = "Top";
     public const string P2ContentBottom = "Bottom";
@@ -64,5 +115,4 @@ internal partial class en_US : LanguageProvider
     public const string P2ContentNewTabFormat = "new tab {0}";
     public const string P2TextTabContent = "Tab Content";
 
-    protected override Type GetResourceKindType() => typeof(TabStripShowCaseLangResourceKind);
 }

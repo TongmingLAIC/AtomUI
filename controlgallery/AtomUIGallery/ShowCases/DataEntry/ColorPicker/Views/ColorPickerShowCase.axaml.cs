@@ -1,6 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Converters;
-using ColorPicker = AtomUI.Desktop.Controls.ColorPicker;
 
 namespace AtomUIGallery.ShowCases.ColorPicker;
 
@@ -10,14 +10,18 @@ public partial class ColorPickerShowCase : GalleryReactiveUserControl<ColorPicke
 
     public ColorPickerShowCase()
     {
-        this.WhenActivated(disposables =>
+        InitializeComponent();
+    }
+
+    private void HandleCustomRenderTextAttached(object? sender, VisualTreeAttachmentEventArgs args)
+    {
+        if (sender is AtomUI.Desktop.Controls.ColorPicker colorPicker)
         {
-            AtomUIColorPicker.SetColorTextFormatter(CustomRenderText, (color, format) =>
+            AtomUIColorPicker.SetColorTextFormatter(colorPicker, (color, _) =>
             {
                 var colorText = ColorToHexConverter.ToHexString(color, AlphaComponentPosition.Leading, false, true);
                 return $"Custom Text ({colorText})";
             });
-        });
-        InitializeComponent();
+        }
     }
 }

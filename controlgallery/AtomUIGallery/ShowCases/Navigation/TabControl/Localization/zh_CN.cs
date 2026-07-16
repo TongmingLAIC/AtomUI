@@ -1,15 +1,18 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TabControl;
 
 [LanguageProvider(LanguageCode.zh_CN, TabControlShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string TabControlBasicTitle = "基础用法";
     public const string TabControlBasicDescription = "默认激活第一个标签页。";
     public const string TabControlItemsSourceTitle = "通过 ItemSource 生成标签项";
     public const string TabControlItemsSourceDescription = "基于数据源和项目模板添加 TabItem。";
+    public const string TabControlReorderTitle = "拖拽排序";
+    public const string TabControlReorderDescription = "通过 IsTabReorderEnabled 开启拖拽排序。排序后选中状态会跟随同一个逻辑标签项。";
+    public const string TabControlReorderPlacementTitle = "不同位置的拖拽排序";
+    public const string TabControlReorderPlacementDescription = "切换 TabStripPlacement，验证水平和垂直标签轨道下的拖拽排序效果。";
     public const string TabControlDisabledTitle = "禁用标签";
     public const string TabControlDisabledDescription = "禁用某个标签页。";
     public const string TabControlCenteredTitle = "居中显示";
@@ -32,6 +35,54 @@ internal partial class zh_CN : LanguageProvider
     public const string TabControlAddCloseDescription = "隐藏默认加号图标，并为自定义触发器绑定事件。";
     public const string TabControlExtraContentTitle = "额外内容";
     public const string TabControlExtraContentDescription = "可以在标签页右侧、左侧或两侧添加额外操作。";
+    public const string PageSubtitle = "将相关内容组织为可切换的标签页。";
+    public const string PageDescription = "TabControl 和 CardTabControl 提供文档式导航、数据模板标签、可关闭标签、灵活位置以及可选的标签栏操作。";
+    public const string ComponentCategory = "导航";
+    public const string ComponentStatusStable = "稳定";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计变量";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertySelectedIndex = "获取或设置当前激活标签的索引。";
+    public const string ApiPropertySelectedItem = "获取或设置当前激活的标签项。";
+    public const string ApiPropertyItemsSource = "提供用于创建标签项的数据集合。";
+    public const string ApiPropertyItemTemplate = "定义通过数据源渲染标签内容的模板。";
+    public const string ApiPropertyTabStripPlacement = "控制标签栏位于顶部、底部、左侧或右侧。";
+    public const string ApiPropertyTabAlignmentCenter = "让标签头在标签栏内居中。";
+    public const string ApiPropertyIsTabReorderEnabled = "启用标签项拖拽排序。";
+    public const string ApiPropertyTabActivationTrigger = "控制标签在鼠标按下时激活，或在同一标签上松开时激活。";
+    public const string ApiPropertySizeType = "控制小号、中号或大号标签尺寸。";
+    public const string ApiPropertyIsTabClosable = "为允许关闭的标签启用关闭按钮。";
+    public const string ApiPropertyIsTabAutoHideCloseButton = "仅在标签悬浮或聚焦时显示关闭按钮。";
+    public const string ApiPropertyHeaderStartExtraContent = "在标签头之前添加额外内容。";
+    public const string ApiPropertyHeaderEndExtraContent = "在标签头之后添加额外内容。";
+    public const string ApiPropertyIsShowAddTabButton = "在卡片式标签控件上显示新增标签按钮。";
+    public const string ApiPropertyAddTabRequest = "点击卡片式标签新增按钮请求创建新标签时触发。";
+    public const string ApiEventTabReordering = "拖拽排序提交前触发。将 Cancel 设为 true 可保留原顺序。";
+    public const string ApiEventTabReordered = "拖拽排序提交到逻辑集合后触发。";
+    public const string TokenColumnToken = "变量";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "范围";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenNameCardBg = "卡片式标签背景色。";
+    public const string TokenNameCardSize = "卡片式标签高度。";
+    public const string TokenNameCardPadding = "卡片式标签内边距。";
+    public const string TokenNameTitleFontSize = "默认标签标题字号。";
+    public const string TokenNameInkBarColor = "选中标签指示条颜色。";
+    public const string TokenNameHorizontalItemGutter = "横向标签项之间的间距。";
+    public const string TokenNameHorizontalItemPadding = "横向标签项内边距。";
+    public const string TokenNameVerticalItemPadding = "纵向标签项内边距。";
+    public const string TokenNameItemColor = "默认标签文本颜色。";
+    public const string TokenNameItemSelectedColor = "选中标签文本颜色。";
+    public const string TokenNameCardGutter = "卡片式标签项之间的间距。";
+    public const string TokenNameAddTabButtonMarginHorizontal = "横向新增标签按钮外边距。";
+    public const string TokenNameCloseIconMargin = "关闭图标外边距。";
+    public const string TokenNameTabAndContentGutter = "标签栏与选中内容之间的间距。";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
     public const string P2HeaderTabN1 = "标签页 1";
     public const string P2HeaderTabN2 = "标签页 2";
     public const string P2HeaderTabN3 = "标签页 3";
@@ -87,5 +138,4 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentEndExtraAction = "右侧额外操作";
     public const string P2HeaderNewTabFormat = "新增标签 {0}";
 
-    protected override Type GetResourceKindType() => typeof(TabControlShowCaseLangResourceKind);
 }

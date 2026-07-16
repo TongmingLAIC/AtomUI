@@ -1,17 +1,67 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TreeView;
 
 [LanguageProvider(LanguageCode.en_US, TreeViewShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
-    public const string ScenarioBasic = "Basic";
-    public const string ScenarioAdvanced = "Advanced";
+    public const string ComponentCategory = "Data Display";
+    public const string ComponentStatusStable = "Stable";
+    public const string PageSubtitle = "Display hierarchical data with selectable, checkable, searchable, draggable, and async-loaded nodes.";
+    public const string PageDescription = "TreeView organizes nested data into expandable nodes and supports templated data sources, checkbox selection, filtering, custom switcher icons, context menus, and lazy child loading.";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string ApiPropertyItemsSource = "Tree node data source used with TreeDataTemplate.";
+    public const string ApiPropertyItemTemplate = "Template used to render each tree node from data.";
+    public const string ApiPropertyToggleType = "Shows no toggle, radio buttons, or check boxes for node selection.";
+    public const string ApiPropertyDefaultExpandedPaths = "Node paths expanded when the TreeView is first created.";
+    public const string ApiPropertyDefaultSelectedPaths = "Node paths selected when the TreeView is first created.";
+    public const string ApiPropertyDefaultCheckedPaths = "Node paths checked when checkbox mode is enabled.";
+    public const string ApiPropertyIsShowLine = "Shows connector lines between parent and child nodes.";
+    public const string ApiPropertyIsShowIcon = "Displays node icons.";
+    public const string ApiPropertyIsShowLeafIcon = "Displays icons for leaf nodes.";
+    public const string ApiPropertyNodeHoverMode = "Controls whether hover feedback covers the node content, block, or whole line.";
+    public const string ApiPropertyIsDraggable = "Allows nodes to be reordered by drag and drop.";
+    public const string ApiPropertyDataLoader = "Loads child nodes asynchronously when a node expands.";
+    public const string ApiPropertyFilterValue = "Filter value applied to searchable trees.";
+    public const string ApiPropertyFilterStrategy = "Controls whether filtering matches the full tree or direct nodes.";
+    public const string ApiPropertyIsSelectOnRightClick = "Selects the node that opens a context menu with right click.";
+    public const string TokenNameHeaderHeight = "Node header height.";
+    public const string TokenNameNodeHoverBg = "Node hover background color.";
+    public const string TokenNameNodeSelectedBg = "Node selected background color.";
+    public const string TokenNameDirectoryNodeSelectedColor = "Directory node selected text color.";
+    public const string TokenNameDirectoryNodeSelectedBg = "Directory node selected background color.";
+    public const string TokenNameTreeItemMargin = "Tree item outer margin.";
+    public const string TokenNameTreeItemHeaderPadding = "Tree item header padding.";
+    public const string TokenNameTreeItemHeaderMargin = "Tree item header margin.";
+    public const string TokenNameTreeNodeSwitcherMargin = "Tree node switcher button margin.";
+    public const string TokenNameTreeNodeIconMargin = "Tree node icon margin.";
+    public const string TokenNameDragIndicatorLineWidth = "Drag indicator line width.";
+    public const string TokenNameFilterHighlightColor = "Filter highlight color.";
+    public const string TokenScopeComponent = "TreeView";
+    public const string TokenStatusStable = "Stable";
     public const string BasicTitle = "Basic";
     public const string BasicDescription = "The most basic usage, tell you how to use checkable, selectable, disabled, defaultExpandKeys, and etc.";
     public const string GenerateByTemplateTitle = "Generate by template";
     public const string GenerateByTemplateDescription = "You can use the Template mechanism to generate tree nodes";
+    public const string SelectionBindingTitle = "SelectedItem binding";
+    public const string SelectionBindingDescription = "Bind SelectedItem to a node object instance, then click a node or action button to watch the bound value update.";
+    public const string SelectionItemsBindingTitle = "SelectedItems binding";
+    public const string SelectionItemsBindingDescription = "Bind SelectedItems to node object instances, then click nodes or action buttons to watch the selected collection update.";
+    public const string SelectionBindingValueTitle = "Bound value";
+    public const string SelectionBindingSelectFirst = "Select parent 1-0";
+    public const string SelectionBindingSelectSecond = "Select parent 1-1";
+    public const string SelectionBindingSelectBoth = "Select both";
+    public const string SelectionBindingClear = "Clear";
     public const string BlockNodeTitle = "Block Node";
     public const string BlockNodeDescription = "Block Node.";
     public const string TreeWithLineTitle = "Tree with line";
@@ -73,6 +123,8 @@ internal partial class en_US : LanguageProvider
     public const string P2TextShowicon = "showIcon:";
     public const string P2TextShowleaficon = "ShowLeafIcon:";
     public const string P2TextNodeHoverMode = "Node hover mode:";
+    public const string P2TextSelectedItemBinding = "SelectedItem";
+    public const string P2TextSelectedItemsBinding = "SelectedItems";
     public const string P2ContentDefault = "Default";
     public const string P2ContentBlock = "Block";
     public const string P2ContentWholeline = "WholeLine";
@@ -84,5 +136,4 @@ internal partial class en_US : LanguageProvider
     public const string P2HeaderNewNodeFormat = "{0} / new ({1})";
     public const string P2HeaderRenamedFormat = "{0} (renamed)";
 
-    protected override Type GetResourceKindType() => typeof(TreeViewShowCaseLangResourceKind);
 }

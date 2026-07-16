@@ -10,14 +10,15 @@
 
 ## 先看这几条
 
-日常开发先记住这 6 条，绝大多数 AOT 问题都能在写代码时避开。
+日常开发先记住这 7 条，绝大多数 AOT 问题都能在写代码时避开。
 
-1. 不要在 AtomUI 内置路径里新增字符串绑定，例如 `new Binding("Name")` 或 AXAML `ReflectionBinding`。
-2. 不要运行时扫描 assembly、type、field、property 来完成内置注册。能生成就用 source generator，能显式注册就显式注册。
-3. 不要用 `UnconditionalSuppressMessage` 盖掉 trim/AOT warning。它只是不显示 warning，不会保留被 trim 掉的 metadata。
-4. 替换 AOT 不安全代码时，先确认旧语义，再改实现。尤其是 binding mode、binding priority、初始值、异常包装、dispose 后行为。
-5. 新增 subscription、binding、event handler、activation scope、cache 时，必须能说清楚在哪里释放或失效。
-6. Analyzer 通过不等于 NativeAOT publish 一定成功。涉及发布配置、linker、root descriptor 时，要做真实 publish 验证。
+1. 新增功能和修复 bug 时，AOT 兼容是第一设计约束。同一需求有 AOT 友好实现和运行时反射/动态发现实现时，必须选择 AOT 友好实现；能用 source generator 就不要用反射。
+2. 不要在 AtomUI 内置路径里新增字符串绑定，例如 `new Binding("Name")` 或 AXAML `ReflectionBinding`。
+3. 不要运行时扫描 assembly、type、field、property 来完成内置注册。能显式注册就显式注册，能生成 registry/catalog 就用 source generator。
+4. 不要用 `UnconditionalSuppressMessage` 盖掉 trim/AOT warning。它只是不显示 warning，不会保留被 trim 掉的 metadata。
+5. 替换 AOT 不安全代码时，先确认旧语义，再改实现。尤其是 binding mode、binding priority、初始值、异常包装、dispose 后行为。
+6. 新增 subscription、binding、event handler、activation scope、cache 时，必须能说清楚在哪里释放或失效。
+7. Analyzer 通过不等于 NativeAOT publish 一定成功。涉及发布配置、linker、root descriptor 时，要做真实 publish 验证。
 
 一句话总结：AOT 改造的方向是把运行时动态发现变成编译期已知代码，而不是把 warning 压下去。
 
@@ -32,6 +33,7 @@
 | 语言资源 | generated provider wrapper | `GetFields(...)` 枚举资源字段 | 缺字段、异常、日志语义是否不变 |
 | 图标创建 | generated factory 或 virtual factory | 扫描 icon assembly 后反射创建 | 非法 kind 的异常包装是否不变 |
 | DataGrid 动态 path | `[GenerateDataMemberAccessors]` 或手写 descriptor | 对用户模型直接 `GetProperty(path)` | sort/filter/group/AddNew 是否走 descriptor |
+| 非 Visual AvaloniaObject 资源宿主 | `[GenerateScopedResourceHost]` 生成 scoped host 生命周期 | 每个对象手写 `IResourceHost` / `IThemeVariantHost` 样板代码 | owner attach/release、WeakReference、资源更新测试 |
 | ReactiveUI view activation | AtomUI/Gallery 自己管理 activation scope | view-side `WhenActivated` extension 反射路径 | Loaded/Unloaded 和 VM 切换释放 |
 | 发布配置 | analyzer 加真实 NativeAOT publish | 只看普通 build | linker、root、generator 项目是否被错误发布 |
 
@@ -45,6 +47,7 @@
 - `src/AtomUI.Desktop.Controls`
 - `src/AtomUI.Desktop.Controls.DataGrid`
 - `src/AtomUI.Desktop.Controls.ColorPicker`
+- `src/AtomUI.Desktop.Controls.Extras`
 - `src/AtomUI.Icons.*`
 - `src/AtomUI.Generator`
 - `controlgallery/AtomUIGallery`
@@ -151,8 +154,11 @@ _relayBindingDisposables.Add(BindUtils.BindVisualAncestor(
 - 把资源字段写入 dictionary。
 - 根据数据模型生成属性 accessor。
 - 为 closed generic 或具体类型生成 factory。
+- 为 owner-managed 非 Visual `AvaloniaObject` 生成 scoped `IResourceHost` / `IThemeVariantHost` 生命周期样板代码。
 
 SG 的价值不是“把反射挪个地方”，而是让运行时代码变成普通的强类型 C#。这样 trimmer 能看见类型、构造函数和成员，NativeAOT 也不需要动态代码生成。
+
+非 Visual `AvaloniaObject` 资源宿主类需求统一遵循 [Scoped Resource Host Source Generator 范式](../modules/generator/scoped-resource-host-generator.md)。不要在每个描述对象中复制手写资源宿主代码；业务属性保留在主文件，资源宿主生命周期由 generator 生成，owner 控件只负责 attach/release。
 
 ### Generator 项目边界
 
@@ -194,25 +200,26 @@ TreatAsLocalProperty="IsAotCompatible;EnableAotAnalyzer;EnableTrimAnalyzer;Enabl
 
 ### Control token 注册
 
-运行时不要扫描 assembly 查找 control token。应由 generator 生成 `ControlTokenTypePool`，返回带 metadata 契约的注册项：
+运行时不要扫描 assembly 查找 Control Token。应由 generator 生成 `ControlTokenDescriptorPool`，返回完整的
+生成式 descriptor：
 
 ```csharp
-tokenTypes.Add(new ControlTokenRegistration(typeof(MyControlToken)));
+descriptors.Add(MyControlTokenDescriptor.Instance);
 ```
 
-`ControlTokenRegistration.TokenType` 要携带 `DynamicallyAccessedMembers`：
+descriptor 必须直接提供以下静态已知信息：
 
-```csharp
-[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor |
-                            DynamicallyAccessedMemberTypes.PublicProperties |
-                            DynamicallyAccessedMemberTypes.NonPublicProperties)]
-public Type TokenType { get; }
-```
+- `ControlTokenIdentity` 和 registry slot。
+- 直接构造 Token builder 的委托。
+- Token name、value type、stage 和 slot。
+- 强类型 parse、set、get 和 resource projection 委托。
+- Control 自身和继承 Token schema。
 
-这里有两个关键点：
+这里有三个关键点：
 
-- DAM 不是“全局保留开关”。只有 `Type` 值从带 DAM 契约的位置继续传到 `Activator.CreateInstance` 或 property scan，trimmer 才知道要保留哪些 metadata。
-- `IList<Type>` 不能表达集合元素的 metadata 要求，所以需要 `ControlTokenRegistration` 这样的包装类型。
+- Builder 必须原样传递 descriptor，不能丢弃 identity 后退化为 `Type` 注册。
+- 内置正常路径不调用 `Activator.CreateInstance`、`Type.GetProperties` 或 `PropertyInfo.GetValue/SetValue`。
+- 第三方 Control Token 必须使用 AtomUI generator，或者显式提供同等完整的 descriptor；不提供反射 fallback。
 
 ### Token value converter 注册
 
@@ -360,6 +367,8 @@ public partial class PersonRow
 }
 ```
 
+如果集合以接口或基类作为 item type 暴露，并且排序、过滤或分组 path 来自这个接口/基类，也要在对应接口或基类上生成 accessor；不要依赖运行时从首个 item 反推具体类型。
+
 不可加 attribute 的模型，显式传入 `IDataMemberAccessorDescriptor`：
 
 ```csharp
@@ -385,6 +394,12 @@ var descriptor = new DataMemberAccessorDescriptor<PersonRow>(
 如果 descriptor 不存在，可以进入 RUC fallback，但调用点必须显式看到风险。`RequiresUnreferencedCode` 不会保留成员，它只会把风险传递给调用方，让 analyzer 在 AOT/trim 场景下报警。
 
 所以结论是：AtomUI 内置模型要走生成 accessor；用户如果要 NativeAOT 稳定发布，就要提供 generated 或手写 descriptor。
+
+### 编译期诊断
+
+DataGrid、List、collection view 等使用字符串 path 做排序、过滤、分组、自动列或数据成员读取时，必须优先让问题在编译期暴露，而不是等到 NativeAOT 运行时才失败。
+
+可静态判断的场景必须提供 analyzer warning。诊断 ID、ID 命名、severity、编码组织和测试规则统一维护在 [compiler-diagnostics-guidelines.md](compiler-diagnostics-guidelines.md)。
 
 ## Reflection helper
 
@@ -637,6 +652,7 @@ docs/superpowers/aot-review-checklist.md
 - 是否新增 `Activator.CreateInstance(Type)`、`Expression.Compile()` 或 `MakeGenericType(...)`。
 - 是否新增 ReactiveUI expression/view activation API。
 - 是否新增动态 data model path，但没有 descriptor 或 generator。
+- 是否新增 DataGrid/List/collection 字符串 path，但没有可在编译期报警的 analyzer 覆盖。
 - 是否新增订阅、binding、event handler，但没有 release path。
 - 是否新增 source generator 逻辑，但没有检查生成物稳定性。
 - 是否新增 suppress trim/AOT warning。
@@ -700,6 +716,5 @@ git diff --check
 - `TypeHelper` 动态 path fallback。
 - `ObjectExtension` / `TypeMemberExtension` 反射 helper。
 - DataGrid 对用户 `Binding` / `ReflectionBinding` 的兼容读取。
-- Theme token 创建中基于 `ControlTokenRegistration.TokenType` 的 `Activator.CreateInstance`。
 
 共同要求是：AtomUI 内置正常路径不用这些 fallback；用户动态场景使用时风险要显式暴露；AOT 用户要有 descriptor、generator 或显式注册这样的稳定替代路径。

@@ -7,14 +7,13 @@ using Avalonia.Interactivity;
 namespace AtomUI.Controls.Commons;
 
 using AvaloniaButton = Avalonia.Controls.Button;
-using ButtonSizeType = SizeType;
 
 [PseudoClasses(ButtonPseudoClass.Visited,
     ButtonPseudoClass.IconOnly,
     ButtonPseudoClass.Loading,
     ButtonPseudoClass.IsDanger)]
 public abstract class AbstractHyperLinkButton : AvaloniaButton,
-                                                ISizeTypeAware,
+                                                ICustomizableSizeTypeAware,
                                                 IMotionAwareControl
 {
     #region 公共属性定义
@@ -28,11 +27,17 @@ public abstract class AbstractHyperLinkButton : AvaloniaButton,
     public static readonly StyledProperty<bool> IsLoadingProperty =
         AvaloniaProperty.Register<AbstractHyperLinkButton, bool>(nameof(IsLoading));
     
-    public static readonly StyledProperty<ButtonSizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractHyperLinkButton>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractHyperLinkButton>();
 
     public static readonly StyledProperty<PathIcon?> IconProperty = 
         AvaloniaProperty.Register<AbstractHyperLinkButton, PathIcon?>(nameof(Icon));
+
+    public static readonly StyledProperty<double> IconWidthProperty =
+        AvaloniaProperty.Register<AbstractHyperLinkButton, double>(nameof(IconWidth));
+
+    public static readonly StyledProperty<double> IconHeightProperty =
+        AvaloniaProperty.Register<AbstractHyperLinkButton, double>(nameof(IconHeight));
 
     public static readonly StyledProperty<bool> IsMotionEnabledProperty = 
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<AbstractHyperLinkButton>();
@@ -65,7 +70,7 @@ public abstract class AbstractHyperLinkButton : AvaloniaButton,
         set => SetValue(IsLoadingProperty, value);
     }
     
-    public ButtonSizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -75,6 +80,18 @@ public abstract class AbstractHyperLinkButton : AvaloniaButton,
     {
         get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
+    }
+
+    public double IconWidth
+    {
+        get => GetValue(IconWidthProperty);
+        set => SetValue(IconWidthProperty, value);
+    }
+
+    public double IconHeight
+    {
+        get => GetValue(IconHeightProperty);
+        set => SetValue(IconHeightProperty, value);
     }
     
     public bool IsMotionEnabled
@@ -100,7 +117,9 @@ public abstract class AbstractHyperLinkButton : AvaloniaButton,
     static AbstractHyperLinkButton()
     {
         AffectsMeasure<AbstractHyperLinkButton>(SizeTypeProperty,
-            IconProperty);
+            IconProperty,
+            IconWidthProperty,
+            IconHeightProperty);
         AffectsRender<AbstractHyperLinkButton>(IsDangerProperty,
             IsGhostProperty);
     }

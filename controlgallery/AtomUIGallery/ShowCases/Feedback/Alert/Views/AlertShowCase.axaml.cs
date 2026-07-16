@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Alert;
 
 public partial class AlertShowCase : GalleryReactiveUserControl<AlertViewModel>
@@ -9,4 +8,5 @@ public partial class AlertShowCase : GalleryReactiveUserControl<AlertViewModel>
     {
         InitializeComponent();
     }
+
 }

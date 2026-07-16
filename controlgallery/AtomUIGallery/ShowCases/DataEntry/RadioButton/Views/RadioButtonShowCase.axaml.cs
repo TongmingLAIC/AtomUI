@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using AtomUI.Controls;
@@ -6,7 +5,6 @@ using AtomUI.Data;
 using AtomUI.Theme.Language;
 using AtomUIGallery.Localization;
 using Avalonia;
-using Avalonia.Controls;
 
 namespace AtomUIGallery.ShowCases.RadioButton;
 
@@ -14,15 +12,10 @@ public partial class RadioButtonShowCase : GalleryReactiveUserControl<RadioButto
 {
     public const string LanguageId = nameof(RadioButtonShowCase);
 
-    private const string BasicScenario   = "Basic";
-    private const string GroupsScenario  = "Groups";
-    private const string OptionsScenario = "Options";
-    private const string StylesScenario  = "Styles";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
-
     public RadioButtonShowCase()
     {
+        InitializeComponent();
+
         this.WhenActivated(disposables =>
         {
             if (DataContext is RadioButtonViewModel viewModel)
@@ -41,60 +34,10 @@ public partial class RadioButtonShowCase : GalleryReactiveUserControl<RadioButto
                 Disposable.Create(() =>
                 {
                     viewModel.RadioOptions = null;
+                    viewModel.ClearTwoWayRadioOptions();
                 }).DisposeWith(disposables);
             }
         });
-
-        InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
-    }
-
-    protected override void OnDataContextChanged(EventArgs e)
-    {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
-        {
-            content.DataContext = DataContext;
-        }
-    }
-
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
-    {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
-        {
-            return;
-        }
-
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
-    }
-
-    private static Control CreateScenarioContent(string scenario)
-    {
-        return scenario switch
-        {
-            BasicScenario   => new RadioButtonBasicShowCase(),
-            GroupsScenario  => new RadioButtonGroupsShowCase(),
-            OptionsScenario => new RadioButtonOptionsShowCase(),
-            StylesScenario  => new RadioButtonStylesShowCase(),
-            _               => throw new InvalidOperationException($"Unknown RadioButton scenario: {scenario}")
-        };
     }
 
     private static void ConfigureRadioOptions(RadioButtonViewModel viewModel)
@@ -106,6 +49,23 @@ public partial class RadioButtonShowCase : GalleryReactiveUserControl<RadioButto
             new () { Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentOptionC, "Option C") },
             new () { Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentOptionD, "Option D"), IsEnabled = false },
         };
+        viewModel.ConfigureTwoWayRadioOptions(
+            new RadioButtonOption
+            {
+                Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentHangzhou, "Hangzhou")
+            },
+            new RadioButtonOption
+            {
+                Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentShanghai, "Shanghai")
+            },
+            new RadioButtonOption
+            {
+                Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentBeijing, "Beijing")
+            },
+            new RadioButtonOption
+            {
+                Content = RadioButtonShowCaseLanguage.Get(RadioButtonShowCaseLangResourceKind.P2ContentChengdu, "Chengdu")
+            });
     }
 }
 

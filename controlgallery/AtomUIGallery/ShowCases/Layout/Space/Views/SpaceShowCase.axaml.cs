@@ -1,12 +1,17 @@
 using System.Reactive.Disposables;
+using AtomUI;
 using AtomUI.Controls;
 using AtomUI.Data;
 using AtomUI.Desktop.Controls;
-using AtomUI.Theme;
 using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using AtomUIGallery.Localization;
+using AtomUISlider = AtomUI.Desktop.Controls.Slider;
+using Avalonia.Controls.Primitives;
 
 namespace AtomUIGallery.ShowCases.Space;
 
@@ -14,32 +19,19 @@ public partial class SpaceShowCase : GalleryReactiveUserControl<SpaceViewModel>
 {
     public const string LanguageId = nameof(SpaceShowCase);
 
-    private const string BasicScenario         = "Basic";
-    private const string SizeScenario          = "Size";
-    private const string AlignScenario         = "Align";
-    private const string CompactFormScenario   = "CompactForm";
-    private const string CompactButtonScenario = "CompactButton";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
-
     public SpaceShowCase()
     {
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
 
         this.WhenActivated(disposables =>
         {
-            if (DataContext is SpaceViewModel viewModel)
+            RefreshCurrentViewModelData();
+            var themeManager = Application.Current?.GetThemeManager();
+            if (themeManager != null)
             {
-                RefreshLocalizedOptionData(viewModel);
-                var themeManager = Application.Current?.GetThemeManager();
-                if (themeManager != null)
-                {
-                    EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshLocalizedOptionData(viewModel);
-                    themeManager.LanguageVariantChanged += handler;
-                    disposables.Add(Disposable.Create(() => themeManager.LanguageVariantChanged -= handler));
-                }
+                EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshCurrentViewModelData();
+                themeManager.LanguageVariantChanged += handler;
+                disposables.Add(Disposable.Create(() => themeManager.LanguageVariantChanged -= handler));
             }
         });
     }
@@ -47,49 +39,77 @@ public partial class SpaceShowCase : GalleryReactiveUserControl<SpaceViewModel>
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+
+        if (DataContext is SpaceViewModel viewModel)
         {
-            content.DataContext = DataContext;
+            viewModel.SizeType = CustomizableSizeType.Small;
+            RefreshLocalizedOptionData(viewModel);
         }
+
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    public void HandleSizeTypeChanged(object? sender, RoutedEventArgs e)
     {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (sender is not AtomUIRadioButton radioButton ||
+            radioButton.IsChecked != true ||
+            radioButton.Tag is not CustomizableSizeType sizeType)
         {
             return;
         }
 
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
+        if (DataContext is SpaceViewModel viewModel)
         {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
+            viewModel.SizeType = sizeType;
         }
 
-        if (tabItem.Content != content)
+        if (!TryFindTemplateControl<AtomUISlider>(radioButton, "CustomSizeSlider", out var customSizeSlider))
         {
-            tabItem.Content = content;
+            return;
+        }
+
+        customSizeSlider.IsVisible = sizeType == CustomizableSizeType.Custom;
+        if (TryFindTemplateControl<AtomUI.Desktop.Controls.Space>(radioButton, "SizeDemoSpace", out var sizeDemoSpace))
+        {
+            ApplySizeDemoSpacing(sizeDemoSpace, sizeType, customSizeSlider.Value);
         }
     }
 
-    private static Control CreateScenarioContent(string scenario)
+    public void HandleCustomSpacingValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        return scenario switch
+        if (sender is not AtomUISlider slider ||
+            DataContext is not SpaceViewModel { SizeType: CustomizableSizeType.Custom })
         {
-            BasicScenario         => new SpaceBasicShowCase(),
-            SizeScenario          => new SpaceSizeShowCase(),
-            AlignScenario         => new SpaceAlignShowCase(),
-            CompactFormScenario   => new SpaceCompactFormShowCase(),
-            CompactButtonScenario => new SpaceCompactButtonShowCase(),
-            _                     => throw new InvalidOperationException($"Unknown Space scenario: {scenario}")
-        };
+            return;
+        }
+
+        if (TryFindTemplateControl<AtomUI.Desktop.Controls.Space>(slider, "SizeDemoSpace", out var sizeDemoSpace))
+        {
+            ApplySizeDemoSpacing(sizeDemoSpace, CustomizableSizeType.Custom, slider.Value);
+        }
+    }
+
+    private static void ApplySizeDemoSpacing(AtomUI.Desktop.Controls.Space space,
+                                             CustomizableSizeType sizeType,
+                                             double customSpacing)
+    {
+        if (sizeType == CustomizableSizeType.Custom)
+        {
+            var spacing = Math.Max(0, customSpacing);
+            space.ItemSpacing = spacing;
+            space.LineSpacing = spacing;
+            return;
+        }
+
+        space.ClearValue(AtomUI.Desktop.Controls.Space.ItemSpacingProperty);
+        space.ClearValue(AtomUI.Desktop.Controls.Space.LineSpacingProperty);
+    }
+
+    private void RefreshCurrentViewModelData()
+    {
+        if (DataContext is SpaceViewModel viewModel)
+        {
+            RefreshLocalizedOptionData(viewModel);
+        }
     }
 
     private static void RefreshLocalizedOptionData(SpaceViewModel viewModel)
@@ -218,6 +238,45 @@ public partial class SpaceShowCase : GalleryReactiveUserControl<SpaceViewModel>
             Value    = value,
             Children = children ?? []
         };
+    }
+
+    private static bool TryFindTemplateControl<T>(Control source, string name, out T control)
+        where T : Control
+    {
+        var current = source;
+        while (current is not null)
+        {
+            if (current is T directControl &&
+                current.Name == name)
+            {
+                control = directControl;
+                return true;
+            }
+
+            var descendantControl = FindNamedDescendant<T>(current, name);
+            if (descendantControl is not null)
+            {
+                control = descendantControl;
+                return true;
+            }
+
+            current = current.Parent as Control;
+        }
+
+        control = null!;
+        return false;
+    }
+
+    private static T? FindNamedDescendant<T>(Control root, string name)
+        where T : Control
+    {
+        if (root is T typedRoot && typedRoot.Name == name)
+        {
+            return typedRoot;
+        }
+
+        return root.GetVisualDescendants().OfType<T>().FirstOrDefault(control => control.Name == name)
+               ?? root.GetLogicalDescendants().OfType<T>().FirstOrDefault(control => control.Name == name);
     }
 }
 

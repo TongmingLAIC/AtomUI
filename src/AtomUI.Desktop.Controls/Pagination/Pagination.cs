@@ -19,12 +19,15 @@ public enum PaginationAlign
 
 public class Pagination : AbstractPagination
 {
-    internal const int MaxNavItemCount = 11;
-
     #region 公共属性定义
     
     public static readonly StyledProperty<bool> IsShowSizeChangerProperty =
         AvaloniaProperty.Register<Pagination, bool>(nameof(IsShowSizeChanger));
+
+    public static readonly StyledProperty<IReadOnlyList<int>?> PageSizeOptionsProperty =
+        AvaloniaProperty.Register<Pagination, IReadOnlyList<int>?>(
+            nameof(PageSizeOptions),
+            validate: ValidatePageSizeOptions);
     
     public static readonly StyledProperty<bool> IsShowQuickJumperProperty =
         AvaloniaProperty.Register<Pagination, bool>(nameof(IsShowQuickJumper));
@@ -39,6 +42,12 @@ public class Pagination : AbstractPagination
     {
         get => GetValue(IsShowSizeChangerProperty);
         set => SetValue(IsShowSizeChangerProperty, value);
+    }
+
+    public IReadOnlyList<int>? PageSizeOptions
+    {
+        get => GetValue(PageSizeOptionsProperty);
+        set => SetValue(PageSizeOptionsProperty, value);
     }
     
     public bool IsShowQuickJumper
@@ -117,6 +126,14 @@ public class Pagination : AbstractPagination
 
     #endregion
 
+    #region 内部协作 API
+
+    internal const int MaxNavItemCount = 11;
+
+    #endregion
+
+    private static readonly int[] DefaultPageSizeOptions = [10, 20, 50, 100];
+
     private PaginationNav? _paginationNav;
     private PaginationNavItem? _previousPageItem;
     private PaginationNavItem? _nextPageItem;
@@ -124,11 +141,6 @@ public class Pagination : AbstractPagination
     private int _selectedNavItemIndex = -1;
     private IDisposable? _sizeChangerDisposable;
     private IDisposable? _quickJumperDisposable;
-
-    public Pagination()
-    {
-        this.RegisterTokenResourceScope(PaginationToken.ScopeProvider);
-    }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -242,7 +254,7 @@ public class Pagination : AbstractPagination
     {
         if (args.PageNumber != CurrentPage)
         {
-            CurrentPage = args.PageNumber;
+            SetCurrentValue(CurrentPageProperty, args.PageNumber);
         }
     }
 
@@ -349,26 +361,124 @@ public class Pagination : AbstractPagination
             }
         }
 
-        if (change.Property == PageSizeProperty)
+        if (change.Property == PageTextProperty ||
+            change.Property == PageSizeOptionsProperty)
         {
-            SetupSizeChangerSelected();
+            SyncSizeChangerItems();
+        }
+        else if (change.Property == PageSizeProperty)
+        {
+            SyncSizeChangerSelection();
         }
     }
 
-    private void SetupSizeChangerSelected()
+    private void SyncSizeChangerItems()
     {
         if (SizeChanger != null)
         {
-            for (int i = 0; i < SizeChanger.Items.Count; i++)
+            SizeChanger.SelectionChanged -= HandlePageSizeChanged;
+            try
             {
-                if (SizeChanger.Items.GetAt(i) is PageSizeComboBoxItem pageSizeItem)
+                SizeChanger.SelectedIndex = -1;
+                SizeChanger.Items.Clear();
+                foreach (var pageSize in GetEffectivePageSizeOptions())
                 {
-                    if (pageSizeItem.PageSize == PageSize)
+                    SizeChanger.Items.Add(new PageSizeComboBoxItem
                     {
-                        SizeChanger.SelectedIndex = i;
-                        break;
-                    }
+                        Content  = $"{pageSize} / {PageText}",
+                        PageSize = pageSize
+                    });
                 }
+
+                var selectedPageSize = PageSize <= 0 ? DefaultPageSize : PageSize;
+                SizeChanger.SelectedIndex = -1;
+                if (TryFindSizeChangerItemIndex(selectedPageSize, out var index))
+                {
+                    SizeChanger.SelectedIndex = index;
+                }
+            }
+            finally
+            {
+                SizeChanger.SelectionChanged += HandlePageSizeChanged;
+            }
+        }
+    }
+
+    private void SyncSizeChangerSelection()
+    {
+        if (SizeChanger == null)
+        {
+            return;
+        }
+
+        var selectedPageSize = PageSize <= 0 ? DefaultPageSize : PageSize;
+        if (TryFindSizeChangerItemIndex(selectedPageSize, out var index))
+        {
+            SetSizeChangerSelectedIndex(index);
+        }
+        else
+        {
+            SyncSizeChangerItems();
+        }
+    }
+
+    private bool TryFindSizeChangerItemIndex(int pageSize, out int index)
+    {
+        index = -1;
+        if (SizeChanger == null)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < SizeChanger.Items.Count; i++)
+        {
+            if (SizeChanger.Items.GetAt(i) is PageSizeComboBoxItem pageSizeItem &&
+                pageSizeItem.PageSize == pageSize)
+            {
+                index = i;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void SetSizeChangerSelectedIndex(int index)
+    {
+        Debug.Assert(SizeChanger != null);
+        if (SizeChanger.SelectedIndex == index)
+        {
+            return;
+        }
+
+        SizeChanger.SelectionChanged -= HandlePageSizeChanged;
+        try
+        {
+            SizeChanger.SelectedIndex = index;
+        }
+        finally
+        {
+            SizeChanger.SelectionChanged += HandlePageSizeChanged;
+        }
+    }
+
+    private IEnumerable<int> GetEffectivePageSizeOptions()
+    {
+        var selectedPageSize = PageSize <= 0 ? DefaultPageSize : PageSize;
+        var pageSizeOptions  = PageSizeOptions ?? DefaultPageSizeOptions;
+        var emittedPageSizes = new HashSet<int>();
+
+        if (selectedPageSize > 0 && !pageSizeOptions.Contains(selectedPageSize))
+        {
+            emittedPageSizes.Add(selectedPageSize);
+            yield return selectedPageSize;
+        }
+
+        foreach (var pageSize in pageSizeOptions)
+        {
+            if (emittedPageSizes.Add(pageSize))
+            {
+                yield return pageSize;
             }
         }
     }
@@ -397,14 +507,8 @@ public class Pagination : AbstractPagination
             sizeChanger.VerticalAlignment = VerticalAlignment.Center;
             _sizeChangerDisposable?.Dispose();
             _sizeChangerDisposable = BindUtils.RelayBind(this, SizeTypeProperty, sizeChanger, ComboBox.SizeTypeProperty);
-            sizeChanger.Items.Add(new PageSizeComboBoxItem { Content = $"10 / {PageText}", PageSize  = 10 });
-            sizeChanger.Items.Add(new PageSizeComboBoxItem { Content = $"20 / {PageText}", PageSize  = 20 });
-            sizeChanger.Items.Add(new PageSizeComboBoxItem { Content = $"50 / {PageText}", PageSize  = 50 });
-            sizeChanger.Items.Add(new PageSizeComboBoxItem { Content = $"100 / {PageText}", PageSize = 100 });
-            sizeChanger.SelectedIndex    =  0;
             SizeChanger                  =  sizeChanger;
-            SizeChanger.SelectionChanged += HandlePageSizeChanged;
-            SetupSizeChangerSelected();
+            SyncSizeChangerItems();
         }
     }
 
@@ -454,14 +558,19 @@ public class Pagination : AbstractPagination
         var total     = Math.Max(0, Total);
         var pageSize  = PageSize <= 0 ? DefaultPageSize : PageSize;
         var pageCount = (int)Math.Ceiling(total / (double)pageSize);
-        CurrentPage = Math.Max(1, Math.Min(pageCount, args.PageNumber));
+        SetCurrentValue(CurrentPageProperty, Math.Max(1, Math.Min(pageCount, args.PageNumber)));
     }
 
     private void HandlePageSizeChanged(object? sender, SelectionChangedEventArgs? args)
     {
         if (args?.AddedItems.Count >= 1 && args.AddedItems[0] is PageSizeComboBoxItem comboBoxItem)
         {
-            PageSize = Math.Max(comboBoxItem.PageSize, 1);
+            SetCurrentValue(PageSizeProperty, Math.Max(comboBoxItem.PageSize, 1));
         }
+    }
+
+    private static bool ValidatePageSizeOptions(IReadOnlyList<int>? pageSizeOptions)
+    {
+        return pageSizeOptions is null || pageSizeOptions.All(pageSize => pageSize > 0);
     }
 }

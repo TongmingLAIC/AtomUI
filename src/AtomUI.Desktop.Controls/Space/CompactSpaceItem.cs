@@ -1,5 +1,6 @@
 using System.Reactive.Disposables;
 using AtomUI.Data;
+using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -82,6 +83,40 @@ internal class CompactSpaceItem : Decorator, ICompactSpaceAware
         }
     }
     
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var size = base.MeasureOverride(availableSize);
+        var position = CompactSpaceItemPosition;
+
+        if (position == null ||
+            position == SpaceItemPosition.First)
+        {
+            ClearOffsetTransform();
+            return size;
+        }
+
+        var itemPosition = position.Value;
+        if (CompactSpace.HasPositionFlag(itemPosition, SpaceItemPosition.First) &&
+            CompactSpace.HasPositionFlag(itemPosition, SpaceItemPosition.Last))
+        {
+            ClearOffsetTransform();
+            return size;
+        }
+        var borderThickness = GetRenderScaleAwareBorderThickness((this as ICompactSpaceAware).GetBorderThickness());
+        var delta           = borderThickness * PositionIndex;
+        if (CompactSpaceOrientation == Orientation.Horizontal)
+        {
+            SetOffsetTransform(-delta, 0);
+        }
+        else
+        {
+            SetOffsetTransform(0, -delta);
+        }
+        return size;
+    }
+
+    #region 实现 ICompactSpaceAware 接口
+
     void ICompactSpaceAware.NotifyPositionChange(SpaceItemPosition? position)
     {
         var isUsedInCompactSpace = position != null;
@@ -93,6 +128,14 @@ internal class CompactSpaceItem : Decorator, ICompactSpaceAware
         if (CompactSpaceItemPosition != position)
         {
             CompactSpaceItemPosition = position;
+        }
+    }
+
+    void ICompactSpaceAware.NotifyOrientationChange(Orientation orientation)
+    {
+        if (CompactSpaceOrientation != orientation)
+        {
+            CompactSpaceOrientation = orientation;
         }
     }
 
@@ -116,46 +159,6 @@ internal class CompactSpaceItem : Decorator, ICompactSpaceAware
         return false;
     }
 
-    protected override Size MeasureOverride(Size availableSize)
-    {
-        var size = base.MeasureOverride(availableSize);
-        var position = CompactSpaceItemPosition;
-
-        if (position == null ||
-            position == SpaceItemPosition.First)
-        {
-            ClearOffsetTransform();
-            return size;
-        }
-
-        var itemPosition = position.Value;
-        if (CompactSpace.HasPositionFlag(itemPosition, SpaceItemPosition.First) &&
-            CompactSpace.HasPositionFlag(itemPosition, SpaceItemPosition.Last))
-        {
-            ClearOffsetTransform();
-            return size;
-        }
-        var borderThickness = (this as ICompactSpaceAware).GetBorderThickness();
-        var delta           = borderThickness * PositionIndex;
-        if (CompactSpaceOrientation == Orientation.Horizontal)
-        {
-            SetOffsetTransform(-delta, 0);
-        }
-        else
-        {
-            SetOffsetTransform(0, -delta);
-        }
-        return size;
-    }
-
-    void ICompactSpaceAware.NotifyOrientationChange(Orientation orientation)
-    {
-        if (CompactSpaceOrientation != orientation)
-        {
-            CompactSpaceOrientation = orientation;
-        }
-    }
-
     double ICompactSpaceAware.GetBorderThickness()
     {
         if (Child is ICompactSpaceAware compactSpaceAware)
@@ -165,6 +168,8 @@ internal class CompactSpaceItem : Decorator, ICompactSpaceAware
 
         return 0.0;
     }
+
+    #endregion
 
     private void SetOffsetTransform(double x, double y)
     {
@@ -190,6 +195,16 @@ internal class CompactSpaceItem : Decorator, ICompactSpaceAware
         {
             RenderTransform = null;
         }
+    }
+
+    private double GetRenderScaleAwareBorderThickness(double borderThickness)
+    {
+        if (Child is Layoutable child)
+        {
+            return BorderUtils.BuildRenderScaleAwareThickness(child, borderThickness);
+        }
+
+        return BorderUtils.BuildRenderScaleAwareThickness(this, borderThickness);
     }
     
     private void ConfigureItemSize(CompactSpaceSize size, bool isUsedInCompactSpace, Orientation compactSpaceOrientation) 

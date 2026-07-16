@@ -10,8 +10,7 @@ namespace AtomUI.Desktop.Controls;
 internal class TabControlToken : AbstractControlDesignToken
 {
     public const string ID = "TabControl";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
-    
+
     public TabControlToken()
         : base(ID)
     {
@@ -194,7 +193,7 @@ internal class TabControlToken : AbstractControlDesignToken
         HorizontalItemPaddingSM = new Thickness(0, SharedToken.UniformlyPaddingXS);
         HorizontalItemPaddingLG = new Thickness(0, SharedToken.UniformlyPadding);
 
-        VerticalItemGutter  = SharedToken.UniformlyMargin;
+        VerticalItemGutter  = SharedToken.SpacingXXS;
         VerticalItemPadding = new Thickness(SharedToken.UniformlyPaddingXS, SharedToken.UniformlyPaddingXS);
 
         ItemColor         = SharedToken.ColorText;

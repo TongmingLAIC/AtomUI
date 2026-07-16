@@ -1,10 +1,12 @@
 using System.Collections;
+using System.Collections.Specialized;
 using AtomUI.Controls;
 using AtomUI.Controls.Data;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Interactivity;
 using VirtualizingStackPanel = Avalonia.Controls.VirtualizingStackPanel;
 
@@ -16,7 +18,8 @@ public class TransferListView : ListView, ITransferView
     public static readonly DirectProperty<TransferListView, IList<EntityKey>?> SelectedKeysProperty =
         AvaloniaProperty.RegisterDirect<TransferListView, IList<EntityKey>?>(nameof(SelectedKeys), 
             o => o.SelectedKeys,
-            (o, v) => o.SelectedKeys = v);
+            (o, v) => o.SelectedKeys = v,
+            defaultBindingMode: BindingMode.TwoWay);
     
     public static readonly DirectProperty<TransferListView, TransferViewType> ViewTypeProperty =
         AvaloniaProperty.RegisterDirect<TransferListView, TransferViewType>(nameof(ViewType), 
@@ -58,9 +61,12 @@ public class TransferListView : ListView, ITransferView
 
     #endregion
     
-    private bool _ignoreSyncSelection;
+    private bool _isApplyingSelectionToSelectedKeys;
+    private bool _isApplyingSelectedKeysToSelection;
     private IList<EntityKey>? _selectedKeysBackup;
     private int _currentPageSizeBackup;
+    private INotifyCollectionChanged? _selectedKeysCollectionChangedSource;
+    private bool _isVisualTreeAttached;
     
     private static readonly FuncTemplate<Panel?> DefaultPanel =
         new(() => new VirtualizingStackPanel());
@@ -85,24 +91,28 @@ public class TransferListView : ListView, ITransferView
         }
     }
 
-    private void HandleItemsSourceChange()
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        if (SelectedKeys != null)
+        var wasApplyingSelectedKeysToSelection = _isApplyingSelectedKeysToSelection;
+        _isApplyingSelectedKeysToSelection = true;
+        try
         {
-            var newSelectedKeys = new List<EntityKey>(SelectedKeys.Count);
-            if (SelectedKeys.Count > 0 && ItemsSource != null)
-            {
-                var allItems = BuildItemKeySet(ItemsSource);
-                foreach (var selectedKey in SelectedKeys)
-                {
-                    if (allItems.Contains(selectedKey))
-                    {
-                        newSelectedKeys.Add(selectedKey);
-                    }
-                }
-            }
-            SetCurrentValue(SelectedKeysProperty, newSelectedKeys);
+            base.OnAttachedToVisualTree(e);
         }
+        finally
+        {
+            _isApplyingSelectedKeysToSelection = wasApplyingSelectedKeysToSelection;
+        }
+        _isVisualTreeAttached = true;
+        ConfigureSelectedKeysCollectionChangedSource(SelectedKeys);
+        HandleSelectedKeysChanged();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _isVisualTreeAttached = false;
+        ReleaseSelectedKeysCollectionChangedSource();
+        base.OnDetachedFromVisualTree(e);
     }
 
     protected override Control CreateContainerForItemOverride(object? item, int index, object? recycleKey)
@@ -124,41 +134,57 @@ public class TransferListView : ListView, ITransferView
         }
     }
 
-    private void HandleSelectionChanged(SelectionChangedEventArgs e)
+    public void DeselectAll() => Selection.Clear();
+
+    public void SelectAll() => Selection.SelectAll();
+
+    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        _ignoreSyncSelection = true;
-        if (SelectedItems == null || SelectedItems.Count == 0)
+        base.OnApplyTemplate(e);
+        SetCurrentValue(BottomPaginationProperty, new SimplePagination()
         {
-            SetCurrentValue(SelectedKeysProperty, null);
-        }
-        else
+            IsReadOnly = false,
+            SizeType = CustomizableSizeType.Small
+        });
+    }
+
+    public void NotifySelectAction(TransferSelectAction selectAction)
+    {
+        if (selectAction == TransferSelectAction.SelectCurrentPage)
         {
-            var selectedKeys = new List<EntityKey>(SelectedItems.Count);
-            foreach (var item in SelectedItems)
+            if (IsPaginationEnabled)
             {
-                if (item is IListItemData listItemData && listItemData.IsEnabled)
+                var startIndex = GlobalIndex(0);
+                var endIndex = GlobalIndex(ItemCount - 1);
+                Selection.SelectRange(startIndex, endIndex);
+            }
+            else
+            {
+                Selection.SelectAll();
+            }
+        }
+        else if (selectAction == TransferSelectAction.InvertSelectCurrentPage)
+        {
+            for (var i = 0; i < ItemCount; i++)
+            {
+                var globalIndex = GlobalIndex(i);
+                if (Selection.IsSelected(globalIndex))
                 {
-                    selectedKeys.Add(listItemData.ItemKey ?? default);
+                    Selection.Deselect(globalIndex);
+                }
+                else
+                {
+                    Selection.Select(globalIndex);
                 }
             }
-            SetCurrentValue(SelectedKeysProperty, selectedKeys);
+        }
+        else if (selectAction == TransferSelectAction.RemoveCurrentPage)
+        {
+            ItemsRemoved?.Invoke(this, new TransferItemsRemovedEventArgs(BuildItemsList(Items)));
         }
     }
 
-    private void HandleSelectedKeysChanged()
-    {
-        SelectedKeyChanged?.Invoke(this, EventArgs.Empty);
-        SelectionCountChanged?.Invoke(this, new SelectionCountChangedEventArgs(SelectedKeys?.Count ?? 0));
-        if (_ignoreSyncSelection)
-        {
-            _ignoreSyncSelection = false;
-            return;
-        }
-        var selectedItems = BuildSelectedItemsList(ItemsSource, SelectedKeys);
-        SetCurrentValue(SelectedItemsProperty, selectedItems);
-    }
-    
-    public void DeselectAll() => Selection.Clear();
+    #region 实现 ITransferView
 
     void ITransferView.SetPaginationEnabled(bool enabled)
     {
@@ -230,6 +256,132 @@ public class TransferListView : ListView, ITransferView
         SetCurrentValue(PageSizeProperty, pageSize);
     }
 
+    #endregion
+
+    private void HandleItemsSourceChange()
+    {
+        if (SelectedKeys != null)
+        {
+            var newSelectedKeys = new List<EntityKey>(SelectedKeys.Count);
+            if (SelectedKeys.Count > 0 && ItemsSource != null)
+            {
+                var allItems = BuildItemKeySet(ItemsSource);
+                foreach (var selectedKey in SelectedKeys)
+                {
+                    if (allItems.Contains(selectedKey))
+                    {
+                        newSelectedKeys.Add(selectedKey);
+                    }
+                }
+            }
+            if (!AreKeyCollectionsEquivalent(SelectedKeys, newSelectedKeys))
+            {
+                SetCurrentValue(SelectedKeysProperty, newSelectedKeys);
+            }
+        }
+    }
+
+    private void HandleSelectionChanged(SelectionChangedEventArgs e)
+    {
+        if (_isApplyingSelectedKeysToSelection)
+        {
+            return;
+        }
+
+        _isApplyingSelectionToSelectedKeys = true;
+        try
+        {
+            if (SelectedItems == null || SelectedItems.Count == 0)
+            {
+                if (!AreKeyCollectionsEquivalent(SelectedKeys, null))
+                {
+                    SetCurrentValue(SelectedKeysProperty, null);
+                }
+            }
+            else
+            {
+                var selectedKeys = new List<EntityKey>(SelectedItems.Count);
+                foreach (var item in SelectedItems)
+                {
+                    if (item is IListItemData listItemData && listItemData.IsEnabled)
+                    {
+                        selectedKeys.Add(listItemData.ItemKey ?? default);
+                    }
+                }
+                if (!AreKeyCollectionsEquivalent(SelectedKeys, selectedKeys))
+                {
+                    SetCurrentValue(SelectedKeysProperty, selectedKeys);
+                }
+            }
+        }
+        finally
+        {
+            _isApplyingSelectionToSelectedKeys = false;
+        }
+    }
+
+    private void HandleSelectedKeysChanged()
+    {
+        ConfigureSelectedKeysCollectionChangedSource(SelectedKeys);
+        SelectedKeyChanged?.Invoke(this, EventArgs.Empty);
+        SelectionCountChanged?.Invoke(this, new SelectionCountChangedEventArgs(SelectedKeys?.Count ?? 0));
+        if (_isApplyingSelectionToSelectedKeys)
+        {
+            return;
+        }
+        var selectedItems = BuildSelectedItemsList(ItemsSource, SelectedKeys);
+        _isApplyingSelectedKeysToSelection = true;
+        try
+        {
+            SetCurrentValue(SelectedItemsProperty, selectedItems);
+        }
+        finally
+        {
+            _isApplyingSelectedKeysToSelection = false;
+        }
+    }
+
+    private void ConfigureSelectedKeysCollectionChangedSource(IList<EntityKey>? selectedKeys)
+    {
+        if (!_isVisualTreeAttached)
+        {
+            ReleaseSelectedKeysCollectionChangedSource();
+            return;
+        }
+
+        if (ReferenceEquals(_selectedKeysCollectionChangedSource, selectedKeys))
+        {
+            return;
+        }
+
+        ReleaseSelectedKeysCollectionChangedSource();
+
+        _selectedKeysCollectionChangedSource = selectedKeys as INotifyCollectionChanged;
+        if (_selectedKeysCollectionChangedSource != null)
+        {
+            _selectedKeysCollectionChangedSource.CollectionChanged += HandleSelectedKeysCollectionChanged;
+        }
+    }
+
+    private void ReleaseSelectedKeysCollectionChangedSource()
+    {
+        if (_selectedKeysCollectionChangedSource != null)
+        {
+            _selectedKeysCollectionChangedSource.CollectionChanged -= HandleSelectedKeysCollectionChanged;
+            _selectedKeysCollectionChangedSource = null;
+        }
+    }
+
+    private void HandleSelectedKeysCollectionChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        if (!ReferenceEquals(sender, _selectedKeysCollectionChangedSource))
+        {
+            return;
+        }
+
+        HandleSelectedKeysChanged();
+    }
+
     private void HandleRemoveButtonClicked(RoutedEventArgs e)
     {
         if (e.Source is TransferRemoveItemButton && GetContainerFromEventSource(e.Source) is TransferListItem listItem)
@@ -257,54 +409,6 @@ public class TransferListView : ListView, ITransferView
                     Selection.Deselect(index);
                 }
             }
-        }
-    }
-
-    public void SelectAll() => Selection.SelectAll();
-
-    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-    {
-        base.OnApplyTemplate(e);
-        SetCurrentValue(BottomPaginationProperty, new SimplePagination()
-        {
-            IsReadOnly = false,
-            SizeType = SizeType.Small
-        });
-    }
-
-    public void NotifySelectAction(TransferSelectAction selectAction)
-    {
-        if (selectAction == TransferSelectAction.SelectCurrentPage)
-        {
-            if (IsPaginationEnabled)
-            {
-                var startIndex = GlobalIndex(0);
-                var endIndex = GlobalIndex(ItemCount - 1);
-                Selection.SelectRange(startIndex, endIndex);
-            }
-            else
-            {
-                Selection.SelectAll();   
-            }
-        }
-        else if (selectAction == TransferSelectAction.InvertSelectCurrentPage)
-        {
-            for (var i = 0; i < ItemCount; i++)
-            {
-                var globalIndex = GlobalIndex(i);
-                if (Selection.IsSelected(globalIndex))
-                {
-                    Selection.Deselect(globalIndex);
-                }
-                else
-                {
-                    Selection.Select(globalIndex);
-                }
-            }
-        }
-        else if (selectAction == TransferSelectAction.RemoveCurrentPage)
-        {
-            ItemsRemoved?.Invoke(this, new TransferItemsRemovedEventArgs(BuildItemsList(Items)));
         }
     }
 
@@ -361,6 +465,35 @@ public class TransferListView : ListView, ITransferView
             keySet.Add(key);
         }
         return keySet;
+    }
+
+    private static bool AreKeyCollectionsEquivalent(ICollection<EntityKey>? currentKeys, ICollection<EntityKey>? nextKeys)
+    {
+        if (currentKeys == null || currentKeys.Count == 0)
+        {
+            return nextKeys == null || nextKeys.Count == 0;
+        }
+
+        if (nextKeys == null || currentKeys.Count != nextKeys.Count)
+        {
+            return false;
+        }
+
+        var currentKeySet = new HashSet<EntityKey>(currentKeys.Count);
+        foreach (var key in currentKeys)
+        {
+            currentKeySet.Add(key);
+        }
+
+        foreach (var key in nextKeys)
+        {
+            if (!currentKeySet.Contains(key))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static List<IItemKey> BuildItemsList(IEnumerable source)

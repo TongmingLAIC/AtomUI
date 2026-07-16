@@ -1,0 +1,266 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AtomUIGallery.ShowCases.Community.CommunityPage"
+             xmlns:atom="https://atomui.net"
+             xmlns:antdicons="https://atomui.net/icons/antdesign"
+             xmlns:gallery="https://atomui.net/oss-controls/gallery"
+             xmlns:views="clr-namespace:AtomUIGallery.ShowCases.Community">
+    <UserControl.Styles>
+        <Style Selector="Image#QinwareLogo">
+            <Setter Property="Source" Value="/Assets/qinware-logo.png" />
+        </Style>
+        <Style Selector="Svg#TLAICIncubationLogo">
+            <Setter Property="Path" Value="/Assets/TLAIC.svg" />
+        </Style>
+        <Style Selector="views|CommunityPage[IsDarkThemeMode=True]">
+            <Style Selector="^ Image#QinwareLogo">
+                <Setter Property="Source" Value="/Assets/qinware-logo-white.png" />
+            </Style>
+            <Style Selector="^ Svg#TLAICIncubationLogo">
+                <Setter Property="Path" Value="/Assets/TLAIC-white.svg" />
+            </Style>
+        </Style>
+    </UserControl.Styles>
+
+    <atom:ScrollViewer HorizontalScrollBarVisibility="Auto"
+                       VerticalScrollBarVisibility="Auto"
+                       AllowAutoHide="False">
+        <StackPanel MinWidth="800"
+                    Width="820"
+                    Margin="32"
+                    Spacing="18"
+                    HorizontalAlignment="Center">
+            <Border Background="{atom:SharedTokenResource ColorBgContainer}"
+                    BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                    CornerRadius="8"
+                    Padding="20">
+                <Grid ColumnDefinitions="Auto,*"
+                      ColumnSpacing="24">
+                    <StackPanel Width="230"
+                                VerticalAlignment="Center">
+                        <Image Name="QinwareLogo"
+                               Width="220"
+                               HorizontalAlignment="Left" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                                Spacing="14"
+                                VerticalAlignment="Center">
+                        <atom:TextBlock Text="{gallery:CommunityPageLangResource AboutAtomUI}"
+                                        FontSize="20"
+                                        FontWeight="Bold" />
+
+                        <StackPanel Spacing="8">
+                            <Border Background="{atom:SharedTokenResource ColorPrimaryBg}"
+                                    CornerRadius="6"
+                                    Padding="12,10">
+                                <Grid ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="10">
+                                    <atom:TextBlock Text="{gallery:CommunityPageLangResource VisionLabel}"
+                                                    Foreground="{atom:SharedTokenResource ColorPrimary}"
+                                                    FontWeight="Bold" />
+                                    <atom:TextBlock Grid.Column="1"
+                                                    Text="{gallery:CommunityPageLangResource VisionText}"
+                                                    TextWrapping="Wrap"
+                                                    Foreground="{atom:SharedTokenResource ColorText}" />
+                                </Grid>
+                            </Border>
+
+                            <Border Background="{atom:SharedTokenResource ColorFillQuaternary}"
+                                    CornerRadius="6"
+                                    Padding="12,10">
+                                <Grid ColumnDefinitions="Auto,*"
+                                      ColumnSpacing="10">
+                                    <atom:TextBlock Text="{gallery:CommunityPageLangResource MissionLabel}"
+                                                    Foreground="{atom:SharedTokenResource ColorText}"
+                                                    FontWeight="Bold" />
+                                    <atom:TextBlock Grid.Column="1"
+                                                    Text="{gallery:CommunityPageLangResource MissionText}"
+                                                    TextWrapping="Wrap"
+                                                    Foreground="{atom:SharedTokenResource ColorTextSecondary}" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6"
+                                    Orientation="Horizontal">
+                            <atom:HyperLinkButton Icon="{antdicons:AntDesignIconProvider Kind=GlobalOutlined}"
+                                                  IconWidth="18"
+                                                  IconHeight="18"
+                                                  NavigateUri="https://www.atomui.net"
+                                                  Content="{gallery:CommunityPageLangResource HomePage}" />
+                            <atom:HyperLinkButton Icon="{antdicons:AntDesignIconProvider Kind=GiteeOutlined}"
+                                                  IconWidth="18"
+                                                  IconHeight="18"
+                                                  NavigateUri="https://gitee.com/chinware/atomui"
+                                                  Content="Gitee" />
+                            <atom:HyperLinkButton Icon="{antdicons:AntDesignIconProvider Kind=GithubOutlined}"
+                                                  IconWidth="18"
+                                                  IconHeight="18"
+                                                  NavigateUri="https://github.com/chinware/atomui"
+                                                  Content="Github" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Background="{atom:SharedTokenResource ColorBgContainer}"
+                    BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                    CornerRadius="8"
+                    Padding="24">
+                <Grid MinHeight="188"
+                      ColumnDefinitions="220,*"
+                      ColumnSpacing="32">
+                    <Svg Name="TLAICIncubationLogo"
+                         Width="210"
+                         VerticalAlignment="Center"
+                         HorizontalAlignment="Left" />
+
+                    <StackPanel Grid.Column="1"
+                                Spacing="16"
+                                VerticalAlignment="Center">
+                        <StackPanel Spacing="6">
+                            <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationEyebrow}"
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="{atom:SharedTokenResource ColorPrimary}" />
+                            <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationTitle}"
+                                            FontSize="24"
+                                            FontWeight="Bold"
+                                            LineHeight="30"
+                                            TextWrapping="Wrap"
+                                            Foreground="{atom:SharedTokenResource ColorText}" />
+                            <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationDescription}"
+                                            FontSize="14"
+                                            LineHeight="22"
+                                            TextWrapping="Wrap"
+                                            Foreground="{atom:SharedTokenResource ColorTextSecondary}" />
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="*,*,*"
+                              ColumnSpacing="16">
+                            <StackPanel Spacing="4">
+                                <Border Height="1"
+                                        Background="{atom:SharedTokenResource ColorPrimaryBorder}" />
+                                <atom:TextBlock Text="01"
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Foreground="{atom:SharedTokenResource ColorPrimary}" />
+                                <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationPointOpenSource}"
+                                                FontSize="15"
+                                                FontWeight="Bold"
+                                                TextWrapping="Wrap"
+                                                Foreground="{atom:SharedTokenResource ColorText}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1"
+                                        Spacing="4">
+                                <Border Height="1"
+                                        Background="{atom:SharedTokenResource ColorPrimaryBorder}" />
+                                <atom:TextBlock Text="02"
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Foreground="{atom:SharedTokenResource ColorPrimary}" />
+                                <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationPointEcosystem}"
+                                                FontSize="15"
+                                                FontWeight="Bold"
+                                                TextWrapping="Wrap"
+                                                Foreground="{atom:SharedTokenResource ColorText}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2"
+                                        Spacing="4">
+                                <Border Height="1"
+                                        Background="{atom:SharedTokenResource ColorPrimaryBorder}" />
+                                <atom:TextBlock Text="03"
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Foreground="{atom:SharedTokenResource ColorPrimary}" />
+                                <atom:TextBlock Text="{gallery:CommunityPageLangResource IncubationPointLicense}"
+                                                FontSize="15"
+                                                FontWeight="Bold"
+                                                TextWrapping="Wrap"
+                                                Foreground="{atom:SharedTokenResource ColorText}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*,*,*"
+                  ColumnSpacing="12"
+                  Margin="0,6,0,0">
+                <Border Background="{atom:SharedTokenResource ColorBgContainer}"
+                        BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="10">
+                        <atom:TextBlock Text="{gallery:CommunityPageLangResource WeChatOfficial}"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap" />
+                        <Image Source="/Assets/qinware-wechatpress.png"
+                               HorizontalAlignment="Center"
+                               Width="144" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Background="{atom:SharedTokenResource ColorBgContainer}"
+                        BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="10">
+                        <atom:TextBlock Text="{gallery:CommunityPageLangResource TelegramGroup}"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap" />
+                        <Image Source="/Assets/atomui-telegram.png"
+                               HorizontalAlignment="Center"
+                               Width="144" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2"
+                        Background="{atom:SharedTokenResource ColorBgContainer}"
+                        BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="10">
+                        <atom:TextBlock Text="{gallery:CommunityPageLangResource WeChatGroup}"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap" />
+                        <Image Source="/Assets/atomui-wechat.png"
+                               HorizontalAlignment="Center"
+                               Width="144" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="3"
+                        Background="{atom:SharedTokenResource ColorBgContainer}"
+                        BoxShadow="{atom:SharedTokenResource BoxShadowsTertiary}"
+                        CornerRadius="8"
+                        Padding="16">
+                    <StackPanel Spacing="10">
+                        <atom:TextBlock Text="{gallery:CommunityPageLangResource QQGroup}"
+                                        FontSize="16"
+                                        FontWeight="Bold"
+                                        HorizontalAlignment="Center"
+                                        TextAlignment="Center"
+                                        TextWrapping="Wrap" />
+                        <Image Source="/Assets/atomui-qq.png"
+                               HorizontalAlignment="Center"
+                               Width="144" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </atom:ScrollViewer>
+</UserControl>

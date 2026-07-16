@@ -7,6 +7,7 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 
 namespace AtomUI.Desktop.Controls;
 
@@ -20,13 +21,13 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
     public new static readonly StyledProperty<PathIcon?> IconProperty =
         AvaloniaProperty.Register<MenuItem, PathIcon?>(nameof(Icon));
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<MenuItem>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<MenuItem>();
 
     public static readonly StyledProperty<int> DisplayPageSizeProperty =
         Menu.DisplayPageSizeProperty.AddOwner<MenuItem>();
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -49,6 +50,10 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
     IEnumerable<IMenuItemData> ITreeNode<IMenuItemData>.Children => EnumerateChildren();
     public ITreeNode<IMenuItemData>? ParentNode => Parent as ITreeNode<IMenuItemData>;
     public EntityKey? ItemKey { get; set; }
+
+    private Popup? _popup;
+    private bool _isUsingDetachedTitleBarPopupPlacement;
+    private IDisposable? _detachedTitleBarPopupPlacementTracker;
 
     private IEnumerable<IMenuItemData> EnumerateChildren()
     {
@@ -121,6 +126,8 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
         set => SetValue(ShouldUseOverlayPopupProperty, value);
     }
 
+    internal bool IsPointerOverSubMenu => _popup?.IsPointerOverPopup ?? false;
+
     #endregion
 
     static MenuItem()
@@ -128,10 +135,27 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
         AffectsRender<MenuItem>(BackgroundProperty);
         AffectsMeasure<MenuItem>(IconProperty);
         AutoScrollToSelectedItemProperty.OverrideDefaultValue<MenuItem>(false);
+        ClickEvent.AddClassHandler<MenuItem>(
+            (x, e) => x.CloseOwningMenuBeforeClickHandler(e),
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
+        if (change.Property == IsSubMenuOpenProperty)
+        {
+            if (change.GetNewValue<bool>())
+            {
+                ConfigureDetachedTitleBarPopupPlacement();
+            }
+            else
+            {
+                DetachedTitleBarPopupSupport.ClearPopupPlacementTracker(
+                    ref _detachedTitleBarPopupPlacementTracker);
+            }
+        }
+
         base.OnPropertyChanged(change);
         if (change.Property == ParentProperty)
         {
@@ -252,9 +276,24 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
+        ClearDetachedTitleBarPopupPlacement();
         base.OnApplyTemplate(e);
+        _popup = e.NameScope.Find<Popup>("PART_Popup");
+        ConfigureDetachedTitleBarPopupPlacement();
         UpdatePseudoClasses();
         ConfigureMaxPopupHeight();
+    }
+
+    protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToLogicalTree(e);
+        ConfigureDetachedTitleBarPopupPlacement();
+    }
+
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
+    {
+        ClearDetachedTitleBarPopupPlacement();
+        base.OnDetachedFromLogicalTree(e);
     }
 
     public async Task CloseItemAsync(CancellationToken cancellationToken = default)
@@ -271,10 +310,71 @@ public class MenuItem : AvaloniaMenuItem, IMenuItemData
         IsSubMenuOpen = false;
     }
 
+    private void CloseOwningMenuBeforeClickHandler(RoutedEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, this) || HasSubMenu || StaysOpenOnClick)
+        {
+            return;
+        }
+
+        CloseOwningMenuImmediately();
+    }
+
+    private void CloseOwningMenuImmediately()
+    {
+        StyledElement? current = Parent;
+        while (current != null)
+        {
+            if (current is Menu menu)
+            {
+                menu.CloseImmediately();
+                return;
+            }
+
+            if (current is ContextMenu contextMenu)
+            {
+                contextMenu.Close();
+                return;
+            }
+
+            if (current is MenuItem menuItem)
+            {
+                menuItem.Close();
+            }
+
+            current = current.Parent;
+        }
+    }
+
     private void ConfigureMaxPopupHeight()
     {
         SetCurrentValue(MaxPopupHeightProperty,
             ItemHeight * DisplayPageSize + PopupPadding.Top + PopupPadding.Bottom);
+    }
+
+    private void ConfigureDetachedTitleBarPopupPlacement()
+    {
+        DetachedTitleBarPopupSupport.ConfigurePopupPlacement(
+            this,
+            _popup,
+            ref _isUsingDetachedTitleBarPopupPlacement,
+            IsTopLevel);
+        _detachedTitleBarPopupPlacementTracker =
+            DetachedTitleBarPopupSupport.UpdatePopupPlacementTracker(
+                this,
+                _popup,
+                _detachedTitleBarPopupPlacementTracker,
+                () => IsSubMenuOpen,
+                IsTopLevel && IsSubMenuOpen);
+    }
+
+    private void ClearDetachedTitleBarPopupPlacement()
+    {
+        DetachedTitleBarPopupSupport.ClearPopupPlacementTracker(
+            ref _detachedTitleBarPopupPlacementTracker);
+        DetachedTitleBarPopupSupport.ClearPopupPlacement(
+            _popup,
+            ref _isUsingDetachedTitleBarPopupPlacement);
     }
 
     protected override void OnInitialized()

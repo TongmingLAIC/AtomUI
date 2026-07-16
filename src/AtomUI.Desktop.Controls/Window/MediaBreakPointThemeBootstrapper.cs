@@ -10,9 +10,9 @@ namespace AtomUI.Desktop.Controls;
 ///
 /// 断点数值来自当前 Theme 的 Alias Token (ScreenSMMin/ScreenSMMax 等),使得开发者
 /// 通过主题配置文件覆盖 Alias Token 就能改断点,不需要动 axaml 里的字面量。
-/// 订阅 ThemeManager.ThemeLoaded,每次 theme 加载后重建 CQ。
+/// 订阅 ThemeManager.ThemeChanged,每次 committed theme 切换后重建 CQ。
 ///
-/// 注意:CQ 必须按从大到小的顺序注入 (ExtraExtraLarge → ExtraSmall)。
+/// 注意:CQ 必须按从大到小的顺序注入 (ExtraExtraExtraLarge → ExtraSmall)。
 /// Avalonia 在跨断点 resize 过程中 activator 的评估顺序与声明顺序相关,
 /// 经实测只有这个顺序下所有方向的断点切换都能正确 fire。
 /// </summary>
@@ -27,12 +27,13 @@ internal static class MediaBreakPointThemeBootstrapper
 
     private static readonly (Func<DesignToken, double?> Min, Func<DesignToken, double?> Max, MediaBreakPoint Bp)[] Rows =
     {
-        (t => t.ScreenXXLMin, _ => null,                 MediaBreakPoint.ExtraExtraLarge),
-        (t => t.ScreenXLMin,  t => t.ScreenXLMax,        MediaBreakPoint.ExtraLarge),
-        (t => t.ScreenLGMin,  t => t.ScreenLGMax,        MediaBreakPoint.Large),
-        (t => t.ScreenMDMin,  t => t.ScreenMDMax,        MediaBreakPoint.Medium),
-        (t => t.ScreenSMMin,  t => t.ScreenSMMax,        MediaBreakPoint.Small),
-        (_ => null,           t => t.ScreenSMMin - 1,    MediaBreakPoint.ExtraSmall),
+        (t => t.ScreenXXXLMin, _ => null,              MediaBreakPoint.ExtraExtraExtraLarge),
+        (t => t.ScreenXXLMin,  t => t.ScreenXXLMax,    MediaBreakPoint.ExtraExtraLarge),
+        (t => t.ScreenXLMin,   t => t.ScreenXLMax,     MediaBreakPoint.ExtraLarge),
+        (t => t.ScreenLGMin,   t => t.ScreenLGMax,     MediaBreakPoint.Large),
+        (t => t.ScreenMDMin,   t => t.ScreenMDMax,     MediaBreakPoint.Medium),
+        (t => t.ScreenSMMin,   t => t.ScreenSMMax,     MediaBreakPoint.Small),
+        (_ => null,            t => t.ScreenSMMin - 1, MediaBreakPoint.ExtraSmall),
     };
 
     public static void Attach(ThemeManager themeManager)
@@ -43,17 +44,17 @@ internal static class MediaBreakPointThemeBootstrapper
         }
 
         _themeManager              =  themeManager;
-        themeManager.ThemeLoaded   += HandleThemeLoaded;
+        themeManager.ThemeChanged  += HandleThemeChanged;
     }
 
-    private static void HandleThemeLoaded(object? sender, ThemeOperateEventArgs args)
+    private static void HandleThemeChanged(object? sender, ThemeChangedEventArgs args)
     {
-        if (sender is not ThemeManager tm || args.Theme == null)
+        if (sender is not ThemeManager tm)
         {
             return;
         }
 
-        Rebuild(tm, args.Theme);
+        Rebuild(tm, args.NewTheme);
     }
 
     private static void Rebuild(ThemeManager themeManager, ITheme theme)

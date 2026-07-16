@@ -1,13 +1,16 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TimePicker;
 
 [LanguageProvider(LanguageCode.zh_TW, TimePickerShowCase.LanguageId)]
-internal partial class zh_TW : LanguageProvider
+internal partial class zh_TW
 {
     public const string BasicTitle = "基礎用法";
     public const string BasicDescription = "點擊 TimePicker 後，可以在面板中選擇或輸入時間。";
+    public const string BindingTitle = "SelectedTime 綁定";
+    public const string BindingDescription = "SelectedTime、RangeStartSelectedTime 與 RangeEndSelectedTime 默認與 ViewModel 雙向同步，無需顯式設置 Binding Mode=TwoWay。";
+    public const string PickerDisplayTimeTitle = "彈出面板顯示時間";
+    public const string PickerDisplayTimeDescription = "打開彈出面板時定位到指定時間，但不提交選中值。";
     public const string HourFormatsTitle = "12 小時和 24 小時格式";
     public const string HourFormatsDescription = "TimePicker 支持 12 小時和 24 小時兩種時間格式。";
     public const string ThreeSizesTitle = "三種尺寸";
@@ -30,7 +33,52 @@ internal partial class zh_TW : LanguageProvider
     public const string P2PlaceholderTextBorderless = "無邊框";
     public const string P2PlaceholderTextStartTime = "開始時間";
     public const string P2SecondaryPlaceholderTextEndTime = "結束時間";
+    public const string P2TextExpandDirection = "選擇器尺寸：";
+    public const string P2ContentLarge = "大號";
+    public const string P2ContentDefault = "默認";
+    public const string P2ContentSmall = "小號";
+    public const string P2ContentCustom = "自定義";
+    public const string P2TextSelectedTime = "選中值：";
+    public const string P2TextSelectedTimeRange = "選中範圍：";
+    public const string P2ContentSetNoon = "設置為中午";
+    public const string P2ContentSetWorkHours = "設置工作時間";
+    public const string P2ContentClear = "清空";
+    public const string PageSubtitle = "從彈出時間面板中選擇單個時間或時間範圍。";
+    public const string PageDescription = "TimePicker 支援 12 小時和 24 小時制、尺寸變體、禁用狀態、分鐘和秒的步進選項、視覺變體、校驗狀態以及範圍選擇。";
+    public const string ComponentCategory = "資料錄入";
+    public const string ComponentStatusStable = "穩定";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "設計變數";
+    public const string ApiColumnProperty = "屬性";
+    public const string ApiColumnDescription = "說明";
+    public const string ApiColumnType = "類型";
+    public const string ApiColumnDefault = "默認值";
+    public const string ApiPropertySelectedTime = "TimePicker 當前選中的時間值；默認 TwoWay 綁定，並支持 Avalonia data validation。";
+    public const string ApiPropertyDefaultTime = "TimePicker 重置行為使用的初始時間。";
+    public const string ApiPropertyPickerDisplayTime = "彈出面板打開時使用的顯示錨點，不提交選中值。";
+    public const string ApiPropertyIsNeedConfirm = "要求使用者確認所選時間後再提交。";
+    public const string ApiPropertyIsShowNow = "是否在彈出面板中顯示「此刻」快捷操作。";
+    public const string ApiPropertyMinuteIncrement = "生成分鐘選項時使用的步進值。";
+    public const string ApiPropertySecondIncrement = "生成秒選項時使用的步進值。";
+    public const string ApiPropertyClockIdentifier = "選擇 12 小時或 24 小時時鐘顯示。";
+    public const string ApiPropertyRangeStartSelectedTime = "RangeTimePicker 當前選中的開始時間。";
+    public const string ApiPropertyRangeEndSelectedTime = "RangeTimePicker 當前選中的結束時間。";
+    public const string ApiPropertyRangeStartDefaultTime = "RangeTimePicker 重置行為使用的初始開始時間。";
+    public const string ApiPropertyRangeEndDefaultTime = "RangeTimePicker 重置行為使用的初始結束時間。";
+    public const string TokenColumnToken = "變數";
+    public const string TokenColumnDescription = "說明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "狀態";
+    public const string TokenScopeComponent = "組件";
+    public const string TokenStatusStable = "穩定";
+    public const string TokenNameItemHeight = "每個可選時間項的高度。";
+    public const string TokenNameItemWidth = "小時、分鐘和秒列的寬度。";
+    public const string TokenNamePeriodHostWidth = "上午/下午選擇列的寬度。";
+    public const string TokenNameItemPadding = "每個可選時間項的內邊距。";
+    public const string TokenNameButtonsMargin = "彈出操作按鈕區域的頂部外邊距。";
+    public const string TokenNameRangePickerArrowMargin = "範圍輸入之間箭頭的外邊距。";
+    public const string TokenNameRangePickerIndicatorThickness = "範圍選擇指示器的厚度。";
+    public const string TokenNameHeaderMargin = "時間面板頭部下方的外邊距。";
 
-    protected override Type GetResourceKindType() => typeof(TimePickerShowCaseLangResourceKind);
 }
-

@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
 using AtomUI.Controls;
@@ -11,8 +12,9 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
-using Avalonia.LogicalTree;
+using Avalonia.Data;
 using Avalonia.Metadata;
+using Avalonia.Input;
 using Avalonia.Threading;
 
 namespace AtomUI.Desktop.Controls;
@@ -35,7 +37,9 @@ public partial class Dialog : TemplatedControl,
         ContentPresenter.ContentTemplateProperty.AddOwner<Dialog>();
 
     public static readonly StyledProperty<bool> IsOpenProperty =
-        AvaloniaProperty.Register<Dialog, bool>(nameof(IsOpen));
+        AvaloniaProperty.Register<Dialog, bool>(
+            nameof(IsOpen),
+            defaultBindingMode: BindingMode.TwoWay);
 
     public static readonly StyledProperty<bool> IsModalProperty =
         AvaloniaProperty.Register<Dialog, bool>(nameof(IsModal), true);
@@ -151,6 +155,16 @@ public partial class Dialog : TemplatedControl,
     }
 
     public IAvaloniaDependencyResolver? DependencyResolver { get; set; }
+
+    internal DialogMotionAnchorMode MotionAnchorMode { get; set; }
+
+    internal bool UsesPlacementTargetAsMotionAnchor =>
+        MotionAnchorMode switch
+        {
+            DialogMotionAnchorMode.ExplicitPlacementTarget => PlacementTarget is not null,
+            DialogMotionAnchorMode.FallbackPlacementTarget => false,
+            _ => PlacementTarget is not null
+        };
 
     public bool IsOpen
     {
@@ -397,8 +411,12 @@ public partial class Dialog : TemplatedControl,
     private DialogOpenState? _openState;
     private Action<IDialogHost?>? _dialogHostChangedHandler;
     private CancellationTokenSource? _frameCancellationTokenSource;
+    private DispatcherFrame? _synchronousOpenFrame;
     private bool _opening;
     private bool _closing;
+    private Func<DialogClosingContext, ValueTask<bool>>? BeforeCloseAsync { get; set; }
+    private CancellationToken _openCancellationToken;
+    private IReadOnlyList<DialogButton> _synchronizedButtons = Array.Empty<DialogButton>();
 
     static Dialog()
     {
@@ -408,7 +426,6 @@ public partial class Dialog : TemplatedControl,
 
     public Dialog()
     {
-        this.RegisterTokenResourceScope(DialogToken.ScopeProvider);
         CustomButtons.CollectionChanged += HandleCustomButtonsChanged;
         SetCurrentValue(EffectiveMinimizableProperty, IsMinimizable);
     }
@@ -426,13 +443,13 @@ public partial class Dialog : TemplatedControl,
         }
         else
         {
-            Done(Result);
+            RequestClose(DialogCloseRequest.OpenStateChanged(Result));
         }
     }
 
     public object? Open()
     {
-        if (_openState != null || _opening)
+        if (_openState != null || _opening || _closing)
         {
             return null;
         }
@@ -441,20 +458,33 @@ public partial class Dialog : TemplatedControl,
         _frameCancellationTokenSource?.Dispose();
         _frameCancellationTokenSource = new CancellationTokenSource();
         var frame = new DispatcherFrame();
+        _synchronousOpenFrame = frame;
         _frameCancellationTokenSource.Token.Register(() => frame.Continue = false);
+        DialogInputCaptureTracker.ReleaseCurrentMouseCapture();
         Dispatcher.InvokeAsync(async () => await OpenAsync(_frameCancellationTokenSource.Token));
-        Dispatcher.PushFrame(frame);
+        try
+        {
+            Dispatcher.PushFrame(frame);
+        }
+        finally
+        {
+            if (ReferenceEquals(_synchronousOpenFrame, frame))
+            {
+                _synchronousOpenFrame = null;
+            }
+        }
         return Result;
     }
 
     public async Task OpenAsync(CancellationToken cancellationToken = default)
     {
-        if (_openState != null || _opening)
+        if (_openState != null || _opening || _closing)
         {
             return;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+        _openCancellationToken = cancellationToken;
         _opening = true;
 
         try
@@ -569,87 +599,66 @@ public partial class Dialog : TemplatedControl,
 
     public void Accept()
     {
-        Result = DialogCode.Accepted;
-        NotifyClose();
+        RequestClose(DialogCloseRequest.Accepted(null));
     }
 
     public void Reject()
     {
-        Result = DialogCode.Rejected;
-        NotifyClose();
+        RequestClose(DialogCloseRequest.Rejected(null));
     }
 
     public void Done(object? dialogResult)
     {
-        Result = dialogResult;
-        NotifyClose();
+        RequestClose(DialogCloseRequest.Programmatic(dialogResult));
     }
 
     public void Done()
     {
-        NotifyClose();
+        RequestClose(DialogCloseRequest.Programmatic(Result));
     }
 
-    protected virtual void NotifyClose()
+    private void RequestClose(DialogCloseRequest request)
     {
         if (IsConfirmLoading || _closing)
         {
             return;
         }
 
-        var closingArgs = new CancelEventArgs();
-        Closing?.Invoke(this, closingArgs);
-        if (closingArgs.Cancel)
-        {
-            return;
-        }
-
         _closing = true;
         var closeCompletionPending = false;
+        var previousResult         = Result;
+
         try
         {
-            if (Result is DialogCode code)
+            SetCurrentValue(ResultProperty, request.Result);
+
+            if (!NotifyClosing())
             {
-                if (code == DialogCode.Accepted)
+                CancelCloseRequest(request, previousResult);
+                return;
+            }
+
+            if (BeforeCloseAsync is null)
+            {
+                CommitClose(request.Result, ref closeCompletionPending);
+                return;
+            }
+
+            var beforeCloseTask = CreateBeforeCloseTask(request);
+            if (beforeCloseTask.IsCompleted)
+            {
+                if (!ReadBeforeCloseResult(beforeCloseTask))
                 {
-                    Accepted?.Invoke(this, EventArgs.Empty);
+                    CancelCloseRequest(request, previousResult);
+                    return;
                 }
-                else if (code == DialogCode.Rejected)
-                {
-                    Rejected?.Invoke(this, EventArgs.Empty);
-                }
+
+                CommitClose(request.Result, ref closeCompletionPending);
+                return;
             }
 
-            Finished?.Invoke(this, new DialogFinishedEventArgs(Result));
-            if (DataContext is IDialogAwareDataContext dialogAwareDataContext)
-            {
-                dialogAwareDataContext.NotifyClosed();
-            }
-
-            var result    = Result;
-            var openState = _openState;
-            _openState    = null;
-            _dialogHostChangedHandler?.Invoke(null);
-
-            using (BeginIgnoringIsOpen())
-            {
-                SetCurrentValue(IsOpenProperty, false);
-            }
-
-            if (openState is not null)
-            {
-                var closeCompletedSynchronously = false;
-                openState.Close(() =>
-                {
-                    closeCompletedSynchronously = true;
-                    CompleteClose(openState, result);
-                });
-                closeCompletionPending = !closeCompletedSynchronously;
-            }
-            else
-            {
-                CompleteClose(null, result);
-            }
+            closeCompletionPending = true;
+            _ = ContinueCloseAsync(request, previousResult, beforeCloseTask);
         }
         finally
         {
@@ -660,13 +669,168 @@ public partial class Dialog : TemplatedControl,
         }
     }
 
+    private bool NotifyClosing()
+    {
+        var closingArgs = new CancelEventArgs();
+        Closing?.Invoke(this, closingArgs);
+        return !closingArgs.Cancel;
+    }
+
+    private async Task ContinueCloseAsync(
+        DialogCloseRequest request,
+        object? previousResult,
+        ValueTask<bool> beforeCloseTask)
+    {
+        var closeCompletionPending = false;
+        try
+        {
+            if (!await ReadBeforeCloseResultAsync(beforeCloseTask))
+            {
+                CancelCloseRequest(request, previousResult);
+                return;
+            }
+
+            CommitClose(request.Result, ref closeCompletionPending);
+        }
+        finally
+        {
+            if (!closeCompletionPending)
+            {
+                _closing = false;
+            }
+        }
+    }
+
+    private ValueTask<bool> CreateBeforeCloseTask(DialogCloseRequest request)
+    {
+        var context = new DialogClosingContext(
+            this,
+            request.Result,
+            request.Reason,
+            request.SourceButton,
+            _openCancellationToken);
+        try
+        {
+            return BeforeCloseAsync?.Invoke(context) ?? ValueTask.FromResult(true);
+        }
+        catch (Exception ex)
+        {
+            TraceBeforeCloseException(ex);
+            return ValueTask.FromResult(false);
+        }
+    }
+
+    private static bool ReadBeforeCloseResult(ValueTask<bool> beforeCloseTask)
+    {
+        try
+        {
+            return beforeCloseTask.GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            TraceBeforeCloseException(ex);
+            return false;
+        }
+    }
+
+    private static async ValueTask<bool> ReadBeforeCloseResultAsync(ValueTask<bool> beforeCloseTask)
+    {
+        try
+        {
+            return await beforeCloseTask;
+        }
+        catch (Exception ex)
+        {
+            TraceBeforeCloseException(ex);
+            return false;
+        }
+    }
+
+    private static void TraceBeforeCloseException(Exception exception)
+    {
+        Debug.WriteLine($"Dialog before-close callback failed: {exception}");
+    }
+
+    private void CommitClose(object? result, ref bool closeCompletionPending)
+    {
+        if (result is DialogCode code)
+        {
+            if (code == DialogCode.Accepted)
+            {
+                Accepted?.Invoke(this, EventArgs.Empty);
+            }
+            else if (code == DialogCode.Rejected)
+            {
+                Rejected?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        Finished?.Invoke(this, new DialogFinishedEventArgs(result));
+        if (DataContext is IDialogAwareDataContext dialogAwareDataContext)
+        {
+            dialogAwareDataContext.NotifyClosed();
+        }
+
+        var openState = _openState;
+        _openState    = null;
+        _dialogHostChangedHandler?.Invoke(null);
+
+        using (BeginIgnoringIsOpen())
+        {
+            SetCurrentValue(IsOpenProperty, false);
+        }
+
+        StopSynchronousOpenFrame();
+        if (openState is not null)
+        {
+            var closeCompletedSynchronously = false;
+            openState.Close(() =>
+            {
+                closeCompletedSynchronously = true;
+                CompleteClose(openState, result);
+            });
+            closeCompletionPending = !closeCompletedSynchronously;
+        }
+        else
+        {
+            CompleteClose(null, result);
+        }
+    }
+
+    private void RestoreResult(object? previousResult)
+    {
+        SetCurrentValue(ResultProperty, previousResult);
+    }
+
+    private void CancelCloseRequest(DialogCloseRequest request, object? previousResult)
+    {
+        RestoreResult(previousResult);
+        if (request.RestoreIsOpenOnCancel)
+        {
+            using (BeginIgnoringIsOpen())
+            {
+                SetCurrentValue(IsOpenProperty, true);
+            }
+        }
+    }
+
+    private void StopSynchronousOpenFrame()
+    {
+        if (_synchronousOpenFrame is { } frame)
+        {
+            frame.Continue = false;
+        }
+    }
+
     private void CompleteClose(DialogOpenState? openState, object? result)
     {
         openState?.SetClosed(result);
+        _synchronizedButtons = Array.Empty<DialogButton>();
         Closed?.Invoke(this, EventArgs.Empty);
         _frameCancellationTokenSource?.Cancel();
         _frameCancellationTokenSource?.Dispose();
         _frameCancellationTokenSource = null;
+        _openCancellationToken        = default;
         _closing = false;
     }
 
@@ -756,17 +920,17 @@ public partial class Dialog : TemplatedControl,
 
     private void ParentClosed(object? sender, EventArgs e)
     {
-        Done(null);
+        RequestClose(new DialogCloseRequest(null, DialogCloseReason.OwnerClosed, null, false));
     }
 
     private void TargetDetached(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        Done();
+        RequestClose(new DialogCloseRequest(Result, DialogCloseReason.PlacementTargetDetached, null, false));
     }
 
     internal void NotifyDialogHostCloseRequest()
     {
-        Done();
+        RequestClose(new DialogCloseRequest(Result, DialogCloseReason.HostCloseRequest, null, false));
     }
 
     internal Point CalculatePlacementOffset(Size hostSize, Size ownerSize)
@@ -824,6 +988,33 @@ public partial class Dialog : TemplatedControl,
         }
     }
 
+    private sealed record DialogCloseRequest(
+        object? Result,
+        DialogCloseReason Reason,
+        DialogButton? SourceButton,
+        bool RestoreIsOpenOnCancel)
+    {
+        public static DialogCloseRequest Accepted(DialogButton? sourceButton)
+        {
+            return new DialogCloseRequest(DialogCode.Accepted, DialogCloseReason.Accepted, sourceButton, false);
+        }
+
+        public static DialogCloseRequest Rejected(DialogButton? sourceButton)
+        {
+            return new DialogCloseRequest(DialogCode.Rejected, DialogCloseReason.Rejected, sourceButton, false);
+        }
+
+        public static DialogCloseRequest Programmatic(object? result)
+        {
+            return new DialogCloseRequest(result, DialogCloseReason.Programmatic, null, false);
+        }
+
+        public static DialogCloseRequest OpenStateChanged(object? result)
+        {
+            return new DialogCloseRequest(result, DialogCloseReason.Programmatic, null, true);
+        }
+    }
+
     private class DialogOpenState : IDisposable
     {
         private readonly IDisposable _cleanup;
@@ -847,9 +1038,9 @@ public partial class Dialog : TemplatedControl,
 
         public void Close(Action? closedCallback = null)
         {
-            _cleanup.Dispose();
             DialogHost.Close(() =>
             {
+                _cleanup.Dispose();
                 DialogHost.Content = null;
                 closedCallback?.Invoke();
             });
@@ -899,17 +1090,61 @@ public partial class Dialog : TemplatedControl,
             button.Role == DialogButtonRole.ApplyRole ||
             button.Role == DialogButtonRole.ResetRole)
         {
-            Accept();
+            RequestClose(DialogCloseRequest.Accepted(button));
         }
         else if (button.Role == DialogButtonRole.RejectRole ||
                  button.Role == DialogButtonRole.NoRole)
         {
-            Reject();
+            RequestClose(DialogCloseRequest.Rejected(button));
         }
     }
 
     internal void NotifyDialogButtonSynchronized(IReadOnlyList<DialogButton> buttons)
     {
+        _synchronizedButtons = buttons;
         ButtonsConfigure?.Invoke(buttons);
+    }
+
+    internal bool TryHandleStandardButtonKey(Key key)
+    {
+        var standardButton = ResolveStandardButtonForKey(key);
+
+        if (standardButton == DialogStandardButton.NoButton)
+        {
+            return false;
+        }
+
+        var button = _synchronizedButtons.FirstOrDefault(x =>
+            x.StandardButtonType == standardButton &&
+            x.IsEffectivelyEnabled);
+        if (button is null)
+        {
+            return false;
+        }
+
+        NotifyDialogButtonBoxClicked(button);
+        return true;
+    }
+
+    private DialogStandardButton ResolveStandardButtonForKey(Key key)
+    {
+        return key switch
+        {
+            Key.Enter  => DefaultStandardButton,
+            Key.Escape => ResolveEscapeStandardButton(),
+            _          => DialogStandardButton.NoButton
+        };
+    }
+
+    private DialogStandardButton ResolveEscapeStandardButton()
+    {
+        if (IsSet(EscapeStandardButtonProperty))
+        {
+            return EscapeStandardButton;
+        }
+
+        return StandardButtons.HasFlag(DialogStandardButton.Cancel)
+            ? DialogStandardButton.Cancel
+            : DialogStandardButton.NoButton;
     }
 }

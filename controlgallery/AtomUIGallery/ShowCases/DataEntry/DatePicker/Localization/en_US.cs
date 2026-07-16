@@ -1,13 +1,16 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.DatePicker;
 
 [LanguageProvider(LanguageCode.en_US, DatePickerShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string BasicTitle = "Basic";
     public const string BasicDescription = "Click DatePicker, and then we could select or input a date in panel.";
+    public const string BindingTitle = "SelectedDateTime binding";
+    public const string BindingDescription = "SelectedDateTime, RangeStartSelectedDate, and RangeEndSelectedDate synchronize with the ViewModel without explicitly setting Binding Mode=TwoWay.";
+    public const string PickerDisplayDateTitle = "Popup display date";
+    public const string PickerDisplayDateDescription = "Open the popup panel at a specific display date without committing a selected value.";
     public const string RangePickerTitle = "Range Picker";
     public const string RangePickerDescription = "Set range picker type by picker prop.";
     public const string NeedConfirmTitle = "Need Confirm";
@@ -25,9 +28,21 @@ internal partial class en_US : LanguageProvider
     public const string PlacementTitle = "Placement";
     public const string PlacementDescription = "You can manually specify the position of the popup via placement.";
     public const string P2PlaceholderTextSelectDate = "Select date";
+    public const string P2PlaceholderTextSelectWeek = "Select week";
+    public const string P2PlaceholderTextSelectMonth = "Select month";
+    public const string P2PlaceholderTextSelectQuarter = "Select quarter";
+    public const string P2PlaceholderTextSelectYear = "Select year";
     public const string P2SecondaryPlaceholderTextEndDate = "End date";
     public const string P2PlaceholderTextSelectTime = "Select time";
     public const string P2PlaceholderTextStartDate = "Start date";
+    public const string P2PlaceholderTextStartWeek = "Start week";
+    public const string P2SecondaryPlaceholderTextEndWeek = "End week";
+    public const string P2PlaceholderTextStartMonth = "Start month";
+    public const string P2SecondaryPlaceholderTextEndMonth = "End month";
+    public const string P2PlaceholderTextStartQuarter = "Start quarter";
+    public const string P2SecondaryPlaceholderTextEndQuarter = "End quarter";
+    public const string P2PlaceholderTextStartYear = "Start year";
+    public const string P2SecondaryPlaceholderTextEndYear = "End year";
     public const string P2PlaceholderTextOutline = "Outline";
     public const string P2PlaceholderTextFilled = "Filled";
     public const string P2PlaceholderTextBorderless = "Borderless";
@@ -35,11 +50,55 @@ internal partial class en_US : LanguageProvider
     public const string P2ContentLarge = "Large";
     public const string P2ContentDefault = "Default";
     public const string P2ContentSmall = "Small";
+    public const string P2ContentCustom = "Custom";
     public const string P2TextPlacement = "Placement:";
+    public const string P2TextSelectedDateTime = "Selected value:";
+    public const string P2TextSelectedDateRange = "Selected range:";
+    public const string P2ContentSetTomorrow = "Set tomorrow";
+    public const string P2ContentSetThisWeek = "Set this week";
+    public const string P2ContentClear = "Clear";
     public const string P2ContentTopleft = "TopLeft";
     public const string P2ContentTopright = "TopRight";
     public const string P2ContentBottomleft = "BottomLeft";
     public const string P2ContentBottomright = "BottomRight";
+    public const string PageSubtitle = "Select dates, ranges, and optional times from calendar panels.";
+    public const string PageDescription = "DatePicker supports single and range selection, confirmation flows, time selection, disabled states, size variants, validation status, visual variants, and custom popup placement.";
+    public const string ComponentCategory = "Data Entry";
+    public const string ComponentStatusStable = "Stable";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertySelectedDateTime = "Selected date and optional time for DatePicker. The property binds TwoWay by default and supports Avalonia data validation.";
+    public const string ApiPropertyDefaultDateTime = "Initial date and optional time used by DatePicker reset behavior.";
+    public const string ApiPropertyPickerDisplayDate = "Popup panel display anchor; does not commit a selected value.";
+    public const string ApiPropertyRangeStartSelectedDate = "Selected start date for RangeDatePicker.";
+    public const string ApiPropertyRangeEndSelectedDate = "Selected end date for RangeDatePicker.";
+    public const string ApiPropertyFormat = "Custom date/time formatting string.";
+    public const string ApiPropertyPickerMode = "Selection granularity: Date, Week, Month, Quarter, or Year.";
+    public const string ApiPropertyIsShowTime = "Enables the time selection panel.";
+    public const string ApiPropertyIsNeedConfirm = "Requires the user to confirm the selected value before committing.";
+    public const string ApiPropertyClockIdentifier = "Chooses 12-hour or 24-hour clock display when time selection is enabled.";
+    public const string ApiPropertyPickerPlacement = "Controls the popup placement relative to the input.";
+    public const string ApiPropertySecondaryPlaceholderText = "Placeholder text for the end input of range pickers.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusStable = "Stable";
+    public const string TokenNameCellHoverBg = "Background color for hovered date cells.";
+    public const string TokenNameCellActiveWithRangeBg = "Background color for cells inside the selected range.";
+    public const string TokenNameCellHoverWithRangeBg = "Hover background color for cells inside the selected range.";
+    public const string TokenNameCellBgDisabled = "Background color for disabled date cells.";
+    public const string TokenNameCellRangeBorderColor = "Border color used while selecting a date range.";
+    public const string TokenNameCellWidth = "Width of each date cell.";
+    public const string TokenNameCellHeight = "Height of each date cell.";
+    public const string TokenNamePanelContentPadding = "Padding inside the calendar panel.";
+    public const string TokenNameItemPanelMinWidth = "Minimum width of a calendar item panel.";
+    public const string TokenNameRangeCalendarSpacing = "Spacing between range calendar panels.";
 
-    protected override Type GetResourceKindType() => typeof(DatePickerShowCaseLangResourceKind);
 }

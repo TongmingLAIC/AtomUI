@@ -1,10 +1,9 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.RadioButton;
 
 [LanguageProvider(LanguageCode.zh_CN, RadioButtonShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string ScenarioBasic = "基础";
     public const string ScenarioGroups = "分组";
@@ -21,6 +20,8 @@ internal partial class zh_CN : LanguageProvider
     public const string VerticalRadioGroupDescription = "垂直排列的单选框组。";
     public const string ItemsSourceRadioGroupTitle = "通过 ItemsSource 生成单选框组";
     public const string ItemsSourceRadioGroupDescription = "单选框组。";
+    public const string CheckedItemBindingTitle = "CheckedItem 绑定";
+    public const string CheckedItemBindingDescription = "CheckedItem 默认使用 TwoWay 绑定，可由用户选择或 ViewModel 状态双向更新。";
     public const string OptionButtonTitle = "选项按钮";
     public const string OptionButtonDescription = "选项按钮组。";
     public const string OptionButtonWithIconTitle = "带图标的选项按钮";
@@ -54,6 +55,54 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentShanghai = "上海";
     public const string P2ContentBeijing = "北京";
     public const string P2ContentChengdu = "成都";
+    public const string P2ContentSelectChengdu = "选择成都";
+    public const string P2ContentClear = "清空";
+    public const string P2ContentNone = "无";
+    public const string P2CheckedItemSummaryFormat = "已选择：{0}";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计 Token";
+    public const string PageSubtitle = "在一组互斥选项中选择一个值。";
+    public const string PageDescription =
+        "RadioButton 覆盖单个选择、分组选项、数据驱动选项、选项按钮样式、图标、禁用状态和尺寸变体。";
+    public const string ComponentCategory = "数据录入";
+    public const string ComponentStatusStable = "稳定";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyIsChecked = "单选项是否被选中。";
+    public const string ApiPropertyContent = "单选项显示的内容。";
+    public const string ApiPropertyIsEnabled = "选项是否可交互。";
+    public const string ApiPropertyIsMotionEnabled = "启用单选交互的动效。";
+    public const string ApiPropertyIsWaveSpiritEnabled = "启用点击波纹反馈效果。";
+    public const string ApiPropertyCheckedItem = "单选框组当前选中的项，默认 TwoWay 绑定，并支持 Avalonia 数据验证。";
+    public const string ApiPropertyItemsSource = "用于生成单选框组条目的数据源。";
+    public const string ApiPropertyItemTemplate = "用于渲染生成条目的模板。";
+    public const string ApiPropertyOrientation = "单选框组条目的排列方向。";
+    public const string ApiPropertyItemSpacing = "单选框组条目之间的水平间距。";
+    public const string ApiPropertyLineSpacing = "单选框组换行后的垂直间距。";
+    public const string ApiPropertyButtonStyle = "选项按钮视觉样式。";
+    public const string ApiPropertySizeType = "选项按钮组尺寸。";
+    public const string ApiPropertySelectedItem = "选项按钮组当前选中的项。";
+    public const string ApiPropertyIcon = "选项按钮内部显示的图标。";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenNameRadioSize = "单选指示器尺寸。";
+    public const string TokenNameDotSize = "单选指示器内选中圆点尺寸。";
+    public const string TokenNameDotColorDisabled = "禁用状态下选中圆点颜色。";
+    public const string TokenNameTextMargin = "单选指示器与文本内容之间的间距。";
+    public const string TokenNameButtonBackground = "选项按钮默认背景色。";
+    public const string TokenNameButtonCheckedBackground = "选中选项按钮背景色。";
+    public const string TokenNameButtonColor = "选项按钮默认文本颜色。";
+    public const string TokenNameButtonPadding = "选项按钮内部边距。";
+    public const string TokenNameButtonSolidCheckedBackground = "实色选项按钮选中背景色。";
+    public const string TokenNameContentFontSize = "选项按钮内容默认字号。";
+    public const string TokenNamePadding = "选项按钮默认框架内边距。";
+    public const string TokenScopeRadioButton = "RadioButton";
+    public const string TokenScopeOptionButton = "OptionButton";
+    public const string TokenStatusStable = "稳定";
 
-    protected override Type GetResourceKindType() => typeof(RadioButtonShowCaseLangResourceKind);
 }

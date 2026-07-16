@@ -3,8 +3,8 @@
 // Please see http://go.microsoft.com/fwlink/?LinkID=131993 for details.
 // All other rights reserved.
 
-using System.Diagnostics;
 using AtomUI.Controls;
+using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -47,10 +47,10 @@ public class DataGridRowHeader : ContentControl
 
     #region 内部属性定义
     
-    internal static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<DataGridRowHeader>();
+    internal static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<DataGridRowHeader>();
     
-    internal SizeType SizeType
+    internal CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -128,6 +128,11 @@ public class DataGridRowHeader : ContentControl
         ConfigureOwnerDependentState();
     }
 
+    internal void EnsureGridLines()
+    {
+        ConfigureOwnerDependentState();
+    }
+
     private void ConfigureOwnerDependentState()
     {
         if (_rootElement != null)
@@ -143,7 +148,7 @@ public class DataGridRowHeader : ContentControl
 
         if (_horizontalSeparator != null)
         {
-            _horizontalSeparator.Height = owningGrid.BorderThickness.Left;
+            _horizontalSeparator.Height = BorderUtils.BuildRenderScaleAwareThickness(owningGrid, owningGrid.BorderThickness.Left);
         }
 
         ConfigureSeparatorVisible(owningGrid);
@@ -151,7 +156,7 @@ public class DataGridRowHeader : ContentControl
 
     private void ConfigureSeparatorVisible(DataGrid owningGrid)
     {
-        bool newVisibility = owningGrid.AreHorizontalGridLinesVisible;
+        bool newVisibility = owningGrid.ShouldDisplayRowBottomGridLine(Slot);
 
         if (newVisibility != IsSeparatorsVisible)
         {

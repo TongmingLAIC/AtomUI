@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using AtomUI.Controls;
 using AtomUI.Controls.Primitives;
@@ -48,6 +47,11 @@ public partial class TreeView : AvaloniaTreeView,
                                 IFormItemAware
 {
     #region 公共属性定义
+    public static readonly new DirectProperty<TreeView, IList> SelectedItemsProperty =
+        AvaloniaTreeView.SelectedItemsProperty.AddOwner<TreeView>(
+            o => o.SelectedItems,
+            (o, v) => o.SelectedItems = v);
+
     public static readonly StyledProperty<bool> IsAutoExpandParentProperty =
         AvaloniaProperty.Register<TreeView, bool>(nameof(IsAutoExpandParent), true);
     
@@ -161,6 +165,28 @@ public partial class TreeView : AvaloniaTreeView,
     public static readonly StyledProperty<Thickness> EmptyIndicatorPaddingProperty =
         AvaloniaProperty.Register<TreeView, Thickness>(nameof(EmptyIndicatorPadding));
     
+    [AllowNull]
+    public new IList SelectedItems
+    {
+        get => base.SelectedItems;
+        set
+        {
+            var oldValue = base.SelectedItems;
+            SyncingSelectedItems = true;
+            _syncingSelectedItemsTarget = value;
+            try
+            {
+                base.SelectedItems = value;
+            }
+            finally
+            {
+                _syncingSelectedItemsTarget = null;
+                SyncingSelectedItems = false;
+            }
+            RaisePropertyChanged(SelectedItemsProperty, oldValue, base.SelectedItems);
+        }
+    }
+
     public bool IsAutoExpandParent
     {
         get => GetValue(IsAutoExpandParentProperty);
@@ -453,6 +479,10 @@ public partial class TreeView : AvaloniaTreeView,
     
     private static readonly IList Empty = Array.Empty<object>();
     private IList? _checkedItems;
+    private IList? _syncingSelectedItemsTarget;
+    private readonly TreeDataController _treeDataController;
+    private bool _isTreeDataControllerAttached;
+    internal bool SyncingSelectedItems;
     internal bool SyncingCheckedItems;
     
     internal bool IsExpandAllProcess { get; set; }
@@ -465,6 +495,7 @@ public partial class TreeView : AvaloniaTreeView,
         TreeViewItem.CollapsedEvent.AddClassHandler<TreeView>((treeView, args) => treeView.HandleTreeItemCollapsed(args));
         TreeViewItem.ContextMenuRequestEvent.AddClassHandler<TreeView>((treeView, args) => treeView.HandleTreeItemContextMenuRequest(args));
         TreeViewItem.ClickEvent.AddClassHandler<TreeView>((treeView, args) => treeView.HandleTreeItemClicked(args));
+        RequestBringIntoViewEvent.AddClassHandler<TreeView>((treeView, args) => treeView.HandleDescendantRequestBringIntoView(args));
         ConfigureFilter();
 
         SelectedItemProperty.Changed.AddClassHandler<TreeView>((treeView, args) => treeView.NotifyFormValueChanged(args.NewValue));
@@ -479,8 +510,28 @@ public partial class TreeView : AvaloniaTreeView,
     protected TreeView(ITreeViewInteractionHandler interactionHandler)
     {
         InteractionHandler = interactionHandler ?? throw new ArgumentNullException(nameof(interactionHandler));
-        this.RegisterTokenResourceScope(TreeViewToken.ScopeProvider);
+        _treeDataController = new TreeDataController(this);
         Items.CollectionChanged           += HandleCollectionChanged;
+    }
+
+    internal bool ShouldPreserveSelectedContainerDuringSelectedItemsSync(TreeViewItem treeViewItem)
+    {
+        if (!SyncingSelectedItems ||
+            _syncingSelectedItemsTarget is null)
+        {
+            return false;
+        }
+
+        var item = TreeItemFromContainer(treeViewItem);
+        return item != null && _syncingSelectedItemsTarget.Contains(item);
+    }
+
+    private void HandleDescendantRequestBringIntoView(RequestBringIntoViewEventArgs args)
+    {
+        if (!ReferenceEquals(args.Source, this))
+        {
+            args.Handled = true;
+        }
     }
 
     protected override void OnInitialized()
@@ -518,7 +569,10 @@ public partial class TreeView : AvaloniaTreeView,
                 var oldItems = e.OldItems!;
                 for (var i = 0; i < oldItems.Count; i++)
                 {
-                    CheckedItems.Remove(oldItems[i]);
+                    if (!ShouldPreserveRemovedTreeItem(oldItems[i]))
+                    {
+                        CheckedItems.Remove(oldItems[i]);
+                    }
                 }
                 break;
             case NotifyCollectionChangedAction.Reset:
@@ -590,36 +644,7 @@ public partial class TreeView : AvaloniaTreeView,
 
     public void CheckedSubTree(TreeViewItem viewItem)
     {
-        if (!viewItem.IsEffectiveCheckable())
-        {
-            return;
-        }
-        
-        var originIsMotionEnabled = IsMotionEnabled;
-        try
-        {
-            SetCurrentValue(IsMotionEnabledProperty, false);
-            var checkedItems = DoCheckedSubTree(viewItem);
-            try
-            {
-                SyncingCheckedItems = true;
-                foreach (var checkedItem in checkedItems)
-                {
-                    if (!CheckedItems.Contains(checkedItem))
-                    {
-                        CheckedItems.Add(checkedItem);
-                    }
-                }
-            }
-            finally
-            {
-                SyncingCheckedItems = false;
-            }
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originIsMotionEnabled);
-        }
+        ApplyCheckedSubTree(viewItem);
     }
 
     protected virtual bool RecursiveCheckNodePredicate(TreeViewItem treeViewItem)
@@ -632,189 +657,14 @@ public partial class TreeView : AvaloniaTreeView,
         return true;
     }
 
-    private ISet<object> DoCheckedSubTree(TreeViewItem treeViewItem)
-    {
-        var expandedStates  = new Dictionary<TreeViewItem, bool>();
-
-        // Phase 1: Expand entire subtree to realize all containers
-        ExpandSubTreeForCheck(treeViewItem, expandedStates);
-        var checkedItems = new HashSet<object>(GetSubTreeCheckResultCapacity(treeViewItem, expandedStates.Count));
-
-        try
-        {
-            // Phase 2: Check all nodes (all containers are now realized)
-            DoCheckedSubTreeCore(treeViewItem, checkedItems);
-
-            // Phase 3: Update parent chain once after all children are checked
-            if (!IsCheckStrictly)
-            {
-                var (checkedParentItems, _) = SetupParentNodeCheckedStatus(treeViewItem);
-                checkedItems.UnionWith(checkedParentItems);
-            }
-        }
-        finally
-        {
-            // Phase 4: Restore all expanded states
-            RestoreExpandedStates(expandedStates);
-        }
-
-        return checkedItems;
-    }
-
-    private void DoCheckedSubTreeCore(TreeViewItem treeViewItem, HashSet<object> checkedItems)
-    {
-        if (RecursiveCheckNodePredicate(treeViewItem))
-        {
-            treeViewItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, true);
-            var treeItemData = TreeItemFromContainer(treeViewItem);
-            Debug.Assert(treeItemData != null);
-            checkedItems.Add(treeItemData);
-        }
-
-        foreach (var childItem in treeViewItem.Items)
-        {
-            if (childItem != null)
-            {
-                var container = TreeContainerFromItem(childItem);
-                if (container is TreeViewItem childTreeViewItem && childTreeViewItem.IsEffectiveCheckable())
-                {
-                    DoCheckedSubTreeCore(childTreeViewItem, checkedItems);
-                }
-            }
-        }
-    }
-
     public void UnCheckedSubTree(TreeViewItem viewItem)
     {
-        if (!viewItem.IsEffectiveCheckable())
-        {
-            return;
-        }
-
-        var originIsMotionEnabled = IsMotionEnabled;
-        try
-        {
-            SetCurrentValue(IsMotionEnabledProperty, false);
-            var unCheckedItems = DoUnCheckedSubTree(viewItem);
-            try
-            {
-                SyncingCheckedItems = true;
-                foreach (var unCheckedItem in unCheckedItems)
-                {
-                    CheckedItems.Remove(unCheckedItem);
-                }
-
-                var treeItemData = TreeItemFromContainer(viewItem);
-                Debug.Assert(treeItemData != null);
-                CheckedItems.Remove(treeItemData);
-            }
-            finally
-            {
-                SyncingCheckedItems = false;
-            }
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originIsMotionEnabled);
-        }
+        ApplyUnCheckedSubTree(viewItem);
     }
 
     public ISet<object> DoUnCheckedSubTree(TreeViewItem treeViewItem)
     {
-        var expandedStates = new Dictionary<TreeViewItem, bool>();
-
-        // Phase 1: Expand entire subtree to realize all containers
-        ExpandSubTreeForCheck(treeViewItem, expandedStates);
-        var unCheckedItems = new HashSet<object>(GetSubTreeCheckResultCapacity(treeViewItem, expandedStates.Count));
-
-        try
-        {
-            // Phase 2: Uncheck all nodes (all containers are now realized)
-            DoUnCheckedSubTreeCore(treeViewItem, unCheckedItems);
-
-            // Phase 3: Update parent chain once after all children are unchecked
-            if (!IsCheckStrictly)
-            {
-                var (_, unCheckedParentItems) = SetupParentNodeCheckedStatus(treeViewItem);
-                unCheckedItems.UnionWith(unCheckedParentItems);
-            }
-        }
-        finally
-        {
-            // Phase 4: Restore all expanded states
-            RestoreExpandedStates(expandedStates);
-        }
-
-        return unCheckedItems;
-    }
-
-    private int GetSubTreeCheckResultCapacity(TreeViewItem treeViewItem, int realizedSubTreeCount)
-    {
-        if (IsCheckStrictly)
-        {
-            return realizedSubTreeCount;
-        }
-
-        return realizedSubTreeCount + Math.Max(0, CountTreeViewItemPathDepth(treeViewItem) - 1);
-    }
-
-    private void DoUnCheckedSubTreeCore(TreeViewItem treeViewItem, HashSet<object> unCheckedItems)
-    {
-        if (treeViewItem.IsChecked == true && RecursiveUnCheckNodePredicate(treeViewItem))
-        {
-            var treeItemData = TreeItemFromContainer(treeViewItem);
-            Debug.Assert(treeItemData != null);
-            unCheckedItems.Add(treeItemData);
-            treeViewItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, false);
-        }
-
-        foreach (var childItem in treeViewItem.Items)
-        {
-            if (childItem != null)
-            {
-                var control = TreeContainerFromItem(childItem);
-                if (control is TreeViewItem childTreeViewItem && childTreeViewItem.IsEffectiveCheckable())
-                {
-                    DoUnCheckedSubTreeCore(childTreeViewItem, unCheckedItems);
-                }
-            }
-        }
-    }
-
-    private void ExpandSubTreeForCheck(TreeViewItem treeViewItem, Dictionary<TreeViewItem, bool> expandedStates)
-    {
-        var wasExpanded = treeViewItem.IsExpanded;
-        expandedStates[treeViewItem] = wasExpanded;
-
-        if (treeViewItem.Presenter?.Panel == null && !wasExpanded)
-        {
-            treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, true);
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel != null)
-            {
-                topLevel.GetLayoutManager()?.ExecuteLayoutPass();
-            }
-        }
-
-        foreach (var childItem in treeViewItem.Items)
-        {
-            if (childItem != null)
-            {
-                var container = TreeContainerFromItem(childItem);
-                if (container is TreeViewItem childTreeViewItem)
-                {
-                    ExpandSubTreeForCheck(childTreeViewItem, expandedStates);
-                }
-            }
-        }
-    }
-
-    private void RestoreExpandedStates(Dictionary<TreeViewItem, bool> expandedStates)
-    {
-        foreach (var (item, wasExpanded) in expandedStates)
-        {
-            item.SetCurrentValue(TreeViewItem.IsExpandedProperty, wasExpanded);
-        }
+        return CollectUnCheckedSubTreeItems(treeViewItem);
     }
 
     private void UpdatePseudoClasses()
@@ -841,7 +691,7 @@ public partial class TreeView : AvaloniaTreeView,
             
             if (item != null && item is not Visual && item is ITreeItemNode treeViewItemData)
             {
-                TreeViewItem.ApplyNodeData(treeViewItem, treeViewItemData);
+                treeViewItem.PrepareTreeItemNodeData(treeViewItemData, this);
             }
             
             if (ItemTemplate != null)
@@ -892,9 +742,31 @@ public partial class TreeView : AvaloniaTreeView,
     {
     }
 
+    protected override void ClearContainerForItemOverride(Control container)
+    {
+        if (container is TreeViewItem treeViewItem)
+        {
+            var shouldReleaseTreeDataTemplateBinding = treeViewItem.Header is BindableTreeItemNode;
+            treeViewItem.ClearPreparedTreeItemNodeData();
+            base.ClearContainerForItemOverride(container);
+            if (shouldReleaseTreeDataTemplateBinding)
+            {
+                // HeaderedItemsControl keeps TreeDataTemplate children binding in an internal disposable.
+                // Preparing once with a null item lets Avalonia release that binding before recycling.
+                base.PrepareContainerForItemOverride(container, null, -1);
+                base.ClearContainerForItemOverride(container);
+            }
+            return;
+        }
+
+        base.ClearContainerForItemOverride(container);
+    }
+
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        _isTreeDataControllerAttached = true;
+        _treeDataController.SetRootSource(ItemsSource);
         InteractionHandler.Attach(this);
         UpdatePseudoClasses();
     }
@@ -906,689 +778,16 @@ public partial class TreeView : AvaloniaTreeView,
         
         // 清理所有待处理的异步加载操作
         _asyncLoadCoordinator.CancelAll();
+        _treeDataController.ClearRootSource();
+        _isTreeDataControllerAttached = false;
     }
 
-    private TreeViewItem? GetTreeViewItemContainer(object childNode, ItemsControl current)
-    {
-        if (current.Presenter?.Panel == null)
-        {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel != null)
-            {
-                topLevel.GetLayoutManager()?.ExecuteLayoutPass();
-            }
-        }
-        if (current.Presenter?.Panel is { } panel)
-        {
-            return current.ContainerFromItem(childNode) as TreeViewItem;
-        }
-        return null;
-    }
-    
-    private void SubscribeToCheckedItems()
-    {
-        if (_checkedItems is INotifyCollectionChanged incc)
-        {
-            incc.CollectionChanged += HandleCheckedItemsCollectionChanged;
-        }
-
-        HandleCheckedItemsCollectionChanged(
-            _checkedItems,
-            new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-    }
-    
-    private void UnsubscribeFromCheckedItems()
-    {
-        if (_checkedItems is INotifyCollectionChanged incc)
-        {
-            incc.CollectionChanged -= HandleCheckedItemsCollectionChanged;
-        }
-    }
-    
-    private void HandleCheckedItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        IList? added   = null;
-        IList? removed = null;
-
-        switch (e.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-
-            {
-                if (e.NewItems != null)
-                {
-                    if (!SyncingCheckedItems)
-                    {
-                        CheckedItemsAdded(e.NewItems); 
-                    }
-                    added = e.NewItems;
-                }
-               
-                break;
-            }
-            case NotifyCollectionChangedAction.Remove:
-                if (!SyncingCheckedItems)
-                {
-                    if (e.OldItems != null)
-                    {
-                        for (var i = 0; i < e.OldItems.Count; i++)
-                        {
-                            MarkItemChecked(e.OldItems[i]!, false);
-                        }
-                    }
-                }
-
-                removed = e.OldItems;
-
-                break;
-            case NotifyCollectionChangedAction.Reset:
-                if (!SyncingCheckedItems)
-                {
-                    foreach (var container in GetRealizedTreeContainers())
-                    {
-                        MarkContainerChecked(container, false);
-                    }
-                    if (e.NewItems?.Count > 0)
-                    {
-                        CheckedItemsAdded(e.NewItems);
-                    }
-                }
-
-                if (e.NewItems?.Count > 0)
-                {
-                    added = new List<object>(CheckedItems.Count);
-                    foreach (var item in CheckedItems)
-                    {
-                        added.Add(item);
-                    }
-                }
-
-                break;
-            case NotifyCollectionChangedAction.Replace:
-            {
-                if (!SyncingCheckedItems)
-                {
-                    if (e.OldItems != null)
-                    {
-                        for (var i = 0; i < e.OldItems.Count; i++)
-                        {
-                            MarkItemChecked(e.OldItems[i]!, false);
-                        }
-                    }
-
-                    if (e.NewItems != null)
-                    {
-                        for (var i = 0; i < e.NewItems.Count; i++)
-                        {
-                            MarkItemChecked(e.NewItems[i]!, true);
-                        }
-                    }
-                }
-                
-                added   = e.NewItems;
-                removed = e.OldItems;
-                break;
-            }
-        }
-        if (added?.Count > 0 || removed?.Count > 0)
-        {
-            CheckedItemsChanged?.Invoke(this, new TreeViewCheckedItemsChangedEventArgs(
-                removed ?? Empty,
-                added ?? Empty));
-        }
-    }
-    
-    private void CheckedItemsAdded(IList items)
-    {
-        if (items.Count == 0)
-        {
-            return;
-        }
-        foreach (var item in items)
-        {
-            MarkItemChecked(item, true);
-        }
-    }
-    
-    private void MarkItemChecked(object item, bool isChecked)
-    {
-        var container = TreeContainerFromItem(item);
-        if (container != null)
-        {
-            MarkContainerChecked(container, isChecked);
-        }
-    }
-    
-    private void MarkContainerChecked(Control container, bool isChecked)
-    {
-        container.SetCurrentValue(TreeViewItem.IsCheckedProperty, isChecked);
-    }
-
-    #region 默认展开选中
-
-    private List<TreeViewItem>? ExpandTreeViewPath(TreeNodePath treeNodePath)
-    {
-        if (treeNodePath.Length == 0)
-        {
-            return null;
-        }
-
-        var originIsMotionEnabled = IsMotionEnabled;
-        try
-        {
-            SetCurrentValue(IsMotionEnabledProperty, false);
-            var   segments  = treeNodePath.Segments;
-            IList items     = Items;
-            var   pathNodes = new List<TreeViewItem>(segments.Count);
-            foreach (var segment in segments)
-            {
-                bool childFound = false;
-                for (var i = 0; i < items.Count; i++)
-                {
-                    var item = items[i];
-                    if (item != null)
-                    {
-                        var treeViewItem = TreeContainerFromItem(item) as TreeViewItem;
-                        if (treeViewItem == null)
-                        {
-                            return null;
-                        }
-                        if (IsPathSegmentMatched(treeViewItem, segment))
-                        {
-                            treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, true);
-                            if (treeViewItem.Presenter?.Panel == null)
-                            {
-                                var topLevel = TopLevel.GetTopLevel(this);
-                                if (topLevel != null)
-                                {
-                                    topLevel.GetLayoutManager()?.ExecuteLayoutPass();
-                                }
-                            }
-                            items      = treeViewItem.Items;
-                            childFound = true;
-                            pathNodes.Add(treeViewItem);
-                            break;
-                        }
-                    }
-                }
-
-                if (!childFound)
-                {
-                    return null;
-                }
-            }
-
-            return pathNodes;
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originIsMotionEnabled);
-        }
-    }
-
-    private List<TreeViewItem>? CollapseTreeViewPath(TreeNodePath treeNodePath)
-    {
-        if (treeNodePath.Length == 0)
-        {
-            return null;
-        }
-        var originIsMotionEnabled = IsMotionEnabled;
-        try
-        {
-            var   segments  = treeNodePath.Segments;
-            IList items     = Items;
-            var   pathNodes = new List<TreeViewItem>(segments.Count);
-            foreach (var segment in segments)
-            {
-                bool childFound = false;
-                for (var i = 0; i < items.Count; i++)
-                {
-                    var item = items[i];
-                    if (item != null)
-                    {
-                        var treeViewItem = TreeContainerFromItem(item) as TreeViewItem;
-                        if (treeViewItem == null)
-                        {
-                            return null;
-                        }
-                        if (IsPathSegmentMatched(treeViewItem, segment))
-                        {
-                            treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, true);
-                            if (treeViewItem.Presenter?.Panel == null)
-                            {
-                                var topLevel = TopLevel.GetTopLevel(this);
-                                if (topLevel != null)
-                                {
-                                    topLevel.GetLayoutManager()?.ExecuteLayoutPass();
-                                }
-                            }
-                            items      = treeViewItem.Items;
-                            childFound = true;
-                            pathNodes.Add(treeViewItem);
-                            break;
-                        }
-                    }
-                }
-
-                if (!childFound)
-                {
-                    return null;
-                }
-            }
-
-            foreach (var treeViewItem in pathNodes)
-            {
-                treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, false);
-            }
-            return pathNodes;
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originIsMotionEnabled);
-        }
-    }
-    
-    private List<TreeViewItem>? TraverTreeViewPath(TreeNodePath treeNodePath, Action<TreeViewItem, int>? action)
-    {
-        if (treeNodePath.Length == 0)
-        {
-            return null;
-        }
-
-        var originIsMotionEnabled = IsMotionEnabled;
-        try
-        {
-            SetCurrentValue(IsMotionEnabledProperty, false);
-            var   segments             = treeNodePath.Segments;
-            IList items                = Items;
-            var   pathNodes            = new List<TreeViewItem>(segments.Count);
-            var   pathNodeExpandStatus = new List<bool>(segments.Count);
-            try
-            {
-                for (int i = 0; i < segments.Count; i++)
-                {
-                    var  segment    = segments[i];
-                    bool childFound = false;
-                    for (var j = 0; j < items.Count; j++)
-                    {
-                        var item = items[j];
-                        if (item != null)
-                        {
-                            var treeViewItem = TreeContainerFromItem(item) as TreeViewItem;
-                            if (treeViewItem == null)
-                            {
-                                return null;
-                            }
-
-                            if (IsPathSegmentMatched(treeViewItem, segment))
-                            {
-                                pathNodeExpandStatus.Add(treeViewItem.IsExpanded);
-                                treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, true);
-                                if (treeViewItem.Presenter?.Panel == null)
-                                {
-                                    var topLevel = TopLevel.GetTopLevel(this);
-                                    if (topLevel != null)
-                                    {
-                                        topLevel.GetLayoutManager()?.ExecuteLayoutPass();
-                                    }
-                                }
-
-                                items      = treeViewItem.Items;
-                                childFound = true;
-                                pathNodes.Add(treeViewItem);
-                                action?.Invoke(treeViewItem, i);
-                                break;
-                            }
-                        }
-                    }
-
-                    if (!childFound)
-                    {
-                        return null;
-                    }
-                }
-
-                return pathNodes;
-            }
-            finally
-            {
-                for (var i = pathNodes.Count - 1; i >= 0; --i)
-                {
-                    var treeViewItem = pathNodes[i];
-                    var expandStatus = pathNodeExpandStatus[i];
-                    treeViewItem.SetCurrentValue(TreeViewItem.IsExpandedProperty, expandStatus);
-                }
-            }
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originIsMotionEnabled);
-        }
-    }
-
-    private static bool IsPathSegmentMatched(TreeViewItem treeViewItem, string segment)
-    {
-        if (treeViewItem.ItemKey != null && treeViewItem.ItemKey.Value == segment)
-        {
-            return true;
-        }
-        return treeViewItem.Value?.ToString() == segment;
-    }
-    
-    private (ISet<object>, ISet<object>) SetupParentNodeCheckedStatus(TreeViewItem viewItem)
-    {
-        var parent           = viewItem.Parent;
-        var parentDepth      = Math.Max(0, CountTreeViewItemPathDepth(viewItem) - 1);
-        var checkedParents   =  new HashSet<object>(parentDepth);
-        var unCheckedParents =  new HashSet<object>(parentDepth);
-        while (parent is TreeViewItem parentTreeItem && parentTreeItem.IsEnabled)
-        {
-            GetChildCheckStatus(parentTreeItem, out var isAllChecked, out var isAnyChecked);
-
-            if (parentTreeItem.IsChecked == true && !isAllChecked)
-            {
-                var parentTreeItemData = TreeItemFromContainer(parentTreeItem);
-                Debug.Assert(parentTreeItemData != null);
-                unCheckedParents.Add(parentTreeItemData);
-            }
-            
-            var originMotionEnabled = parentTreeItem.IsMotionEnabled;
-            try
-            {
-                parentTreeItem.SetCurrentValue(TreeViewItem.IsMotionEnabledProperty, false);
-                if (isAllChecked)
-                {
-                    parentTreeItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, true);
-                }
-                else if (isAnyChecked)
-                {
-                    parentTreeItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, null);
-                }
-                else
-                {
-                    parentTreeItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, false);
-                }
-            }
-            finally
-            {
-                parentTreeItem.SetCurrentValue(TreeViewItem.IsMotionEnabledProperty, originMotionEnabled);
-            }
-       
-            if (parentTreeItem.IsChecked == true)
-            {
-                var parentTreeItemData = TreeItemFromContainer(parentTreeItem);
-                Debug.Assert(parentTreeItemData != null);
-                checkedParents.Add(parentTreeItemData);
-            }
-            parent = parent.Parent;
-        }
-
-        return (checkedParents, unCheckedParents);
-    }
-
-    private void ConfigureStateAfterItemsSourceChanged()
-    {
-        if (!IsLoaded)
-        {
-            return;
-        }
-
-        var selectedItemPath  = BuildNodeIdentityPath(SelectedItem as ITreeItemNode);
-        var selectedItemPaths = BuildNodeIdentityPaths(SelectedItems);
-        var checkedItemPaths  = BuildNodeIdentityPaths(CheckedItems);
-
-        SetCurrentValue(SelectedItemProperty, null);
-        SelectedItems.Clear();
-        CheckedItems.Clear();
-
-        var selectionRestored = false;
-        if (selectedItemPath != null)
-        {
-            selectionRestored = TrySelectNodePath(selectedItemPath);
-        }
-        if (!selectionRestored && selectedItemPaths != null)
-        {
-            foreach (var path in selectedItemPaths)
-            {
-                selectionRestored |= TrySelectNodePath(path);
-            }
-        }
-        if (!selectionRestored)
-        {
-            ConfigureDefaultSelectedPaths();
-        }
-
-        var checkedRestored = false;
-        if (checkedItemPaths != null)
-        {
-            foreach (var path in checkedItemPaths)
-            {
-                checkedRestored |= TryCheckNodePath(path);
-            }
-        }
-        if (!checkedRestored)
-        {
-            ConfigureDefaultCheckedPaths();
-        }
-
-        if (IsDefaultExpandAll)
-        {
-            ExpandAll(false);
-        }
-        else
-        {
-            ConfigureDefaultExpandedPaths();
-        }
-    }
-
-    private static List<TreeNodePath>? BuildNodeIdentityPaths(IList? nodes)
-    {
-        if (nodes == null)
-        {
-            return null;
-        }
-
-        var paths = new List<TreeNodePath>(nodes.Count);
-        foreach (var node in nodes)
-        {
-            if (node is ITreeItemNode treeItemNode)
-            {
-                var path = BuildNodeIdentityPath(treeItemNode);
-                if (path != null)
-                {
-                    paths.Add(path);
-                }
-            }
-        }
-        return paths;
-    }
-
-    private static TreeNodePath? BuildNodeIdentityPath(ITreeItemNode? node)
-    {
-        if (node == null)
-        {
-            return null;
-        }
-
-        var depth    = CountTreeItemPathDepth(node);
-        var segments = new string[depth];
-        var current  = node;
-        for (var i = segments.Length - 1; current != null; i--)
-        {
-            var segment = current.ItemKey?.ToString() ?? current.Value?.ToString();
-            if (string.IsNullOrEmpty(segment))
-            {
-                return null;
-            }
-
-            segments[i] = segment;
-            current     = current.ParentNode as ITreeItemNode;
-        }
-
-        return new TreeNodePath(segments);
-    }
-
-    private bool TrySelectNodePath(TreeNodePath path)
-    {
-        var selected = false;
-        TraverTreeViewPath(path, (treeViewItem, i) =>
-        {
-            if (i == path.Length - 1)
-            {
-                var item = TreeItemFromContainer(treeViewItem);
-                if (item != null)
-                {
-                    if (!SelectedItems.Contains(item))
-                    {
-                        SelectedItems.Add(item);
-                    }
-                    if (SelectionMode == SelectionMode.Single)
-                    {
-                        SetCurrentValue(SelectedItemProperty, item);
-                    }
-                    selected = true;
-                }
-            }
-        });
-        return selected;
-    }
-
-    private bool TryCheckNodePath(TreeNodePath path)
-    {
-        var isChecked = false;
-        TraverTreeViewPath(path, (treeViewItem, i) =>
-        {
-            if (i == path.Length - 1)
-            {
-                treeViewItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, true);
-                isChecked = true;
-            }
-        });
-        return isChecked;
-    }
-
-    private void GetChildCheckStatus(TreeViewItem parentTreeItem, out bool isAllChecked, out bool isAnyChecked)
-    {
-        isAllChecked = false;
-        isAnyChecked = false;
-
-        if (parentTreeItem.Items.Count == 0)
-        {
-            return;
-        }
-
-        isAllChecked = true;
-        foreach (var childItem in parentTreeItem.Items)
-        {
-            var childSatisfiesAllChecked = false;
-            if (childItem != null)
-            {
-                var container = TreeContainerFromItem(childItem);
-                if (container is TreeViewItem treeViewItem)
-                {
-                    var isCheckable = treeViewItem.IsEffectiveCheckable();
-                    childSatisfiesAllChecked = !isCheckable || treeViewItem.IsChecked == true;
-                    if (isCheckable && treeViewItem.IsChecked != false)
-                    {
-                        isAnyChecked = true;
-                    }
-                }
-            }
-
-            if (!childSatisfiesAllChecked)
-            {
-                isAllChecked = false;
-            }
-
-            if (!isAllChecked && isAnyChecked)
-            {
-                break;
-            }
-        }
-    }
-
-    private void ConfigureDefaultCheckedPaths()
-    {
-        if (DefaultCheckedPaths != null)
-        {
-            foreach (var checkedPath in DefaultCheckedPaths)
-            {
-                TraverTreeViewPath(checkedPath, (treeViewItem, i) =>
-                {
-                    if (i == checkedPath.Length - 1)
-                    {
-                        treeViewItem.SetCurrentValue(TreeViewItem.IsCheckedProperty, true);
-                    }
-                });
-            }
-        }
-    }
-        
-    private void ConfigureDefaultExpandedPaths()
-    {
-        if (DefaultExpandedPaths != null)
-        {
-            foreach (var path in DefaultExpandedPaths)
-            {
-                ExpandTreeViewPath(path);
-            }
-        }
-    }
-    
-    private void ConfigureDefaultSelectedPaths()
-    {
-        if (IsSelectable)
-        {
-            if (SelectedItems.Count == 0 && SelectedItem == null)
-            {
-                if (DefaultSelectedPaths != null)
-                {
-                    foreach (var selectedPath in DefaultSelectedPaths)
-                    {
-                        TraverTreeViewPath(selectedPath, (treeViewItem, i) =>
-                        {
-                            if (i == selectedPath.Length - 1)
-                            {
-                                if (!SelectedItems.Contains(TreeItemFromContainer(treeViewItem)))
-                                {
-                                    SelectedItems.Add(TreeItemFromContainer(treeViewItem));
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-            else
-            {
-                if (SelectedItem != null)
-                {
-                    var paths = GetTreePathFromItem(SelectedItem);
-                    SelectTreeItemByPath(paths);
-                }
-            }
-        }
-    }
-    
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
-        ConfigureDefaultSelectedPaths();
-        ConfigureDefaultCheckedPaths();
-        
-        FilterTreeNode();
-        
-        if (IsDefaultExpandAll)
-        {
-            Dispatcher.Post(() => ExpandAll(false));
-        }
-        else
-        {
-            ConfigureDefaultExpandedPaths();
-        }
+        ReplayLoadedState();
     }
 
-    #endregion
-    
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -1646,8 +845,25 @@ public partial class TreeView : AvaloniaTreeView,
 
         if (change.Property == ItemsSourceProperty)
         {
+            if (_isTreeDataControllerAttached)
+            {
+                _treeDataController.SetRootSource(ItemsSource);
+            }
             Dispatcher.Post(ConfigureStateAfterItemsSourceChanged);
         }
+    }
+
+    internal ITreeItemNode? ResolveTreeItemNode(TreeViewItem treeViewItem)
+    {
+        return TreeItemFromContainer(treeViewItem) as ITreeItemNode ??
+               treeViewItem.Header as ITreeItemNode ??
+               treeViewItem;
+    }
+
+    internal bool ShouldPreserveRemovedTreeItem(object? item)
+    {
+        return item is ITreeItemNode node &&
+               _treeDataController.IsMovingNode(node);
     }
 
     protected void HandleSwitcherRotationIconChanged()
@@ -1808,124 +1024,6 @@ public partial class TreeView : AvaloniaTreeView,
         return base.UpdateSelectionFromEvent(container, eventArgs);
     }
 
-    private List<object> GetTreePathFromItem(object item)
-    {
-        List<object> paths;
-        if (item is ITreeItemNode itemData)
-        {
-            var pathDepth = CountTreeItemPathDepth(itemData);
-            paths = new List<object>(pathDepth);
-            for (var i = 0; i < pathDepth; i++)
-            {
-                paths.Add(null!);
-            }
-
-            var current = itemData;
-            for (var i = pathDepth - 1; current != null; i--)
-            {
-                paths[i] = current;
-                current  = current.ParentNode as ITreeItemNode;
-            }
-        }
-        else if (item is TreeViewItem treeViewItem)
-        {
-            var pathDepth = CountTreeViewItemPathDepth(treeViewItem);
-            paths = new List<object>(pathDepth);
-            for (var i = 0; i < pathDepth; i++)
-            {
-                paths.Add(null!);
-            }
-
-            var current = treeViewItem;
-            for (var i = pathDepth - 1; current != null; i--)
-            {
-                paths[i] = current;
-                current  = current.Parent as TreeViewItem;
-            }
-        }
-        else
-        {
-            throw new ArgumentException("Invalid item type, Must ITreeItemNode or TreeItem.");
-        }
-
-        return paths;
-    }
-
-    private static int CountTreeItemPathDepth(ITreeItemNode itemData)
-    {
-        var count   = 0;
-        var current = itemData;
-        while (current != null)
-        {
-            count++;
-            current = current.ParentNode as ITreeItemNode;
-        }
-
-        return count;
-    }
-
-    private void SelectTreeItemByPath(IList paths)
-    {
-        if (paths.Count == 0)
-        {
-            return;
-        }
-        ItemsControl current             = this;
-        bool         originMotionEnabled = IsMotionEnabled;
-        try
-        {
-            SetCurrentValue(IsMotionEnabledProperty, false);
-            for (var i = 0; i < paths.Count; i++)
-            {
-                var pathNode = paths[i];
-                if (pathNode != null)
-                {
-                    TreeViewItem? child          = null;
-                    bool?         originExpanded = null;
-                    try
-                    {
-
-                        if (current is TreeViewItem item)
-                        {
-                            originExpanded = item.IsExpanded;
-                            item.SetCurrentValue(TreeViewItem.IsExpandedProperty, true);
-                        }
-
-                        child = GetTreeViewItemContainer(pathNode, current);
-                    }
-                    finally
-                    {
-                        if (current is TreeViewItem item)
-                        {
-                            if (originExpanded != null)
-                            {
-                                item.SetCurrentValue(TreeViewItem.IsExpandedProperty, originExpanded.Value);
-                            }
-                        }
-                    }
-
-                    if (child != null)
-                    {
-                        current = child;
-                    }
-                }
-            }
-
-            if (current is TreeViewItem treeViewItem)
-            {
-                var item = TreeItemFromContainer(treeViewItem);
-                if (item != null && !SelectedItems.Contains(item))
-                {
-                    SelectedItems.Add(item);
-                }
-            }
-        }
-        finally
-        {
-            SetCurrentValue(IsMotionEnabledProperty, originMotionEnabled);
-        }
-    }
-    
     #region 实现 FormItem 接口
     
     private EventHandler? _formValueChanged;
@@ -1935,7 +1033,7 @@ public partial class TreeView : AvaloniaTreeView,
         remove => _formValueChanged -= value;
     }
 
-    void IFormItemAware.SetFormValue(object? value) => NotifySetFormValue(value?.ToString());
+    void IFormItemAware.SetFormValue(object? value) => NotifySetFormValue(value);
 
     object? IFormItemAware.GetFormValue() => NotifyGetFormValue();
     void IFormItemAware.ClearFormValue() => NotifyClearFormValue();

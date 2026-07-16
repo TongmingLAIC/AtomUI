@@ -1,15 +1,16 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.FloatButton;
 
 [LanguageProvider(LanguageCode.zh_CN, FloatButtonShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string BasicTitle = "基础用法";
     public const string BasicDescription = "最基础的用法。";
     public const string TypeTitle = "类型";
     public const string TypeDescription = "通过 type 属性改变 FloatButton 的类型。";
+    public const string CommandTitle = "命令";
+    public const string CommandDescription = "FloatButtonHost 会将命令转发给真实悬浮按钮，组合内的 FloatButton 子项也能继承宿主数据上下文进行命令绑定。";
     public const string ShapeTitle = "形状";
     public const string ShapeDescription = "通过 shape 属性改变 FloatButton 的形状。";
     public const string TooltipTitle = "带提示的 FloatButton";
@@ -21,9 +22,9 @@ internal partial class zh_CN : LanguageProvider
     public const string MenuModeTitle = "菜单模式";
     public const string MenuModeDescription = "通过 trigger 打开菜单模式，可选择 hover 或 click。";
     public const string ControlledModeTitle = "受控模式";
-    public const string ControlledModeDescription = "通过 open 将组件设置为受控模式，需要与 trigger 一起使用。";
+    public const string ControlledModeDescription = "通过 open 将组件设置为受控模式，IsOpen 默认双向绑定，并与 trigger 一起工作。";
     public const string PlacementTitle = "弹出位置";
-    public const string PlacementDescription = "自定义动画弹出位置，提供 top、right、bottom、left 四种预设位置，默认是 top。";
+    public const string PlacementDescription = "自定义动画弹出位置，提供上、右、下、左四种预设位置，默认在上方。";
     public const string BadgeTitle = "徽标";
     public const string BadgeDescription = "带 Badge 的 FloatButton。";
     public const string BackTopTitle = "回到顶部";
@@ -32,6 +33,58 @@ internal partial class zh_CN : LanguageProvider
     public const string P2TooltipDocuments = "文档";
     public const string P2DescriptionHelpInfo = "帮助信息";
     public const string P2TextScrollToBottom = "滚动到底部";
+    public const string P2CommandCount = "执行次数";
+    public const string P2CommandSource = "来源";
+    public const string P2CommandHost = "宿主按钮";
+    public const string P2CommandGroupChild = "组合子按钮";
+    public const string PageSubtitle = "在滚动区域中持续可用的悬浮操作。";
+    public const string PageDescription = "FloatButton 提供重要操作的快速入口，支持组合菜单、徽标和回到顶部行为，并将控件锚定在当前内容区域。";
+    public const string ComponentCategory = "通用";
+    public const string ComponentStatusStable = ".NET 10";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计变量";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyPlacement = "悬浮按钮或组合在宿主中的锚定位置。";
+    public const string ApiPropertyFloatOffsetX = "定位计算完成后应用的水平偏移。";
+    public const string ApiPropertyFloatOffsetY = "定位计算完成后应用的垂直偏移。";
+    public const string ApiPropertyIcon = "显示在按钮内部的图标。";
+    public const string ApiPropertyTooltip = "鼠标悬停按钮时显示的提示文本。";
+    public const string ApiPropertyTooltipColor = "提示的可选颜色。";
+    public const string ApiPropertyDescription = "显示在方形 FloatButton 中的文本或内容。";
+    public const string ApiPropertyButtonType = "按钮视觉类型。";
+    public const string ApiPropertyShape = "按钮形状。";
+    public const string ApiPropertyHref = "按钮关联的可选 URI。";
+    public const string ApiPropertyCommand = "点击宿主悬浮按钮时执行的命令。";
+    public const string ApiPropertyCommandParameter = "传递给命令的参数。";
+    public const string ApiPropertyIsMotionEnabled = "控制打开、关闭和可见性动画是否启用。";
+    public const string ApiPropertyIsBadgeEnabled = "在悬浮按钮上显示徽标。";
+    public const string ApiPropertyIsDotBadge = "使用点状徽标而不是数字徽标。";
+    public const string ApiPropertyBadgeCount = "徽标中显示的计数。";
+    public const string ApiPropertyBadgeColor = "徽标颜色 token 或颜色名称。";
+    public const string ApiPropertyBadgeOverflowCount = "徽标显示溢出文本前的最大计数。";
+    public const string ApiPropertyTrigger = "打开 FloatButton 组合菜单的交互方式。";
+    public const string ApiPropertyMenuPlacement = "组合菜单项展开的方向。";
+    public const string ApiPropertyIsOpen = "FloatButton 组合的受控打开状态，默认支持双向绑定。";
+    public const string ApiPropertyToTopDuration = "回到顶部滚动动画时长。";
+    public const string ApiPropertyTarget = "BackTopFloatButton 控制的 ScrollViewer。";
+    public const string ApiPropertyVisibilityHeight = "BackTopFloatButton 变为可见所需的滚动偏移。";
+    public const string TokenColumnToken = "变量";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "范围";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenNameFloatButtonSize = "FloatButton 基础宽高。";
+    public const string TokenNameFloatButtonIconSize = "FloatButton 内部图标尺寸。";
+    public const string TokenNameSquareBadgeOffset = "方形 FloatButton 使用的徽标偏移。";
+    public const string TokenNameCircleBadgeOffset = "圆形 FloatButton 使用的徽标偏移。";
+    public const string TokenNamePrimaryColor = "主要 FloatButton 内容前景色。";
+    public const string TokenNameDescriptionLineHeight = "描述文本行高。";
+    public const string TokenNameFloatOffsetX = "默认水平悬浮偏移。";
+    public const string TokenNameFloatOffsetY = "默认垂直悬浮偏移。";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
 
-    protected override Type GetResourceKindType() => typeof(FloatButtonShowCaseLangResourceKind);
 }

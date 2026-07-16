@@ -11,7 +11,6 @@ namespace AtomUI.Desktop.Controls;
 internal class DatePickerToken : AbstractControlDesignToken
 {
     public const string ID = "DatePicker";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
     
     public DatePickerToken()
         : base(ID)
@@ -79,6 +78,11 @@ internal class DatePickerToken : AbstractControlDesignToken
     public double TextHeight { get; set; }
 
     /// <summary>
+    /// 年、季度、月份面板单元格内容宽度
+    /// </summary>
+    public double YearMonthCellWidth { get; set; }
+
+    /// <summary>
     /// 面板内容内边距
     /// </summary>
     public Thickness PanelContentPadding { get; set; }
@@ -127,15 +131,16 @@ internal class DatePickerToken : AbstractControlDesignToken
         CellWidth              = SharedToken.ControlHeightSM;
         CellHeight             = SharedToken.ControlHeightSM;
         TextHeight             = SharedToken.ControlHeightLG;
-        WithoutTimeCellHeight  = SharedToken.ControlHeightLG * 1.65;
+        YearMonthCellWidth     = SharedToken.ControlHeightLG * 1.5;
+        WithoutTimeCellHeight  = (SharedToken.ControlHeightLG * 1.65 + SharedToken.ControlHeightSM) / 2;
         CellMargin             = SharedToken.MarginXXS;
         PanelContentPadding    = SharedToken.PaddingSM;
         ItemPanelMinWidth      = 225;
         ItemPanelMinHeight     = 270;
         MonthViewMinWidth      = 260;
         DayTitleHeight         = SharedToken.ControlHeightSM;
-        HeaderMargin           = new Thickness(0, 0, 0, SharedToken.UniformlyMarginSM);
-        HeaderPadding          = new Thickness(0, 0, 0, SharedToken.UniformlyPaddingSM);
+        HeaderMargin           = new Thickness(0, 0, 0, SharedToken.UniformlyMarginXS);
+        HeaderPadding          = new Thickness(0);
         RangeCalendarSpacing   = 20;
         ButtonsPanelMargin     = new Thickness(0, SharedToken.UniformlyMarginXS, 0, 0);
     }

@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using System.Windows.Input;
 using AtomUI.Controls;
 using Avalonia;
 using Avalonia.Collections;
@@ -11,10 +12,13 @@ namespace AtomUI.Desktop.Controls;
 public interface INavMenuNode : ITreeNode<INavMenuNode>
 {
     IDataTemplate? HeaderTemplate { get; }
+    ICommand? Command => null;
+    object? CommandParameter => null;
     void UpdateParentNode(INavMenuNode? parentNode) => throw new NotImplementedException();
 }
 
-public class NavMenuNode : AvaloniaObject, INavMenuNode
+[GenerateScopedResourceHost]
+public partial class NavMenuNode : AvaloniaObject, INavMenuNode
 {
     public static readonly DirectProperty<NavMenuNode, object?> HeaderProperty =
         AvaloniaProperty.RegisterDirect<NavMenuNode, object?>(
@@ -27,6 +31,18 @@ public class NavMenuNode : AvaloniaObject, INavMenuNode
             nameof(HeaderTemplate),
             o => o.HeaderTemplate,
             (o, v) => o.HeaderTemplate = v);
+
+    public static readonly DirectProperty<NavMenuNode, ICommand?> CommandProperty =
+        AvaloniaProperty.RegisterDirect<NavMenuNode, ICommand?>(
+            nameof(Command),
+            o => o.Command,
+            (o, v) => o.Command = v);
+
+    public static readonly DirectProperty<NavMenuNode, object?> CommandParameterProperty =
+        AvaloniaProperty.RegisterDirect<NavMenuNode, object?>(
+            nameof(CommandParameter),
+            o => o.CommandParameter,
+            (o, v) => o.CommandParameter = v);
     
     public static readonly DirectProperty<NavMenuNode, EntityKey?> ItemKeyProperty =
         AvaloniaProperty.RegisterDirect<NavMenuNode, EntityKey?>(
@@ -60,6 +76,22 @@ public class NavMenuNode : AvaloniaObject, INavMenuNode
     {
         get => _headerTemplate;
         set => SetAndRaise(HeaderTemplateProperty, ref _headerTemplate, value);
+    }
+
+    private ICommand? _command;
+
+    public ICommand? Command
+    {
+        get => _command;
+        set => SetAndRaise(CommandProperty, ref _command, value);
+    }
+
+    private object? _commandParameter;
+
+    public object? CommandParameter
+    {
+        get => _commandParameter;
+        set => SetAndRaise(CommandParameterProperty, ref _commandParameter, value);
     }
     
     private EntityKey? _itemKey;

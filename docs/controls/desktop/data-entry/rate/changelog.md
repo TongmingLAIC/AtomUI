@@ -1,0 +1,26 @@
+# Rate Changelog
+
+本文档记录 Rate 控件级设计、API、主题契约、Token 和实现结构的变化。它不替代仓库根目录 `CHANGELOG.md`，也不作为正式版本发布说明。
+
+## 2026-07-06
+
+- Behavior
+  - Make `Rate.Value` default to TwoWay binding and enable Avalonia data validation.
+  - Keep user rating, Form value and ViewModel state on the same `Value` source of truth.
+- Gallery
+  - Add a `v6.0.8` Rate binding example showing user selection and ViewModel updates staying synchronized.
+
+## 2026-06-26
+
+- Docs
+  - Add LLMS metadata, semantic parts and export source mapping for `Rate`.
+  - Align generated output paths with `controls/rate/index-cn.md` and `controls/rate/semantic-cn.md`.
+
+## 2026-06-24
+
+- Docs
+  - Complete Rate desktop architecture and implementation docs with source-derived API groups, template parts, state flow and verification boundaries.
+  - Establish Rate desktop architecture documentation under `docs/controls/desktop/data-entry/rate/overview.md`.
+  - Add Rate implementation documentation covering source ownership, state flow, lifecycle, resources, AOT boundaries and maintenance invariants.
+  - Add Rate control-level changelog.
+  - Add Rate Token documentation covering RateToken.

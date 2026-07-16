@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using AtomUI.Controls.Utils;
 using AtomUI.Media;
+using AtomUI.Utils;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -14,14 +15,14 @@ using Avalonia.Media;
 namespace AtomUI.Controls.Commons;
 
 public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
-                                                  ISizeTypeAware,
+                                                  ICustomizableSizeTypeAware,
                                                   IWaveSpiritAwareControl,
                                                   IFormItemAware
 {
     #region 公共属性定义
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractOptionButtonGroup>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<AbstractOptionButtonGroup>();
 
     public static readonly StyledProperty<OptionButtonStyle> ButtonStyleProperty =
         AvaloniaProperty.Register<AbstractOptionButtonGroup, OptionButtonStyle>(nameof(ButtonStyle));
@@ -32,7 +33,7 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
     public static readonly StyledProperty<bool> IsWaveSpiritEnabledProperty =
         WaveSpiritAwareControlProperty.IsWaveSpiritEnabledProperty.AddOwner<AbstractOptionButtonGroup>();
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -114,8 +115,14 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
         AffectsRender<AbstractOptionButtonGroup>(SelectionModeProperty);
 
         AffectsMeasure<AbstractOptionButtonGroup>(SizeTypeProperty);
-        AffectsRender<AbstractOptionButtonGroup>(SelectedOptionBorderColorProperty,
-            ButtonStyleProperty, SelectedItemProperty);
+        AffectsRender<AbstractOptionButtonGroup>(
+            SelectedOptionBorderColorProperty,
+            ButtonStyleProperty,
+            SelectedItemProperty,
+            BorderBrushProperty,
+            BorderThicknessProperty,
+            CornerRadiusProperty,
+            UseLayoutRoundingProperty);
         SelectedItemProperty.Changed.AddClassHandler<AbstractOptionButtonGroup>((group, args) => group.NotifyFormValueChanged(args.NewValue));
     }
 
@@ -305,9 +312,10 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
 
     public override void Render(DrawingContext context)
     {
+        var renderBorderThickness = BorderUtils.BuildRenderScaleAwareThickness(this, BorderThickness);
         _borderRenderHelper.Render(context,
             new Size(DesiredSize.Width, DesiredSize.Height),
-            new Thickness(1),
+            renderBorderThickness,
             CornerRadius,
             BackgroundSizing.CenterBorder,
             null,
@@ -330,14 +338,14 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
 
             if (i != ItemCount - 1)
             {
-                var offsetX    = optionButton.Bounds.Right - BorderThickness.Left / 2;
+                var offsetX    = optionButton.Bounds.Right - renderBorderThickness.Left / 2;
                 var startPoint = new Point(offsetX, 0);
                 var endPoint   = new Point(offsetX, Bounds.Height);
                 using var optionState = context.PushRenderOptions(new RenderOptions
                 {
                     EdgeMode = EdgeMode.Aliased
                 });
-                PenUtils.TryModifyOrCreate(ref _separatorPen, BorderBrush, BorderThickness.Left);
+                PenUtils.TryModifyOrCreate(ref _separatorPen, BorderBrush, renderBorderThickness.Left);
                 if (_separatorPen is not null)
                 {
                     context.DrawLine(_separatorPen, startPoint, endPoint);
@@ -353,8 +361,8 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
                     var width   = optionButton.DesiredSize.Width;
                     if (i > 0)
                     {
-                        offsetX -= BorderThickness.Left;
-                        width   += BorderThickness.Left;
+                        offsetX -= renderBorderThickness.Left;
+                        width   += renderBorderThickness.Left;
                     }
 
                     var       translationMatrix = Matrix.CreateTranslation(offsetX, 0);
@@ -371,7 +379,7 @@ public abstract class AbstractOptionButtonGroup : SelectingItemsControl,
 
                     _borderRenderHelper.Render(context,
                         new Size(width, DesiredSize.Height),
-                        BorderThickness,
+                        renderBorderThickness,
                         cornerRadius,
                         BackgroundSizing.InnerBorderEdge,
                         null,

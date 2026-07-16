@@ -13,6 +13,7 @@
                     StyleVariant="{TemplateBinding StyleVariant}"
                     SizeType="{TemplateBinding SizeType}"
                     Status="{TemplateBinding Status}"
+                    DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
                     IsEnabled="{TemplateBinding IsEnabled}"
                     LeftAddOn="{TemplateBinding LeftAddOn}"
                     LeftAddOnTemplate="{TemplateBinding LeftAddOn}"
@@ -26,28 +27,28 @@
                     CompactSpaceOrientation="{TemplateBinding CompactSpaceOrientation}"
                     IsUsedInCompactSpace="{TemplateBinding IsUsedInCompactSpace}">
                     <atom:AddOnDecoratedBox.ContentRightAddOn>
-                        <StackPanel Orientation="Horizontal" Spacing="{atom:SharedTokenResource SpacingXS}">
+                        <StackPanel Orientation="Horizontal" Spacing="{atom:InfoPickerInputTokenSharedTokenResource SpacingXS}">
                             <atom:PickerClearUpButton
                                 Name="PART_ClearUpButton" />
                             <ContentPresenter Name="PART_ContentRightAddOnPresenter" />
                         </StackPanel>
                     </atom:AddOnDecoratedBox.ContentRightAddOn>
-                    <atom:TextBox Name="PART_InfoInputBox"
-                                  HorizontalContentAlignment="Stretch"
-                                  VerticalContentAlignment="Center"
-                                  VerticalAlignment="Stretch"
-                                  HorizontalAlignment="Stretch"
-                                  BorderThickness="0"
-                                  TextWrapping="NoWrap"
-                                  AcceptsReturn="False"
-                                  Width="{TemplateBinding PreferredInputWidth}"
-                                  IsAllowClear="False"
-                                  IsEnableRevealButton="False"
-                                  Text="{TemplateBinding Text}"
-                                  PlaceholderText="{TemplateBinding PlaceholderText}"
-                                  DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
-                                  SizeType="{TemplateBinding SizeType}"
-                                  IsReadOnly="{TemplateBinding IsReadOnly}" />
+                    <atom:EmbeddedTextBox Name="PART_InfoInputBox"
+                                          HorizontalContentAlignment="Stretch"
+                                          VerticalContentAlignment="Center"
+                                          VerticalAlignment="Stretch"
+                                          HorizontalAlignment="Stretch"
+                                          TextWrapping="NoWrap"
+                                          AcceptsReturn="False"
+                                          Width="{TemplateBinding PreferredInputWidth}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontStyle="{TemplateBinding FontStyle}"
+                                          FontWeight="{TemplateBinding FontWeight}"
+                                          Text="{TemplateBinding Text}"
+                                          PlaceholderText="{TemplateBinding PlaceholderText}"
+                                          DataValidationErrors.Errors="{TemplateBinding DataValidationErrors.Errors}"
+                                          IsReadOnly="{TemplateBinding IsReadOnly}" />
                 </atom:AddOnDecoratedBox>
 
                 <atom:Popup Name="PART_Popup"
@@ -75,37 +76,41 @@
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Top" />
         <Setter Property="IsArrowVisible" Value="True" />
-        <Setter Property="IsMotionEnabled" Value="{atom:SharedTokenResource EnableMotion}" />
+        <Setter Property="IsMotionEnabled" Value="{atom:InfoPickerInputTokenSharedTokenResource EnableMotion}" />
         <Setter Property="MarginToAnchor" Value="{atom:PopupHostTokenResource MarginToAnchor}" />
         <Setter Property="ShouldUseOverlayPopup" Value="True" />
         
-        <Style Selector="^ /template/ atom|TextBox#PART_InfoInputBox">
+        <Style Selector="^ /template/ atom|EmbeddedTextBox#PART_InfoInputBox">
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Foreground"
-                    Value="{atom:SharedTokenResource ColorText}" />
+                    Value="{atom:InfoPickerInputTokenSharedTokenResource ColorText}" />
+        </Style>
+        <Style Selector="^ /template/ atom|EmbeddedTextBox#PART_InfoInputBox /template/ TextPresenter#PART_TextPresenter">
+            <Setter Property="Margin" Value="0" />
         </Style>
 
         <Style Selector="^:flyout-open">
-            <Style Selector="^ /template/ atom|TextBox#PART_InfoInputBox">
+            <Style Selector="^ /template/ atom|EmbeddedTextBox#PART_InfoInputBox">
                 <Setter Property="Foreground"
-                        Value="{atom:SharedTokenResource ColorTextTertiary}" />
+                        Value="{atom:InfoPickerInputTokenSharedTokenResource ColorTextTertiary}" />
             </Style>
         </Style>
 
         <Style Selector="^:disabled">
-            <Style Selector="^ /template/ atom|TextBox">
+            <Style Selector="^ /template/ atom|EmbeddedTextBox">
                 <Setter Property="Foreground"
-                        Value="{atom:SharedTokenResource ColorTextDisabled}" />
+                        Value="{atom:InfoPickerInputTokenSharedTokenResource ColorTextDisabled}" />
             </Style>
         </Style>
 
         <Style Selector="^[SizeType=Large]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeLG}" />
+            <Setter Property="FontSize" Value="{atom:InfoPickerInputTokenSharedTokenResource FontSizeLG}" />
         </Style>
-        <Style Selector="^[SizeType=Middle]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+        <Style Selector="^[SizeType=Middle], ^[SizeType=Custom]">
+            <Setter Property="FontSize" Value="{atom:InfoPickerInputTokenSharedTokenResource FontSize}" />
         </Style>
         <Style Selector="^[SizeType=Small]">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeSM}" />
+            <Setter Property="FontSize" Value="{atom:InfoPickerInputTokenSharedTokenResource FontSizeSM}" />
         </Style>
 
     </Style>

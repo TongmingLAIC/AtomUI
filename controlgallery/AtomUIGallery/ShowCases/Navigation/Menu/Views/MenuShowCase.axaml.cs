@@ -7,8 +7,8 @@ using AtomUI.Desktop.Controls;
 using AtomUI.Icons.AntDesign;
 using AtomUI.Theme.Language;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Menu;
@@ -17,103 +17,97 @@ public partial class MenuShowCase : GalleryReactiveUserControl<MenuViewModel>
 {
     public const string LanguageId = nameof(MenuShowCase);
 
-    private const string BasicScenario       = "Basic";
-    private const string FeaturesScenario    = "Features";
-    private const string ItemsSourceScenario = "ItemsSource";
-    private const string ContextScenario     = "Context";
-    private const string NavMenuScenario     = "NavMenu";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
     private NavMenuNode? _navMenuDefaultSelectedItem;
 
     public MenuShowCase()
     {
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
 
         this.WhenActivated(disposables =>
         {
-            if (DataContext is MenuViewModel viewModel)
+            RefreshCurrentViewModelData();
+
+            var themeManager = Application.Current?.GetThemeManager();
+            if (themeManager != null)
             {
-                viewModel.DefaultOpenPaths = new List<TreeNodePath>
-                {
-                    new("/3/SubGroup2")
-                };
-                viewModel.DefaultSelectedPath = new TreeNodePath("/3/SubGroup1/Option1");
-
-                RefreshMenuSources(viewModel);
-
-                var themeManager = Application.Current?.GetThemeManager();
-                if (themeManager != null)
-                {
-                    EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshMenuSources(viewModel);
-                    themeManager.LanguageVariantChanged += handler;
-                    Disposable.Create(() => themeManager.LanguageVariantChanged -= handler)
-                        .DisposeWith(disposables);
-                }
-
-                Disposable.Create(() =>
-                {
-                    viewModel.MenuItems                   = null;
-                    viewModel.InlineNavMenuNodes          = null;
-                    viewModel.ItemsSourceDemoNavMenuNodes = null;
-                    viewModel.MenuFlyoutItems             = null;
-                    viewModel.ContextMenuItems            = null;
-                    viewModel.DefaultOpenPaths            = null;
-                    viewModel.DefaultSelectedPath         = null;
-                    viewModel.DefaultSelectedNode         = null;
-                }).DisposeWith(disposables);
+                EventHandler<LanguageVariantChangedEventArgs> handler = (_, _) => RefreshCurrentViewModelData();
+                themeManager.LanguageVariantChanged += handler;
+                Disposable.Create(() => themeManager.LanguageVariantChanged -= handler)
+                          .DisposeWith(disposables);
             }
+
+            Disposable.Create(ClearCurrentViewModelData).DisposeWith(disposables);
         });
     }
 
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+
+        RefreshCurrentViewModelData();
+    }
+
+    public void HandleChangeModeCheckChanged(object? sender, RoutedEventArgs? args)
+    {
+        if (DataContext is MenuViewModel viewModel)
         {
-            content.DataContext = DataContext;
+            viewModel.HandleChangeModeCheckChanged(sender, args);
         }
     }
 
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    public void HandleChangeStyleCheckChanged(object? sender, RoutedEventArgs? args)
     {
-        EnsureSelectedScenarioContent();
+        if (DataContext is MenuViewModel viewModel)
+        {
+            viewModel.HandleChangeStyleCheckChanged(sender, args);
+        }
     }
 
-    private void EnsureSelectedScenarioContent()
+    public void HandleToggleInlineCollapsedClick(object? sender, RoutedEventArgs? args)
     {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (DataContext is MenuViewModel viewModel)
+        {
+            viewModel.HandleToggleInlineCollapsedClick(sender, args);
+        }
+    }
+
+    private void RefreshCurrentViewModelData()
+    {
+        if (DataContext is MenuViewModel viewModel)
+        {
+            viewModel.DefaultOpenPaths =
+            [
+                new TreeNodePath("/3/SubGroup2")
+            ];
+            viewModel.DefaultSelectedPath = new TreeNodePath("/3/SubGroup1/Option1");
+            viewModel.IsInlineCollapsed   = false;
+            viewModel.InlineCollapsedOpenPaths =
+            [
+                new TreeNodePath("/NavigationOne")
+            ];
+            viewModel.InlineCollapsedSelectedPath = new TreeNodePath("/Option1");
+            RefreshMenuSources(viewModel);
+        }
+    }
+
+    private void ClearCurrentViewModelData()
+    {
+        if (DataContext is not MenuViewModel viewModel)
         {
             return;
         }
 
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
-    }
-
-    private static Control CreateScenarioContent(string scenario)
-    {
-        return scenario switch
-        {
-            BasicScenario       => new MenuBasicShowCase(),
-            FeaturesScenario    => new MenuFeaturesShowCase(),
-            ItemsSourceScenario => new MenuItemsSourceShowCase(),
-            ContextScenario     => new MenuContextShowCase(),
-            NavMenuScenario     => new MenuNavigationShowCase(),
-            _                   => throw new InvalidOperationException($"Unknown Menu scenario: {scenario}")
-        };
+        viewModel.MenuItems                   = null;
+        viewModel.InlineNavMenuNodes          = null;
+        viewModel.ItemsSourceDemoNavMenuNodes = null;
+        viewModel.MenuFlyoutItems             = null;
+        viewModel.ContextMenuItems            = null;
+        viewModel.DefaultOpenPaths            = null;
+        viewModel.DefaultSelectedPath         = null;
+        viewModel.IsInlineCollapsed           = false;
+        viewModel.InlineCollapsedOpenPaths    = null;
+        viewModel.InlineCollapsedSelectedPath = null;
+        viewModel.DefaultSelectedNode         = null;
     }
 
     private void RefreshMenuSources(MenuViewModel viewModel)

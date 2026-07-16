@@ -1,9 +1,12 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Reactive;
 using AtomUI.Controls;
-using Avalonia.Controls;
+using AtomUI.Data;
+using Avalonia;
+using Avalonia.Threading;
 using AtomUIGallery.Localization;
 using ReactiveUI;
 
@@ -16,6 +19,21 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
     public IScreen HostScreen { get; }
 
     public string? UrlPathSegment => ID.ToString();
+
+    private ObservableCollection<CheckBoxApiRow>? _apiRows;
+    private ObservableCollection<CheckBoxDesignTokenRow>? _designTokenRows;
+
+    public ObservableCollection<CheckBoxApiRow>? ApiRows
+    {
+        get => _apiRows;
+        private set => this.RaiseAndSetIfChanged(ref _apiRows, value);
+    }
+
+    public ObservableCollection<CheckBoxDesignTokenRow>? DesignTokenRows
+    {
+        get => _designTokenRows;
+        private set => this.RaiseAndSetIfChanged(ref _designTokenRows, value);
+    }
 
     public bool? _controlledCheckBoxCheckedStatus;
 
@@ -106,6 +124,42 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
         set => this.RaiseAndSetIfChanged(ref _defaultCheckBoxOptions, value);
     }
 
+    private IList<CheckBoxOption>? _twoWayCheckBoxOptions;
+
+    public IList<CheckBoxOption>? TwoWayCheckBoxOptions
+    {
+        get => _twoWayCheckBoxOptions;
+        set => this.RaiseAndSetIfChanged(ref _twoWayCheckBoxOptions, value);
+    }
+
+    private IList? _twoWayCheckedOptions;
+
+    public IList? TwoWayCheckedOptions
+    {
+        get => _twoWayCheckedOptions;
+        set
+        {
+            if (ReferenceEquals(_twoWayCheckedOptions, value))
+            {
+                return;
+            }
+
+            this.RaiseAndSetIfChanged(ref _twoWayCheckedOptions, value);
+            ConfigureTwoWayCheckedOptionsCollectionChangedSource(value);
+        }
+    }
+
+    private string? _twoWayCheckedSummary;
+
+    public string? TwoWayCheckedSummary
+    {
+        get => _twoWayCheckedSummary;
+        set => this.RaiseAndSetIfChanged(ref _twoWayCheckedSummary, value);
+    }
+
+    private CheckBoxOption? _twoWayPearOption;
+    private INotifyCollectionChanged? _twoWayCheckedOptionsCollectionChangedSource;
+
     public ReactiveCommand<Unit, Unit> CheckStatusCommand { get; }
     public ReactiveCommand<Unit, Unit> EnableStatusCommand { get; }
     public ReactiveCommand<Unit, Unit> CheckBoxCommand { get; }
@@ -113,6 +167,8 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
     public ReactiveCommand<Unit, Unit> CheckedItemStatusCommand1 { get; }
     public ReactiveCommand<Unit, Unit> CheckedItemStatusCommand2 { get; }
     public ReactiveCommand<Unit, Unit> CheckedItemStatusCommand3 { get; }
+    public ReactiveCommand<Unit, Unit> AddPearToTwoWayCheckedItemsCommand { get; }
+    public ReactiveCommand<Unit, Unit> ClearTwoWayCheckedItemsCommand { get; }
 
     public CheckBoxViewModel(IScreen screen)
     {
@@ -135,6 +191,8 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
         CheckedItemStatusCommand1 = ReactiveCommand.Create(HandleCheckedItemStatus);
         CheckedItemStatusCommand2 = ReactiveCommand.Create(HandleCheckedItemStatus);
         CheckedItemStatusCommand3 = ReactiveCommand.Create(HandleCheckedItemStatus);
+        AddPearToTwoWayCheckedItemsCommand = ReactiveCommand.Create(HandleAddPearToTwoWayCheckedItems);
+        ClearTwoWayCheckedItemsCommand     = ReactiveCommand.Create(HandleClearTwoWayCheckedItems);
     }
 
     private void HandleCheckStatus()
@@ -162,6 +220,22 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
         SetupCheckBtnText();
         SetupEnabledBtnText();
         SetupControlledCheckBoxText();
+        UpdateTwoWayCheckedSummary();
+    }
+
+    public void ConfigureTwoWayCheckBoxOptions(CheckBoxOption apple, CheckBoxOption pear, CheckBoxOption orange)
+    {
+        _twoWayPearOption = pear;
+        TwoWayCheckBoxOptions =
+        [
+            apple,
+            pear,
+            orange
+        ];
+        TwoWayCheckedOptions = new ObservableCollection<CheckBoxOption>
+        {
+            apple
+        };
     }
 
     private void SetupCheckBtnText()
@@ -238,4 +312,165 @@ public class CheckBoxViewModel : ReactiveObject, IRoutableViewModel
             CheckedAllStatus = null;
         }
     }
+
+    private void HandleAddPearToTwoWayCheckedItems()
+    {
+        if (_twoWayPearOption == null)
+        {
+            return;
+        }
+
+        if (TwoWayCheckedOptions == null)
+        {
+            TwoWayCheckedOptions = new ObservableCollection<CheckBoxOption>
+            {
+                _twoWayPearOption
+            };
+            return;
+        }
+
+        if (!TwoWayCheckedOptions.Contains(_twoWayPearOption))
+        {
+            TwoWayCheckedOptions.Add(_twoWayPearOption);
+        }
+    }
+
+    private void HandleClearTwoWayCheckedItems()
+    {
+        TwoWayCheckedOptions?.Clear();
+    }
+
+    private void ConfigureTwoWayCheckedOptionsCollectionChangedSource(IList? checkedOptions)
+    {
+        if (_twoWayCheckedOptionsCollectionChangedSource != null)
+        {
+            _twoWayCheckedOptionsCollectionChangedSource.CollectionChanged -= HandleTwoWayCheckedOptionsCollectionChanged;
+            _twoWayCheckedOptionsCollectionChangedSource = null;
+        }
+
+        _twoWayCheckedOptionsCollectionChangedSource = checkedOptions as INotifyCollectionChanged;
+        if (_twoWayCheckedOptionsCollectionChangedSource != null)
+        {
+            _twoWayCheckedOptionsCollectionChangedSource.CollectionChanged += HandleTwoWayCheckedOptionsCollectionChanged;
+        }
+
+        UpdateTwoWayCheckedSummary();
+    }
+
+    private void HandleTwoWayCheckedOptionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (ReferenceEquals(sender, _twoWayCheckedOptionsCollectionChangedSource))
+        {
+            UpdateTwoWayCheckedSummary();
+        }
+    }
+
+    private void UpdateTwoWayCheckedSummary()
+    {
+        var selectedTexts = new List<string>();
+        if (TwoWayCheckedOptions != null)
+        {
+            foreach (var option in TwoWayCheckedOptions)
+            {
+                if (option is CheckBoxOption checkBoxOption && checkBoxOption.Content is not null)
+                {
+                    selectedTexts.Add(checkBoxOption.Content.ToString() ?? string.Empty);
+                }
+            }
+        }
+
+        var selectedText = selectedTexts.Count > 0
+            ? string.Join(", ", selectedTexts)
+            : CheckBoxShowCaseLanguage.Get(CheckBoxShowCaseLangResourceKind.P2ContentNone, "None");
+        TwoWayCheckedSummary = string.Format(CultureInfo.CurrentCulture,
+            CheckBoxShowCaseLanguage.Get(CheckBoxShowCaseLangResourceKind.P2TwoWayCheckedSummaryFormat, "Selected: {0}"),
+            selectedText);
+    }
+
+    public void EnsureApiRows()
+    {
+        if (ApiRows is not null)
+        {
+            return;
+        }
+
+        ApiRows =
+        [
+            new CheckBoxApiRow("IsChecked", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyIsChecked), "bool?", "green", "false"),
+            new CheckBoxApiRow("IsThreeState", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyIsThreeState), "bool", "green", "false"),
+            new CheckBoxApiRow("Content", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyContent), "object?", "cyan", "null"),
+            new CheckBoxApiRow("Command", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyCommand), "ICommand?", "cyan", "null"),
+            new CheckBoxApiRow("IsMotionEnabled", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyIsMotionEnabled), "bool", "green", "true"),
+            new CheckBoxApiRow("IsWaveSpiritEnabled", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyIsWaveSpiritEnabled), "bool", "green", "true"),
+            new CheckBoxApiRow("CheckBoxGroup.ItemsSource", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyItemsSource), "IEnumerable?", "cyan", "null"),
+            new CheckBoxApiRow("CheckBoxGroup.CheckedItems", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyCheckedItems), "IList?", "cyan", "null"),
+            new CheckBoxApiRow("CheckBoxGroup.ItemSpacing", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyItemSpacing), "double", "green", "0"),
+            new CheckBoxApiRow("CheckBoxGroup.LineSpacing", Lang(CheckBoxShowCaseLangResourceKind.ApiPropertyLineSpacing), "double", "green", "0")
+        ];
+    }
+
+    public void EnsureDesignTokenRows()
+    {
+        if (DesignTokenRows is not null)
+        {
+            return;
+        }
+
+        DesignTokenRows =
+        [
+            new CheckBoxDesignTokenRow("CheckIndicatorSize", Lang(CheckBoxShowCaseLangResourceKind.TokenNameCheckIndicatorSize), Lang(CheckBoxShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(CheckBoxShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new CheckBoxDesignTokenRow("CheckedMarkSize", Lang(CheckBoxShowCaseLangResourceKind.TokenNameCheckedMarkSize), Lang(CheckBoxShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(CheckBoxShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new CheckBoxDesignTokenRow("IndicatorTristateMarkSize", Lang(CheckBoxShowCaseLangResourceKind.TokenNameIndicatorTristateMarkSize), Lang(CheckBoxShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(CheckBoxShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new CheckBoxDesignTokenRow("TextMargin", Lang(CheckBoxShowCaseLangResourceKind.TokenNameTextMargin), Lang(CheckBoxShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(CheckBoxShowCaseLangResourceKind.TokenStatusStable), "success")
+        ];
+    }
+
+    private static string Lang(CheckBoxShowCaseLangResourceKind kind)
+    {
+        if (Application.Current is not null && Dispatcher.UIThread.CheckAccess())
+        {
+            return LanguageResourceBinder.GetLangResource(kind) ?? FallbackLang(kind);
+        }
+
+        return FallbackLang(kind);
+    }
+
+    private static string FallbackLang(CheckBoxShowCaseLangResourceKind kind)
+    {
+        return kind switch
+        {
+            CheckBoxShowCaseLangResourceKind.ApiPropertyIsChecked                  => en_US.ApiPropertyIsChecked,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyIsThreeState              => en_US.ApiPropertyIsThreeState,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyContent                   => en_US.ApiPropertyContent,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyCommand                   => en_US.ApiPropertyCommand,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyIsMotionEnabled           => en_US.ApiPropertyIsMotionEnabled,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyIsWaveSpiritEnabled       => en_US.ApiPropertyIsWaveSpiritEnabled,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyItemsSource               => en_US.ApiPropertyItemsSource,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyCheckedItems              => en_US.ApiPropertyCheckedItems,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyItemSpacing               => en_US.ApiPropertyItemSpacing,
+            CheckBoxShowCaseLangResourceKind.ApiPropertyLineSpacing               => en_US.ApiPropertyLineSpacing,
+            CheckBoxShowCaseLangResourceKind.TokenNameCheckIndicatorSize          => en_US.TokenNameCheckIndicatorSize,
+            CheckBoxShowCaseLangResourceKind.TokenNameCheckedMarkSize             => en_US.TokenNameCheckedMarkSize,
+            CheckBoxShowCaseLangResourceKind.TokenNameIndicatorTristateMarkSize   => en_US.TokenNameIndicatorTristateMarkSize,
+            CheckBoxShowCaseLangResourceKind.TokenNameTextMargin                  => en_US.TokenNameTextMargin,
+            CheckBoxShowCaseLangResourceKind.TokenScopeComponent                  => en_US.TokenScopeComponent,
+            CheckBoxShowCaseLangResourceKind.TokenStatusStable                    => en_US.TokenStatusStable,
+            _                                                                     => kind.ToString()
+        };
+    }
 }
+
+public sealed record CheckBoxApiRow(
+    string Property,
+    string Description,
+    string Type,
+    string TypeTagColor,
+    string Default);
+
+public sealed record CheckBoxDesignTokenRow(
+    string Token,
+    string Description,
+    string Scope,
+    string ScopeTagColor,
+    string Status,
+    string StatusTagColor);

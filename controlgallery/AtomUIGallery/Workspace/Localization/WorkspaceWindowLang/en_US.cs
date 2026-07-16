@@ -1,11 +1,10 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 using AtomUIGallery.Workspace.Views;
 
 namespace AtomUIGallery.Workspace.Localization.WorkspaceWindowLang;
 
 [LanguageProvider(LanguageCode.en_US, WorkspaceWindow.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string WindowTitle = "AtomUI Desktop Gallery";
 
@@ -26,5 +25,4 @@ internal partial class en_US : LanguageProvider
     public const string MenuItemEnableMotion = "Enable Motion";
     public const string MenuItemEnableWaveSpirit = "Enable WaveSpirit";
 
-    protected override Type GetResourceKindType() => typeof(WorkspaceWindowLangResourceKind);
 }

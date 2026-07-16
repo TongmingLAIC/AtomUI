@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Tag;
 
 public partial class TagShowCase : GalleryReactiveUserControl<TagViewModel>
@@ -9,4 +8,5 @@ public partial class TagShowCase : GalleryReactiveUserControl<TagViewModel>
     {
         InitializeComponent();
     }
+
 }

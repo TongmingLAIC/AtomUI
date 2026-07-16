@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
@@ -9,6 +8,8 @@ using AtomUI.Desktop.Controls;
 using AtomUI.Theme.Language;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Transfer;
@@ -16,12 +17,6 @@ namespace AtomUIGallery.ShowCases.Transfer;
 public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewModel>
 {
     public const string LanguageId = nameof(TransferShowCase);
-
-    private const string BasicScenario      = "Basic";
-    private const string AdvancedScenario   = "Advanced";
-    private const string TreeStatusScenario = "TreeStatus";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
 
     public TransferShowCase()
     {
@@ -53,6 +48,9 @@ public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewM
                     viewModel.BasicTransferItems                  = null;
                     viewModel.OneWayTransferItems                 = null;
                     viewModel.SearchTransferItems                 = null;
+                    viewModel.ControlledTransferItems             = null;
+                    viewModel.ControlledTransferTargetKeys        = null;
+                    viewModel.ControlledTransferSelectedKeys      = null;
                     viewModel.PaginationTransferItems             = null;
                     viewModel.PaginationTransferDefaultTargetKeys = null;
                     viewModel.GridDataTransformItems              = null;
@@ -64,54 +62,16 @@ public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewM
             }
         });
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
+    private void ReloadAdvancedTransferItems(object? sender, RoutedEventArgs e)
     {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
+        if (sender is Control control &&
+            control.FindAncestorOfType<ListTransfer>() is { } transfer &&
+            DataContext is TransferViewModel viewModel)
         {
-            content.DataContext = DataContext;
+            transfer.TargetKeys = viewModel.AdvanceTransferDefaultTargetKeys;
         }
-    }
-
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
-    {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
-        {
-            return;
-        }
-
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
-        {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
-    }
-
-    private static Control CreateScenarioContent(string scenario)
-    {
-        return scenario switch
-        {
-            BasicScenario      => new TransferBasicShowCase(),
-            AdvancedScenario   => new TransferAdvancedShowCase(),
-            TreeStatusScenario => new TransferTreeStatusShowCase(),
-            _                  => throw new InvalidOperationException($"Unknown Transfer scenario: {scenario}")
-        };
     }
 
     private void RefreshLocalizedTransferItems(TransferViewModel viewModel)
@@ -119,6 +79,7 @@ public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewM
         InitBasicTransferItems(viewModel);
         InitOneWayTransferItems(viewModel);
         InitSearchTransferItems(viewModel);
+        InitControlledTransferItems(viewModel);
         InitPaginationTransferItems(viewModel);
         InitDataGridTransferItems(viewModel);
         InitAdvanceTransferItems(viewModel);
@@ -182,6 +143,26 @@ public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewM
         }
 
         vm.SearchTransferItems = items;
+    }
+
+    private void InitControlledTransferItems(TransferViewModel vm)
+    {
+        var items = new List<IListItemData>();
+        for (var i = 0; i < 8; i++)
+        {
+            items.Add(new ListItemData()
+            {
+                ItemKey = $"{i}",
+                Content = TransferShowCaseLanguage.Format(
+                    TransferShowCaseLangResourceKind.P2ItemContentFormat,
+                    "content{0}",
+                    i + 1)
+            });
+        }
+
+        vm.ControlledTransferItems        = items;
+        vm.ControlledTransferTargetKeys   = ["1"];
+        vm.ControlledTransferSelectedKeys = ["2"];
     }
 
     private void InitAdvanceTransferItems(TransferViewModel vm)
@@ -309,6 +290,34 @@ public partial class TransferShowCase : GalleryReactiveUserControl<TransferViewM
                 Header = "0-4"
             }
         ];
+    }
+
+    private void AddControlledTransferTargetKey(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is TransferViewModel viewModel &&
+            viewModel.ControlledTransferTargetKeys != null &&
+            !viewModel.ControlledTransferTargetKeys.Contains("3"))
+        {
+            viewModel.ControlledTransferTargetKeys.Add("3");
+        }
+    }
+
+    private void ClearControlledTransferTargetKeys(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is TransferViewModel viewModel)
+        {
+            viewModel.ControlledTransferTargetKeys?.Clear();
+        }
+    }
+
+    private void SelectControlledTransferSourceKey(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is TransferViewModel viewModel &&
+            viewModel.ControlledTransferSelectedKeys != null &&
+            !viewModel.ControlledTransferSelectedKeys.Contains("4"))
+        {
+            viewModel.ControlledTransferSelectedKeys.Add("4");
+        }
     }
 
 }

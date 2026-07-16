@@ -16,8 +16,8 @@
             </Style>
         </Style>
 
-        <Style Selector="^ /template/ Rectangle.IndicatorLine">
-            <Setter Property="Fill" Value="{atom:StepsTokenResource ProcessTailColor}" />
+        <Style Selector="^ /template/ Border.IndicatorLine">
+            <Setter Property="BorderBrush" Value="{atom:StepsTokenResource ProcessTailColor}" />
         </Style>
 
         <Style Selector="^[Status=Wait]">
@@ -26,8 +26,8 @@
             <Setter Property="DescriptionForeground"
                     Value="{atom:StepsTokenResource WaitDescriptionColor}" />
 
-            <Style Selector="^ /template/ Rectangle.IndicatorLine">
-                <Setter Property="Fill"
+            <Style Selector="^ /template/ Border.IndicatorLine">
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource WaitTailColor}" />
             </Style>
         </Style>
@@ -38,8 +38,8 @@
             <Setter Property="DescriptionForeground"
                     Value="{atom:StepsTokenResource ProcessDescriptionColor}" />
 
-            <Style Selector="^ /template/ Rectangle.IndicatorLine">
-                <Setter Property="Fill"
+            <Style Selector="^ /template/ Border.IndicatorLine">
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource ProcessTailColor}" />
             </Style>
         </Style>
@@ -49,8 +49,8 @@
                     Value="{atom:StepsTokenResource FinishTitleColor}" />
             <Setter Property="DescriptionForeground"
                     Value="{atom:StepsTokenResource FinishDescriptionColor}" />
-            <Style Selector="^ /template/ Rectangle.IndicatorLine">
-                <Setter Property="Fill"
+            <Style Selector="^ /template/ Border.IndicatorLine">
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource FinishTailColor}" />
             </Style>
         </Style>
@@ -61,8 +61,8 @@
             <Setter Property="DescriptionForeground"
                     Value="{atom:StepsTokenResource ErrorDescriptionColor}" />
 
-            <Style Selector="^ /template/ Rectangle.IndicatorLine">
-                <Setter Property="Fill"
+            <Style Selector="^ /template/ Border.IndicatorLine">
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource ErrorTailColor}" />
             </Style>
         </Style>
@@ -70,19 +70,19 @@
         <Style Selector="^[IsSelected=False]">
 
             <Setter Property="Foreground"
-                    Value="{atom:SharedTokenResource ColorTextDescription}" />
+                    Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
             <Setter Property="SubTitleForeground"
-                    Value="{atom:SharedTokenResource ColorTextDescription}" />
+                    Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
             <Setter Property="DescriptionForeground"
-                    Value="{atom:SharedTokenResource ColorTextDescription}" />
+                    Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
 
             <Style Selector="^[IsFinished=True]">
                 <Setter Property="Foreground"
-                        Value="{atom:SharedTokenResource ColorText}" />
+                        Value="{atom:StepsTokenSharedTokenResource ColorText}" />
                 <Setter Property="SubTitleForeground"
-                        Value="{atom:SharedTokenResource ColorTextDescription}" />
+                        Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
                 <Setter Property="DescriptionForeground"
-                        Value="{atom:SharedTokenResource ColorTextDescription}" />
+                        Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
             </Style>
 
             <Style Selector="^[IsClickable=True]">
@@ -102,23 +102,23 @@
 
         <Style Selector="^[IsSelected=True]">
             <Setter Property="SubTitleForeground"
-                    Value="{atom:SharedTokenResource ColorTextDescription}" />
+                    Value="{atom:StepsTokenSharedTokenResource ColorTextDescription}" />
         </Style>
 
         <Style Selector="^ /template/ StackPanel#HeaderLayout">
-            <Setter Property="Spacing" Value="{atom:SharedTokenResource SpacingXS}" />
+            <Setter Property="Spacing" Value="{atom:StepsTokenSharedTokenResource SpacingXS}" />
         </Style>
 
         <Style Selector="^[SizeType=Large]">
             <Style Selector="^ /template/ StackPanel#HeaderLayout">
                 <Setter Property="MinHeight"
-                        Value="{atom:SharedTokenResource ControlHeight}" />
+                        Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
             </Style>
         </Style>
         <Style Selector="^[SizeType=Middle]">
             <Style Selector="^ /template/ StackPanel#HeaderLayout">
                 <Setter Property="MinHeight"
-                        Value="{atom:SharedTokenResource ControlHeight}" />
+                        Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
             </Style>
         </Style>
 
@@ -131,28 +131,28 @@
         </Style>
 
         <Style Selector="^ /template/ ContentPresenter#SubHeaderPresenter">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+            <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSize}" />
         </Style>
 
         <Style Selector="^ /template/ ContentPresenter#DescriptionPresenter">
-            <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+            <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSize}" />
         </Style>
 
         <Style Selector="^[SizeType=Large]">
             <Style Selector="^ /template/ ContentPresenter#HeaderPresenter">
-                <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeLG}" />
+                <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSizeLG}" />
             </Style>
         </Style>
 
         <Style Selector="^[SizeType=Middle]">
             <Style Selector="^ /template/ ContentPresenter#HeaderPresenter">
-                <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSizeLG}" />
+                <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSizeLG}" />
             </Style>
         </Style>
 
         <Style Selector="^[SizeType=Small]">
             <Style Selector="^ /template/ ContentPresenter#HeaderPresenter">
-                <Setter Property="FontSize" Value="{atom:SharedTokenResource FontSize}" />
+                <Setter Property="FontSize" Value="{atom:StepsTokenSharedTokenResource FontSize}" />
             </Style>
         </Style>
 
@@ -198,11 +198,12 @@
                                                     VerticalAlignment="Center"
                                                     IsVisible="{TemplateBinding SubHeader, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                             </StackPanel>
-                                            <Rectangle Name="SeparatorLine"
-                                                       Classes="IndicatorLine"
-                                                       Height="1"
-                                                       VerticalAlignment="Center"
-                                                       IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                            <atom:PixelAlignedBorder Name="SeparatorLine"
+                                                                     Classes="IndicatorLine"
+                                                                     BorderThickness="0,0,0,1"
+                                                                     Height="1"
+                                                                     VerticalAlignment="Center"
+                                                                     IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
                                         </DockPanel>
                                         <ContentPresenter
                                             Name="DescriptionPresenter"
@@ -216,7 +217,7 @@
 
                         <Style Selector="^ /template/ DockPanel#RootLayout">
                             <Setter Property="HorizontalSpacing"
-                                    Value="{atom:SharedTokenResource SpacingXS}" />
+                                    Value="{atom:StepsTokenSharedTokenResource SpacingXS}" />
                         </Style>
 
                         <Style Selector="^ /template/ StackPanel#HeaderLayout">
@@ -233,11 +234,12 @@
                                         <Grid Name="IndicatorLayout" VerticalAlignment="Top"
                                               ColumnDefinitions="*, Auto, *"
                                               RowDefinitions="*">
-                                            <Rectangle Name="BeginningSeparatorLine"
-                                                       Classes="IndicatorLine"
-                                                       VerticalAlignment="Center"
-                                                       IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
-                                                       Grid.Column="0" />
+                                            <atom:PixelAlignedBorder Name="BeginningSeparatorLine"
+                                                                     Classes="IndicatorLine"
+                                                                     BorderThickness="0,0,0,1"
+                                                                     VerticalAlignment="Center"
+                                                                     IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
+                                                                     Grid.Column="0" />
                                             <atom:StepsItemIndicator
                                                 Name="PART_Indicator"
                                                 IndicatorType="{TemplateBinding IndicatorType}"
@@ -254,11 +256,12 @@
                                                 IsShowProgress="{TemplateBinding IsEffectiveShowProgress}"
                                                 ProgressValue="{TemplateBinding ProgressValue}"
                                                 Grid.Column="1" />
-                                            <Rectangle Name="EndingSeparatorLine"
-                                                       Classes="IndicatorLine"
-                                                       VerticalAlignment="Center"
-                                                       IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
-                                                       Grid.Column="2" />
+                                            <atom:PixelAlignedBorder Name="EndingSeparatorLine"
+                                                                     Classes="IndicatorLine"
+                                                                     BorderThickness="0,0,0,1"
+                                                                     VerticalAlignment="Center"
+                                                                     IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
+                                                                     Grid.Column="2" />
                                         </Grid>
                                         <StackPanel Orientation="Horizontal" Name="HeaderLayout"
                                                     HorizontalAlignment="Center">
@@ -285,28 +288,29 @@
                                     </StackPanel>
                                     <Panel Name="TailLineLayout" VerticalAlignment="Top"
                                            Height="{Binding #IndicatorLayout.Bounds.Height}">
-                                        <Rectangle Name="TailSeparatorLine"
-                                                   Classes="IndicatorLine"
-                                                   VerticalAlignment="Center"
-                                                   IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                        <atom:PixelAlignedBorder Name="TailSeparatorLine"
+                                                                 Classes="IndicatorLine"
+                                                                 BorderThickness="0,0,0,1"
+                                                                 VerticalAlignment="Center"
+                                                                 IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
                                     </Panel>
                                 </DockPanel>
                             </ControlTemplate>
                         </Setter>
 
-                        <Style Selector="^ /template/ Rectangle#TailSeparatorLine">
+                        <Style Selector="^ /template/ atom|PixelAlignedBorder#TailSeparatorLine">
                             <Setter Property="Height"
-                                    Value="{atom:SharedTokenResource LineWidth}" />
+                                    Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
                         </Style>
 
-                        <Style Selector="^ /template/ Rectangle#BeginningSeparatorLine">
+                        <Style Selector="^ /template/ atom|PixelAlignedBorder#BeginningSeparatorLine">
                             <Setter Property="Height"
-                                    Value="{atom:SharedTokenResource LineWidth}" />
+                                    Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
                         </Style>
 
-                        <Style Selector="^ /template/ Rectangle#EndingSeparatorLine">
+                        <Style Selector="^ /template/ atom|PixelAlignedBorder#EndingSeparatorLine">
                             <Setter Property="Height"
-                                    Value="{atom:SharedTokenResource LineWidth}" />
+                                    Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
                         </Style>
 
                         <Style Selector="^ /template/ atom|StepsItemIndicator">
@@ -315,8 +319,8 @@
                         </Style>
 
                         <Style Selector="^[Status=Process]">
-                            <Style Selector="^ /template/ Rectangle#BeginningSeparatorLine">
-                                <Setter Property="Fill"
+                            <Style Selector="^ /template/ atom|PixelAlignedBorder#BeginningSeparatorLine">
+                                <Setter Property="BorderBrush"
                                         Value="{atom:StepsTokenResource FinishTailColor}" />
                             </Style>
                         </Style>
@@ -340,11 +344,12 @@
                                 <StackPanel Orientation="Vertical" DockPanel.Dock="Left" Name="ContentLayout">
                                     <Grid Name="IndicatorLayout" VerticalAlignment="Top"
                                           ColumnDefinitions="*, Auto, *">
-                                        <Rectangle Name="BeginningSeparatorLine"
-                                                   Classes="IndicatorLine"
-                                                   VerticalAlignment="Center"
-                                                   IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
-                                                   Grid.Column="0" />
+                                        <atom:PixelAlignedBorder Name="BeginningSeparatorLine"
+                                                                 Classes="IndicatorLine"
+                                                                 BorderThickness="0,0,0,1"
+                                                                 VerticalAlignment="Center"
+                                                                 IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
+                                                                 Grid.Column="0" />
                                         <atom:StepsItemIndicator
                                             Name="PART_Indicator"
                                             IndicatorType="{TemplateBinding IndicatorType}"
@@ -361,11 +366,12 @@
                                             IsShowProgress="{TemplateBinding IsEffectiveShowProgress}"
                                             ProgressValue="{TemplateBinding ProgressValue}"
                                             Grid.Column="1" />
-                                        <Rectangle Name="EndingSeparatorLine"
-                                                   Classes="IndicatorLine"
-                                                   VerticalAlignment="Center"
-                                                   IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
-                                                   Grid.Column="2" />
+                                        <atom:PixelAlignedBorder Name="EndingSeparatorLine"
+                                                                 Classes="IndicatorLine"
+                                                                 BorderThickness="0,0,0,1"
+                                                                 VerticalAlignment="Center"
+                                                                 IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
+                                                                 Grid.Column="2" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Name="HeaderLayout"
                                                 HorizontalAlignment="Center">
@@ -391,10 +397,11 @@
                                         TextAlignment="Center" />
                                 </StackPanel>
                                 <Panel Name="TailLineLayout" VerticalAlignment="Top">
-                                    <Rectangle Name="TailSeparatorLine"
-                                               Classes="IndicatorLine"
-                                               VerticalAlignment="Center"
-                                               IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                    <atom:PixelAlignedBorder Name="TailSeparatorLine"
+                                                             Classes="IndicatorLine"
+                                                             BorderThickness="0,0,0,1"
+                                                             VerticalAlignment="Center"
+                                                             IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
                                 </Panel>
                             </DockPanel>
                         </ControlTemplate>
@@ -405,17 +412,17 @@
                                 Value="{atom:StepsTokenResource DotCurrentSize}" />
                     </Style>
 
-                    <Style Selector="^ /template/ Rectangle#TailSeparatorLine">
+                    <Style Selector="^ /template/ atom|PixelAlignedBorder#TailSeparatorLine">
                         <Setter Property="Height"
                                 Value="{atom:StepsTokenResource DotLineThickness}" />
                     </Style>
 
-                    <Style Selector="^ /template/ Rectangle#BeginningSeparatorLine">
+                    <Style Selector="^ /template/ atom|PixelAlignedBorder#BeginningSeparatorLine">
                         <Setter Property="Height"
                                 Value="{atom:StepsTokenResource DotLineThickness}" />
                     </Style>
 
-                    <Style Selector="^ /template/ Rectangle#EndingSeparatorLine">
+                    <Style Selector="^ /template/ atom|PixelAlignedBorder#EndingSeparatorLine">
                         <Setter Property="Height"
                                 Value="{atom:StepsTokenResource DotLineThickness}" />
                     </Style>
@@ -431,8 +438,8 @@
                     </Style>
 
                     <Style Selector="^[Status=Process]">
-                        <Style Selector="^ /template/ Rectangle#BeginningSeparatorLine">
-                            <Setter Property="Fill"
+                        <Style Selector="^ /template/ atom|PixelAlignedBorder#BeginningSeparatorLine">
+                            <Setter Property="BorderBrush"
                                     Value="{atom:StepsTokenResource FinishTailColor}" />
                         </Style>
                     </Style>
@@ -472,11 +479,12 @@
                                         IsMotionEnabled="{TemplateBinding IsMotionEnabled}"
                                         IsShowProgress="{TemplateBinding IsEffectiveShowProgress}"
                                         ProgressValue="{TemplateBinding ProgressValue}" />
-                                    <Rectangle Name="SeparatorLine"
-                                               Classes="IndicatorLine"
-                                               Width="1"
-                                               HorizontalAlignment="Center"
-                                               IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                    <atom:PixelAlignedBorder Name="SeparatorLine"
+                                                             Classes="IndicatorLine"
+                                                             BorderThickness="0,0,1,0"
+                                                             Width="1"
+                                                             HorizontalAlignment="Center"
+                                                             IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
                                 </DockPanel>
                                 <StackPanel Orientation="Vertical" Name="ContentLayout">
                                     <StackPanel Orientation="Horizontal" Name="HeaderLayout">
@@ -511,7 +519,7 @@
 
                     <Style Selector="^ /template/ DockPanel#RootLayout">
                         <Setter Property="HorizontalSpacing"
-                                Value="{atom:SharedTokenResource Spacing}" />
+                                Value="{atom:StepsTokenSharedTokenResource Spacing}" />
                     </Style>
 
                     <Style Selector="^ /template/ ContentPresenter#DescriptionPresenter">
@@ -542,11 +550,12 @@
                                             IsShowProgress="{TemplateBinding IsEffectiveShowProgress}"
                                             ProgressValue="{TemplateBinding ProgressValue}" />
                                     </Panel>
-                                    <Rectangle Name="SeparatorLine"
-                                               Classes="IndicatorLine"
-                                               Width="1"
-                                               HorizontalAlignment="Center"
-                                               IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                    <atom:PixelAlignedBorder Name="SeparatorLine"
+                                                             Classes="IndicatorLine"
+                                                             BorderThickness="0,0,1,0"
+                                                             Width="1"
+                                                             HorizontalAlignment="Center"
+                                                             IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
                                 </DockPanel>
                                 <StackPanel Orientation="Vertical" Name="ContentLayout">
                                     <StackPanel Orientation="Horizontal" Name="HeaderLayout">
@@ -581,13 +590,13 @@
                     <Style Selector="^[SizeType=Large]">
                         <Style Selector="^ /template/ Panel#ItemIndicatorLayout">
                             <Setter Property="MinHeight"
-                                    Value="{atom:SharedTokenResource ControlHeight}" />
+                                    Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
                         </Style>
                     </Style>
                     <Style Selector="^[SizeType=Middle]">
                         <Style Selector="^ /template/ Panel#ItemIndicatorLayout">
                             <Setter Property="MinHeight"
-                                    Value="{atom:SharedTokenResource ControlHeight}" />
+                                    Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
                         </Style>
                     </Style>
 
@@ -605,7 +614,7 @@
 
                     <Style Selector="^ /template/ DockPanel#RootLayout">
                         <Setter Property="HorizontalSpacing"
-                                Value="{atom:SharedTokenResource Spacing}" />
+                                Value="{atom:StepsTokenSharedTokenResource Spacing}" />
                     </Style>
 
                 </Style>
@@ -621,7 +630,7 @@
             <Style Selector="^[Orientation=Horizontal]">
                 <Style Selector="^ /template/ Rectangle.NavIndicatorLine">
                     <Setter Property="Height"
-                            Value="{atom:SharedTokenResource LineWidthBold}" />
+                            Value="{atom:StepsTokenSharedTokenResource LineWidthBold}" />
                 </Style>
                 <Setter Property="NavIndicatorLineRenderTransform" Value="scale(0.0, 1.0)" />
 
@@ -633,7 +642,7 @@
             <Style Selector="^[Orientation=Vertical]">
                 <Style Selector="^ /template/ Rectangle.NavIndicatorLine">
                     <Setter Property="Width"
-                            Value="{atom:SharedTokenResource LineWidthBold}" />
+                            Value="{atom:StepsTokenSharedTokenResource LineWidthBold}" />
                 </Style>
                 <Setter Property="NavIndicatorLineRenderTransform" Value="scale(1.0, 0.0)" />
 
@@ -662,6 +671,12 @@
 
             <Style Selector="^ /template/ atom|Icon#NavArrow">
                 <Setter Property="Foreground"
+                        Value="{atom:StepsTokenResource NavArrowColor}" />
+                <Setter Property="FillBrush"
+                        Value="{atom:StepsTokenResource NavArrowColor}" />
+                <Setter Property="StrokeBrush"
+                        Value="{atom:StepsTokenResource NavArrowColor}" />
+                <Setter Property="FallbackBrush"
                         Value="{atom:StepsTokenResource NavArrowColor}" />
                 <Setter Property="Width"
                         Value="{atom:StepsTokenResource IconFontSize}" />
@@ -702,10 +717,13 @@
                         <Setter Property="Template">
                             <ControlTemplate>
                                 <DockPanel LastChildFill="True" Name="RootLayout">
-                                    <antdicons:RightOutlined Name="NavArrow"
-                                                             DockPanel.Dock="Right"
-                                                             VerticalAlignment="Center"
-                                                             IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                    <Panel DockPanel.Dock="Right"
+                                           Classes="NavArrowLayout"
+                                           VerticalAlignment="Top"
+                                           IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}">
+                                        <antdicons:RightOutlined Name="NavArrow"
+                                                                 VerticalAlignment="Center" />
+                                    </Panel>
                                     <DockPanel LastChildFill="True" Name="IndicatorLineLayout">
                                         <Rectangle DockPanel.Dock="Bottom"
                                                    Classes="NavIndicatorLine"
@@ -762,7 +780,7 @@
 
                         <Style Selector="^ /template/ DockPanel#ItemContentLayout">
                             <Setter Property="HorizontalSpacing"
-                                    Value="{atom:SharedTokenResource SpacingXS}" />
+                                    Value="{atom:StepsTokenSharedTokenResource SpacingXS}" />
                         </Style>
 
                         <Style Selector="^[IsClickable=True]">
@@ -787,10 +805,13 @@
                         <Setter Property="Template">
                             <ControlTemplate>
                                 <DockPanel LastChildFill="True" Name="RootLayout">
-                                    <antdicons:RightOutlined Name="NavArrow"
-                                                             DockPanel.Dock="Right"
-                                                             VerticalAlignment="Center"
-                                                             IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                    <Panel DockPanel.Dock="Right"
+                                           Classes="NavArrowLayout"
+                                           VerticalAlignment="Top"
+                                           IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}">
+                                        <antdicons:RightOutlined Name="NavArrow"
+                                                                 VerticalAlignment="Center" />
+                                    </Panel>
                                     <DockPanel LastChildFill="True" Name="IndicatorLineLayout">
                                         <Rectangle DockPanel.Dock="Bottom" Classes="NavIndicatorLine"
                                                    Opacity="0.0"
@@ -855,6 +876,18 @@
                                     Value="{atom:StepsTokenResource DescriptionMaxWidth}" />
                         </Style>
                     </Style>
+
+                    <Style Selector="^ /template/ Panel.NavArrowLayout">
+                        <Setter Property="Height"
+                                Value="{atom:StepsTokenResource IconSize}" />
+                    </Style>
+
+                    <Style Selector="^[SizeType=Small]">
+                        <Style Selector="^ /template/ Panel.NavArrowLayout">
+                            <Setter Property="Height"
+                                    Value="{atom:StepsTokenResource IconSizeSM}" />
+                        </Style>
+                    </Style>
                 </Style>
 
                 <!-- 点指示器类型 -->
@@ -862,10 +895,14 @@
                     <Setter Property="Template">
                         <ControlTemplate>
                             <DockPanel LastChildFill="True" Name="RootLayout">
-                                <antdicons:RightOutlined Name="NavArrow"
-                                                         DockPanel.Dock="Right"
-                                                         VerticalAlignment="Center"
-                                                         IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}" />
+                                <Panel DockPanel.Dock="Right"
+                                       Classes="NavArrowLayout"
+                                       VerticalAlignment="Top"
+                                       Height="{atom:StepsTokenResource IconFontSize}"
+                                       IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}">
+                                    <antdicons:RightOutlined Name="NavArrow"
+                                                             VerticalAlignment="Center" />
+                                </Panel>
                                 <DockPanel LastChildFill="True" Name="IndicatorLineLayout">
                                     <Rectangle DockPanel.Dock="Bottom" Classes="NavIndicatorLine"
                                                Opacity="0.0"
@@ -922,7 +959,7 @@
 
                     <Style Selector="^ /template/ Panel#IndicatorLayout">
                         <Setter Property="Height"
-                                Value="{atom:StepsTokenResource DotCurrentSize}" />
+                                Value="{atom:StepsTokenResource IconFontSize}" />
                     </Style>
 
                     <Style Selector="^ /template/ atom|StepsItemIndicator">
@@ -1030,7 +1067,7 @@
 
                     <Style Selector="^ /template/ DockPanel#ItemContentLayout">
                         <Setter Property="HorizontalSpacing"
-                                Value="{atom:SharedTokenResource Spacing}" />
+                                Value="{atom:StepsTokenSharedTokenResource Spacing}" />
                     </Style>
 
                     <Style Selector="^ /template/ ContentPresenter#DescriptionPresenter">
@@ -1107,7 +1144,7 @@
 
                     <Style Selector="^ /template/ DockPanel#ItemContentLayout">
                         <Setter Property="HorizontalSpacing"
-                                Value="{atom:SharedTokenResource Spacing}" />
+                                Value="{atom:StepsTokenSharedTokenResource Spacing}" />
                     </Style>
 
                     <Style Selector="^ /template/ Panel#IndicatorLayout">
@@ -1117,13 +1154,13 @@
                     <Style Selector="^[SizeType=Large]">
                         <Style Selector="^ /template/ Panel#IndicatorLayout">
                             <Setter Property="MinHeight"
-                                    Value="{atom:SharedTokenResource ControlHeight}" />
+                                    Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
                         </Style>
                     </Style>
                     <Style Selector="^[SizeType=Middle]">
                         <Style Selector="^ /template/ Panel#IndicatorLayout">
                             <Setter Property="MinHeight"
-                                    Value="{atom:SharedTokenResource ControlHeight}" />
+                                    Value="{atom:StepsTokenSharedTokenResource ControlHeight}" />
                         </Style>
                     </Style>
 
@@ -1155,10 +1192,11 @@
                         <StackPanel Orientation="Vertical" Name="RootLayout" VerticalAlignment="Center">
                             <Grid Name="IndicatorLayout" VerticalAlignment="Top"
                                   ColumnDefinitions="*, Auto, *">
-                                <Rectangle Name="InlineBeginningSeparatorLine"
-                                           VerticalAlignment="Center"
-                                           IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
-                                           Grid.Column="0" />
+                                <atom:PixelAlignedBorder Name="InlineBeginningSeparatorLine"
+                                                         BorderThickness="0,0,0,1"
+                                                         VerticalAlignment="Center"
+                                                         IsVisible="{TemplateBinding IsFirst, Converter={x:Static BoolConverters.Not}}"
+                                                         Grid.Column="0" />
                                 <atom:StepsItemIndicator
                                     Name="PART_Indicator"
                                     IndicatorType="{TemplateBinding IndicatorType}"
@@ -1175,10 +1213,11 @@
                                     IsShowProgress="{TemplateBinding IsEffectiveShowProgress}"
                                     ProgressValue="{TemplateBinding ProgressValue}"
                                     Grid.Column="1" />
-                                <Rectangle Name="InlineEndingSeparatorLine"
-                                           VerticalAlignment="Center"
-                                           IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
-                                           Grid.Column="2" />
+                                <atom:PixelAlignedBorder Name="InlineEndingSeparatorLine"
+                                                         BorderThickness="0,0,0,1"
+                                                         VerticalAlignment="Center"
+                                                         IsVisible="{TemplateBinding IsLast, Converter={x:Static BoolConverters.Not}}"
+                                                         Grid.Column="2" />
                             </Grid>
                             <ContentPresenter
                                 Name="HeaderPresenter"
@@ -1195,11 +1234,11 @@
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="CornerRadius" Value="{atom:SharedTokenResource BorderRadiusSM}" />
+            <Setter Property="CornerRadius" Value="{atom:StepsTokenSharedTokenResource BorderRadiusSM}" />
 
             <Style Selector="^:pointerover">
                 <Setter Property="Background"
-                        Value="{atom:SharedTokenResource ControlItemBgHover}" />
+                        Value="{atom:StepsTokenSharedTokenResource ControlItemBgHover}" />
             </Style>
             
             <Style Selector="^ /template/ Border#Frame">
@@ -1207,17 +1246,17 @@
                         Value="{atom:StepsTokenResource InlineItemPadding}" />
             </Style>
 
-            <Style Selector="^ /template/ Rectangle#InlineBeginningSeparatorLine">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#InlineBeginningSeparatorLine">
                 <Setter Property="Height"
-                        Value="{atom:SharedTokenResource LineWidth}" />
-                <Setter Property="Fill"
+                        Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource InlineTailColor}" />
             </Style>
 
-            <Style Selector="^ /template/ Rectangle#InlineEndingSeparatorLine">
+            <Style Selector="^ /template/ atom|PixelAlignedBorder#InlineEndingSeparatorLine">
                 <Setter Property="Height"
-                        Value="{atom:SharedTokenResource LineWidth}" />
-                <Setter Property="Fill"
+                        Value="{atom:StepsTokenSharedTokenResource LineWidth}" />
+                <Setter Property="BorderBrush"
                         Value="{atom:StepsTokenResource InlineTailColor}" />
             </Style>
 
@@ -1228,7 +1267,7 @@
 
             <Style Selector="^ /template/ ContentPresenter#HeaderPresenter">
                 <Setter Property="FontSize"
-                        Value="{atom:SharedTokenResource FontSizeSM}" />
+                        Value="{atom:StepsTokenSharedTokenResource FontSizeSM}" />
                 <Setter Property="Foreground"
                         Value="{atom:StepsTokenResource InlineTitleColor}" />
                 <Setter Property="Margin"
@@ -1238,8 +1277,8 @@
             </Style>
 
             <Style Selector="^[Status=Process]">
-                <Style Selector="^ /template/ Rectangle#BeginningSeparatorLine">
-                    <Setter Property="Fill"
+                <Style Selector="^ /template/ atom|PixelAlignedBorder#InlineBeginningSeparatorLine">
+                    <Setter Property="BorderBrush"
                             Value="{atom:StepsTokenResource FinishTailColor}" />
                 </Style>
             </Style>

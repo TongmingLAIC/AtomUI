@@ -1,7 +1,6 @@
 ﻿using System.Reactive.Disposables;
 using AtomUI.Controls;
 using AtomUI.Data;
-using AtomUI.Desktop.Controls.Primitives.Themes;
 using AtomUI.Theme;
 using Avalonia;
 using Avalonia.Controls;
@@ -9,8 +8,6 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
-using Avalonia.Data;
-using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.LogicalTree;
@@ -24,7 +21,7 @@ public abstract class InfoPickerInput : TemplatedControl,
                                         IFormItemAware,
                                         IInputControlStatusAware,
                                         IInputControlStyleVariantAware,
-                                        ISizeTypeAware,
+                                        ICustomizableSizeTypeAware,
                                         IFormItemFeedbackAware
 {
     #region 公共属性定义
@@ -52,8 +49,8 @@ public abstract class InfoPickerInput : TemplatedControl,
     public static readonly StyledProperty<IDataTemplate?> ContentRightAddOnTemplateProperty =
         AddOnDecoratedBox.ContentRightAddOnTemplateProperty.AddOwner<InfoPickerInput>();
 
-    public static readonly StyledProperty<SizeType> SizeTypeProperty =
-        SizeTypeControlProperty.SizeTypeProperty.AddOwner<InfoPickerInput>();
+    public static readonly StyledProperty<CustomizableSizeType> SizeTypeProperty =
+        CustomizableSizeTypeControlProperty.SizeTypeProperty.AddOwner<InfoPickerInput>();
 
     public static readonly StyledProperty<InputControlStyleVariant> StyleVariantProperty =
         InputControlStyleVariantProperty.StyleVariantProperty.AddOwner<InfoPickerInput>();
@@ -138,7 +135,7 @@ public abstract class InfoPickerInput : TemplatedControl,
         set => SetValue(ContentRightAddOnTemplateProperty, value);
     }
 
-    public SizeType SizeType
+    public CustomizableSizeType SizeType
     {
         get => GetValue(SizeTypeProperty);
         set => SetValue(SizeTypeProperty, value);
@@ -248,6 +245,12 @@ public abstract class InfoPickerInput : TemplatedControl,
         AvaloniaProperty.RegisterDirect<InfoPickerInput, bool>(nameof(IsArrowVisibleEffective),
             o => o.IsArrowVisibleEffective,
             (o, v) => o.IsArrowVisibleEffective = v);
+
+    internal static readonly DirectProperty<InfoPickerInput, InputControlStatus> EffectiveStatusProperty =
+        AvaloniaProperty.RegisterDirect<InfoPickerInput, InputControlStatus>(
+            nameof(EffectiveStatus),
+            o => o.EffectiveStatus,
+            (o, v) => o.EffectiveStatus = v);
     
     internal static readonly DirectProperty<InfoPickerInput, bool> IsPopupHorizontalFlippedProperty =
         AvaloniaProperty.RegisterDirect<InfoPickerInput, bool>(nameof(IsPopupHorizontalFlipped),
@@ -328,6 +331,14 @@ public abstract class InfoPickerInput : TemplatedControl,
         private set => SetAndRaise(IsArrowVisibleEffectiveProperty, ref _isArrowVisibleEffective, value);
     }
 
+    private InputControlStatus _effectiveStatus;
+
+    internal InputControlStatus EffectiveStatus
+    {
+        get => _effectiveStatus;
+        private set => SetAndRaise(EffectiveStatusProperty, ref _effectiveStatus, value);
+    }
+
     private bool _isPopupHorizontalFlipped;
 
     internal bool IsPopupHorizontalFlipped
@@ -358,7 +369,7 @@ public abstract class InfoPickerInput : TemplatedControl,
     private protected Popup? PickerPopup;
     protected bool CurrentValidSelected;
     protected TextBox? InfoInputBox;
-    protected Border? PickerInnerBox;
+    protected Control? PickerInnerBox;
 
     private protected bool IsChoosing;
     private AddOnDecoratedBox? _addOnDecoratedBox;
@@ -374,7 +385,6 @@ public abstract class InfoPickerInput : TemplatedControl,
 
     public InfoPickerInput()
     {
-        this.RegisterTokenResourceScope(InfoPickerInputToken.ScopeProvider);
     }
 
     public virtual void Clear()
@@ -815,11 +825,29 @@ public abstract class InfoPickerInput : TemplatedControl,
             ConfigureShowArrowEffective();
         }
 
+        if (change.Property == StatusProperty ||
+            change.Property == DataValidationErrors.HasErrorsProperty ||
+            change.Property == DataValidationErrors.ErrorsProperty)
+        {
+            UpdateEffectiveStatus();
+        }
+
         if (change.Property == PickerPlacementProperty ||
             change.Property == IsPopupHorizontalFlippedProperty ||
             change.Property == IsPopupVerticalFlippedProperty)
         {
             ConfigureArrowPosition();
+        }
+    }
+
+    private void UpdateEffectiveStatus()
+    {
+        var effectiveStatus = DataValidationErrors.GetHasErrors(this)
+            ? InputControlStatus.Error
+            : Status;
+        if (EffectiveStatus != effectiveStatus)
+        {
+            EffectiveStatus = effectiveStatus;
         }
     }
     

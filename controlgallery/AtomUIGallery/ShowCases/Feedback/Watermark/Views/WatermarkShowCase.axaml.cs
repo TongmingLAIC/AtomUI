@@ -1,4 +1,3 @@
-
 namespace AtomUIGallery.ShowCases.Watermark;
 
 public partial class WatermarkShowCase : GalleryReactiveUserControl<WatermarkViewModel>
@@ -9,4 +8,5 @@ public partial class WatermarkShowCase : GalleryReactiveUserControl<WatermarkVie
     {
         InitializeComponent();
     }
+
 }

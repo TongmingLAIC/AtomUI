@@ -1,7 +1,13 @@
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Reactive;
 using AtomUI;
 using AtomUI.Controls;
+using AtomUI.Data;
 using AtomUI.Desktop.Controls;
 using AtomUIGallery.Localization;
+using Avalonia;
+using Avalonia.Threading;
 using ReactiveUI;
 
 namespace AtomUIGallery.ShowCases.Select;
@@ -13,6 +19,22 @@ public class SelectViewModel : ReactiveObject, IRoutableViewModel
     public IScreen HostScreen { get; }
 
     public string? UrlPathSegment => ID.ToString();
+
+    private ObservableCollection<SelectApiRow>? _apiRows;
+
+    public ObservableCollection<SelectApiRow>? ApiRows
+    {
+        get => _apiRows;
+        private set => this.RaiseAndSetIfChanged(ref _apiRows, value);
+    }
+
+    private ObservableCollection<SelectDesignTokenRow>? _designTokenRows;
+
+    public ObservableCollection<SelectDesignTokenRow>? DesignTokenRows
+    {
+        get => _designTokenRows;
+        private set => this.RaiseAndSetIfChanged(ref _designTokenRows, value);
+    }
 
     private List<SelectOption>? _randomOptions;
 
@@ -37,6 +59,62 @@ public class SelectViewModel : ReactiveObject, IRoutableViewModel
         get => _defaultSelectedOptions;
         set => this.RaiseAndSetIfChanged(ref _defaultSelectedOptions, value);
     }
+
+    private ISelectOption? _defaultSelectedOption;
+
+    public ISelectOption? DefaultSelectedOption
+    {
+        get => _defaultSelectedOption;
+        set => this.RaiseAndSetIfChanged(ref _defaultSelectedOption, value);
+    }
+
+    private ISelectOption? _boundSelectedOption;
+
+    public ISelectOption? BoundSelectedOption
+    {
+        get => _boundSelectedOption;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _boundSelectedOption, value);
+            this.RaisePropertyChanged(nameof(BoundSelectedOptionText));
+        }
+    }
+
+    private IList<ISelectOption>? _boundSelectedOptions;
+    private INotifyCollectionChanged? _boundSelectedOptionsCollectionChangedSource;
+
+    public IList<ISelectOption>? BoundSelectedOptions
+    {
+        get => _boundSelectedOptions;
+        set
+        {
+            if (ReferenceEquals(_boundSelectedOptions, value))
+            {
+                this.RaisePropertyChanged(nameof(BoundSelectedOptionsText));
+                return;
+            }
+
+            if (_boundSelectedOptionsCollectionChangedSource != null)
+            {
+                _boundSelectedOptionsCollectionChangedSource.CollectionChanged -= HandleBoundSelectedOptionsCollectionChanged;
+            }
+
+            this.RaiseAndSetIfChanged(ref _boundSelectedOptions, value);
+
+            _boundSelectedOptionsCollectionChangedSource = value as INotifyCollectionChanged;
+            if (_boundSelectedOptionsCollectionChangedSource != null)
+            {
+                _boundSelectedOptionsCollectionChangedSource.CollectionChanged += HandleBoundSelectedOptionsCollectionChanged;
+            }
+            this.RaisePropertyChanged(nameof(BoundSelectedOptionsText));
+        }
+    }
+
+    public string BoundSelectedOptionText => BoundSelectedOption?.Header?.ToString() ?? "-";
+
+    public string BoundSelectedOptionsText => BoundSelectedOptions is { Count: > 0 }
+        ? string.Join(", ", BoundSelectedOptions.Select(option => option.Header?.ToString()))
+        : "-";
 
     private List<ISelectOption>? _singleLucyOptions;
 
@@ -110,9 +188,9 @@ public class SelectViewModel : ReactiveObject, IRoutableViewModel
         set => this.RaiseAndSetIfChanged(ref _maxTagCountOptions, value);
     }
 
-    private SizeType _selectSizeType;
+    private CustomizableSizeType _selectSizeType = CustomizableSizeType.Middle;
 
-    public SizeType SelectSizeType
+    public CustomizableSizeType SelectSizeType
     {
         get => _selectSizeType;
         set => this.RaiseAndSetIfChanged(ref _selectSizeType, value);
@@ -129,8 +207,196 @@ public class SelectViewModel : ReactiveObject, IRoutableViewModel
     public SelectViewModel(IScreen screen)
     {
         HostScreen = screen;
+        SetBoundSelectedOptionCommand  = ReactiveCommand.Create(SetBoundSelectedOption);
+        ClearBoundSelectedOptionCommand = ReactiveCommand.Create(ClearBoundSelectedOption);
+        SetBoundSelectedOptionsCommand = ReactiveCommand.Create(SetBoundSelectedOptions);
+        ClearBoundSelectedOptionsCommand = ReactiveCommand.Create(ClearBoundSelectedOptions);
+    }
+
+    public ReactiveCommand<Unit, Unit> SetBoundSelectedOptionCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ClearBoundSelectedOptionCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> SetBoundSelectedOptionsCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> ClearBoundSelectedOptionsCommand { get; }
+
+    private void SetBoundSelectedOption()
+    {
+        if (BasicSelectedOptions is { Count: > 1 })
+        {
+            BoundSelectedOption = BasicSelectedOptions[1];
+        }
+    }
+
+    private void ClearBoundSelectedOption()
+    {
+        BoundSelectedOption = null;
+    }
+
+    private void SetBoundSelectedOptions()
+    {
+        if (BasicSelectedOptions is not { Count: > 2 })
+        {
+            return;
+        }
+
+        if (BoundSelectedOptions is ObservableCollection<ISelectOption> collection)
+        {
+            collection.Clear();
+            collection.Add(BasicSelectedOptions[0]);
+            collection.Add(BasicSelectedOptions[2]);
+        }
+        else
+        {
+            BoundSelectedOptions = new ObservableCollection<ISelectOption>
+            {
+                BasicSelectedOptions[0],
+                BasicSelectedOptions[2]
+            };
+        }
+    }
+
+    private void ClearBoundSelectedOptions()
+    {
+        if (BoundSelectedOptions is ObservableCollection<ISelectOption> collection)
+        {
+            collection.Clear();
+        }
+        else
+        {
+            BoundSelectedOptions = new ObservableCollection<ISelectOption>();
+        }
+    }
+
+    private void HandleBoundSelectedOptionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        this.RaisePropertyChanged(nameof(BoundSelectedOptionsText));
+    }
+
+    public void EnsureApiRows()
+    {
+        if (ApiRows is not null)
+        {
+            return;
+        }
+
+        ApiRows =
+        [
+            new SelectApiRow("Mode", Lang(SelectShowCaseLangResourceKind.ApiPropertyMode), "SelectMode", "purple", "Single"),
+            new SelectApiRow("OptionsSource", Lang(SelectShowCaseLangResourceKind.ApiPropertyOptionsSource), "IEnumerable<ISelectOption>?", "cyan", "null"),
+            new SelectApiRow("SelectedOption", Lang(SelectShowCaseLangResourceKind.ApiPropertySelectedOption), "ISelectOption?", "cyan", "null"),
+            new SelectApiRow("SelectedOptions", Lang(SelectShowCaseLangResourceKind.ApiPropertySelectedOptions), "IList<ISelectOption>?", "cyan", "null"),
+            new SelectApiRow("DefaultValues", Lang(SelectShowCaseLangResourceKind.ApiPropertyDefaultValues), "string?", "cyan", "null"),
+            new SelectApiRow("PlaceholderText", Lang(SelectShowCaseLangResourceKind.ApiPropertyPlaceholderText), "string?", "cyan", "null"),
+            new SelectApiRow("IsAllowClear", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsAllowClear), "bool", "green", "false"),
+            new SelectApiRow("IsFilterEnabled", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsFilterEnabled), "bool", "green", "false"),
+            new SelectApiRow("IsShowOverflowTip", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsShowOverflowTip), "bool", "green", "true"),
+            new SelectApiRow("OverflowTipDelay", Lang(SelectShowCaseLangResourceKind.ApiPropertyOverflowTipDelay), "int", "green", "1200"),
+            new SelectApiRow("OverflowTipPlacement", Lang(SelectShowCaseLangResourceKind.ApiPropertyOverflowTipPlacement), "PlacementMode", "purple", "TopEdgeAlignedLeft"),
+            new SelectApiRow("Filter", Lang(SelectShowCaseLangResourceKind.ApiPropertyFilter), "IValueFilter?", "cyan", "null"),
+            new SelectApiRow("IsGroupEnabled", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsGroupEnabled), "bool", "green", "false"),
+            new SelectApiRow("IsHideSelectedOptions", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsHideSelectedOptions), "bool", "green", "false"),
+            new SelectApiRow("MaxCount", Lang(SelectShowCaseLangResourceKind.ApiPropertyMaxCount), "int", "green", "0"),
+            new SelectApiRow("IsResponsiveTagMode", Lang(SelectShowCaseLangResourceKind.ApiPropertyIsResponsiveTagMode), "bool", "green", "false"),
+            new SelectApiRow("MaxTagCount", Lang(SelectShowCaseLangResourceKind.ApiPropertyMaxTagCount), "int", "green", "0"),
+            new SelectApiRow("OptionsLoader", Lang(SelectShowCaseLangResourceKind.ApiPropertyOptionsLoader), "ISelectOptionsAsyncLoader?", "cyan", "null"),
+            new SelectApiRow("StyleVariant", Lang(SelectShowCaseLangResourceKind.ApiPropertyStyleVariant), "InputControlStyleVariant", "purple", "Outlined"),
+            new SelectApiRow("Status", Lang(SelectShowCaseLangResourceKind.ApiPropertyStatus), "InputControlStatus", "purple", "Default"),
+            new SelectApiRow("SizeType", Lang(SelectShowCaseLangResourceKind.ApiPropertySizeType), "CustomizableSizeType", "purple", "Middle")
+        ];
+    }
+
+    public void EnsureDesignTokenRows()
+    {
+        if (DesignTokenRows is not null)
+        {
+            return;
+        }
+
+        DesignTokenRows =
+        [
+            new SelectDesignTokenRow("MultipleItemBg", Lang(SelectShowCaseLangResourceKind.TokenNameMultipleItemBg), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("MultipleItemHeight", Lang(SelectShowCaseLangResourceKind.TokenNameMultipleItemHeight), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("MultipleItemHeightSM", Lang(SelectShowCaseLangResourceKind.TokenNameMultipleItemHeightSM), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("MultipleItemHeightLG", Lang(SelectShowCaseLangResourceKind.TokenNameMultipleItemHeightLG), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("MultipleSelectorBgDisabled", Lang(SelectShowCaseLangResourceKind.TokenNameMultipleSelectorBgDisabled), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("OptionSelectedColor", Lang(SelectShowCaseLangResourceKind.TokenNameOptionSelectedColor), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("OptionSelectedBg", Lang(SelectShowCaseLangResourceKind.TokenNameOptionSelectedBg), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("OptionActiveBg", Lang(SelectShowCaseLangResourceKind.TokenNameOptionActiveBg), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("OptionPadding", Lang(SelectShowCaseLangResourceKind.TokenNameOptionPadding), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("OptionHeight", Lang(SelectShowCaseLangResourceKind.TokenNameOptionHeight), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success"),
+            new SelectDesignTokenRow("PopupContentPadding", Lang(SelectShowCaseLangResourceKind.TokenNamePopupContentPadding), Lang(SelectShowCaseLangResourceKind.TokenScopeComponent), "cyan", Lang(SelectShowCaseLangResourceKind.TokenStatusStable), "success")
+        ];
+    }
+
+    private static string Lang(SelectShowCaseLangResourceKind kind)
+    {
+        if (Application.Current is not null && Dispatcher.UIThread.CheckAccess())
+        {
+            return LanguageResourceBinder.GetLangResource(kind) ?? FallbackLang(kind);
+        }
+
+        return FallbackLang(kind);
+    }
+
+    private static string FallbackLang(SelectShowCaseLangResourceKind kind)
+    {
+        return kind switch
+        {
+            SelectShowCaseLangResourceKind.ApiPropertyMode                       => en_US.ApiPropertyMode,
+            SelectShowCaseLangResourceKind.ApiPropertyOptionsSource              => en_US.ApiPropertyOptionsSource,
+            SelectShowCaseLangResourceKind.ApiPropertySelectedOption             => en_US.ApiPropertySelectedOption,
+            SelectShowCaseLangResourceKind.ApiPropertySelectedOptions            => en_US.ApiPropertySelectedOptions,
+            SelectShowCaseLangResourceKind.ApiPropertyDefaultValues              => en_US.ApiPropertyDefaultValues,
+            SelectShowCaseLangResourceKind.ApiPropertyPlaceholderText            => en_US.ApiPropertyPlaceholderText,
+            SelectShowCaseLangResourceKind.ApiPropertyIsAllowClear               => en_US.ApiPropertyIsAllowClear,
+            SelectShowCaseLangResourceKind.ApiPropertyIsFilterEnabled            => en_US.ApiPropertyIsFilterEnabled,
+            SelectShowCaseLangResourceKind.ApiPropertyIsShowOverflowTip          => en_US.ApiPropertyIsShowOverflowTip,
+            SelectShowCaseLangResourceKind.ApiPropertyOverflowTipDelay           => en_US.ApiPropertyOverflowTipDelay,
+            SelectShowCaseLangResourceKind.ApiPropertyOverflowTipPlacement       => en_US.ApiPropertyOverflowTipPlacement,
+            SelectShowCaseLangResourceKind.ApiPropertyFilter                     => en_US.ApiPropertyFilter,
+            SelectShowCaseLangResourceKind.ApiPropertyIsGroupEnabled             => en_US.ApiPropertyIsGroupEnabled,
+            SelectShowCaseLangResourceKind.ApiPropertyIsHideSelectedOptions      => en_US.ApiPropertyIsHideSelectedOptions,
+            SelectShowCaseLangResourceKind.ApiPropertyMaxCount                   => en_US.ApiPropertyMaxCount,
+            SelectShowCaseLangResourceKind.ApiPropertyIsResponsiveTagMode        => en_US.ApiPropertyIsResponsiveTagMode,
+            SelectShowCaseLangResourceKind.ApiPropertyMaxTagCount                => en_US.ApiPropertyMaxTagCount,
+            SelectShowCaseLangResourceKind.ApiPropertyOptionsLoader              => en_US.ApiPropertyOptionsLoader,
+            SelectShowCaseLangResourceKind.ApiPropertyStyleVariant               => en_US.ApiPropertyStyleVariant,
+            SelectShowCaseLangResourceKind.ApiPropertyStatus                     => en_US.ApiPropertyStatus,
+            SelectShowCaseLangResourceKind.ApiPropertySizeType                   => en_US.ApiPropertySizeType,
+            SelectShowCaseLangResourceKind.TokenNameMultipleItemBg               => en_US.TokenNameMultipleItemBg,
+            SelectShowCaseLangResourceKind.TokenNameMultipleItemHeight           => en_US.TokenNameMultipleItemHeight,
+            SelectShowCaseLangResourceKind.TokenNameMultipleItemHeightSM         => en_US.TokenNameMultipleItemHeightSM,
+            SelectShowCaseLangResourceKind.TokenNameMultipleItemHeightLG         => en_US.TokenNameMultipleItemHeightLG,
+            SelectShowCaseLangResourceKind.TokenNameMultipleSelectorBgDisabled   => en_US.TokenNameMultipleSelectorBgDisabled,
+            SelectShowCaseLangResourceKind.TokenNameOptionSelectedColor          => en_US.TokenNameOptionSelectedColor,
+            SelectShowCaseLangResourceKind.TokenNameOptionSelectedBg             => en_US.TokenNameOptionSelectedBg,
+            SelectShowCaseLangResourceKind.TokenNameOptionActiveBg               => en_US.TokenNameOptionActiveBg,
+            SelectShowCaseLangResourceKind.TokenNameOptionPadding                => en_US.TokenNameOptionPadding,
+            SelectShowCaseLangResourceKind.TokenNameOptionHeight                 => en_US.TokenNameOptionHeight,
+            SelectShowCaseLangResourceKind.TokenNamePopupContentPadding          => en_US.TokenNamePopupContentPadding,
+            SelectShowCaseLangResourceKind.TokenScopeComponent                   => en_US.TokenScopeComponent,
+            SelectShowCaseLangResourceKind.TokenStatusStable                     => en_US.TokenStatusStable,
+            _                                                                    => kind.ToString()
+        };
     }
 }
+
+public sealed record SelectApiRow(
+    string Property,
+    string Description,
+    string Type,
+    string TypeTagColor,
+    string Default);
+
+public sealed record SelectDesignTokenRow(
+    string Token,
+    string Description,
+    string Scope,
+    string ScopeTagColor,
+    string Status,
+    string StatusTagColor);
 
 public class SelectOptionsAsyncLoader : ISelectOptionsAsyncLoader
 {

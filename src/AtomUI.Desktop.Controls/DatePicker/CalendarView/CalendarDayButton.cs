@@ -7,7 +7,6 @@ using Avalonia.Controls.Metadata;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Threading;
 using AvaloniaButton = Avalonia.Controls.Button;
 
 namespace AtomUI.Desktop.Controls.CalendarView;
@@ -18,9 +17,41 @@ namespace AtomUI.Desktop.Controls.CalendarView;
     StdPseudoClass.InActive,
     CalendarDayButtonPseudoClass.Today,
     CalendarDayButtonPseudoClass.Blackout,
-    CalendarDayButtonPseudoClass.DayFocused)]
+    CalendarDayButtonPseudoClass.DayFocused,
+    CalendarDayButtonPseudoClass.RangeStart,
+    CalendarDayButtonPseudoClass.RangeEnd,
+    CalendarDayButtonPseudoClass.RangeMiddle,
+    CalendarDayButtonPseudoClass.RangePreviewStart,
+    CalendarDayButtonPseudoClass.RangePreviewEnd,
+    CalendarDayButtonPseudoClass.RangePreviewMiddle,
+    CalendarDayButtonPseudoClass.WeekNumber,
+    CalendarDayButtonPseudoClass.WeekSelectionStart,
+    CalendarDayButtonPseudoClass.WeekSelectionMiddle,
+    CalendarDayButtonPseudoClass.WeekSelectionEnd,
+    CalendarDayButtonPseudoClass.WeekRangeStart,
+    CalendarDayButtonPseudoClass.WeekRangeMiddle,
+    CalendarDayButtonPseudoClass.WeekRangeEnd,
+    CalendarDayButtonPseudoClass.WeekHoverStart,
+    CalendarDayButtonPseudoClass.WeekHoverMiddle,
+    CalendarDayButtonPseudoClass.WeekHoverEnd)]
 internal sealed class CalendarDayButton : AvaloniaButton
 {
+    #region 公共事件定义
+
+    /// <summary>
+    /// Occurs when the left pointer button is pressed over this day button.
+    /// </summary>
+    public event EventHandler<PointerPressedEventArgs>? CalendarDayButtonMouseDown;
+
+    /// <summary>
+    /// Occurs when the left pointer button is released over this day button.
+    /// </summary>
+    public event EventHandler<PointerReleasedEventArgs>? CalendarDayButtonMouseUp;
+
+    #endregion
+
+    #region 内部属性定义
+
     internal static readonly StyledProperty<bool> IsMotionEnabledProperty =
         MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<CalendarDayButton>();
 
@@ -29,23 +60,6 @@ internal sealed class CalendarDayButton : AvaloniaButton
         get => GetValue(IsMotionEnabledProperty);
         set => SetValue(IsMotionEnabledProperty, value);
     }
-    
-    /// <summary>
-    /// Occurs when the left mouse button is pressed (or when the tip of the
-    /// stylus touches the tablet PC) while the mouse pointer is over a
-    /// UIElement.
-    /// </summary>
-    public event EventHandler<PointerPressedEventArgs>? CalendarDayButtonMouseDown;
-
-    /// <summary>
-    /// Occurs when the left mouse button is released (or the tip of the
-    /// stylus is removed from the tablet PC) while the mouse (or the
-    /// stylus) is over a UIElement (or while a UIElement holds mouse
-    /// capture).
-    /// </summary>
-    public event EventHandler<PointerReleasedEventArgs>? CalendarDayButtonMouseUp;
-
-    #region 内部属性定义
 
     internal static readonly DirectProperty<CalendarDayButton, bool> IsRangeStartProperty =
         AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangeStart),
@@ -56,12 +70,77 @@ internal sealed class CalendarDayButton : AvaloniaButton
         AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangeEnd),
             o => o.IsRangeEnd,
             (o, v) => o.IsRangeEnd = v);
-    
+
     internal static readonly DirectProperty<CalendarDayButton, bool> IsRangeMiddleProperty =
         AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangeMiddle),
             o => o.IsRangeMiddle,
             (o, v) => o.IsRangeMiddle = v);
-    
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsRangePreviewStartProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangePreviewStart),
+            o => o.IsRangePreviewStart,
+            (o, v) => o.IsRangePreviewStart = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsRangePreviewEndProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangePreviewEnd),
+            o => o.IsRangePreviewEnd,
+            (o, v) => o.IsRangePreviewEnd = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsRangePreviewMiddleProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsRangePreviewMiddle),
+            o => o.IsRangePreviewMiddle,
+            (o, v) => o.IsRangePreviewMiddle = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekNumberProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekNumber),
+            o => o.IsWeekNumber,
+            (o, v) => o.IsWeekNumber = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekSelectionStartProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekSelectionStart),
+            o => o.IsWeekSelectionStart,
+            (o, v) => o.IsWeekSelectionStart = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekSelectionMiddleProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekSelectionMiddle),
+            o => o.IsWeekSelectionMiddle,
+            (o, v) => o.IsWeekSelectionMiddle = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekSelectionEndProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekSelectionEnd),
+            o => o.IsWeekSelectionEnd,
+            (o, v) => o.IsWeekSelectionEnd = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekRangeStartProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekRangeStart),
+            o => o.IsWeekRangeStart,
+            (o, v) => o.IsWeekRangeStart = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekRangeMiddleProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekRangeMiddle),
+            o => o.IsWeekRangeMiddle,
+            (o, v) => o.IsWeekRangeMiddle = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekRangeEndProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekRangeEnd),
+            o => o.IsWeekRangeEnd,
+            (o, v) => o.IsWeekRangeEnd = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekHoverStartProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekHoverStart),
+            o => o.IsWeekHoverStart,
+            (o, v) => o.IsWeekHoverStart = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekHoverMiddleProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekHoverMiddle),
+            o => o.IsWeekHoverMiddle,
+            (o, v) => o.IsWeekHoverMiddle = v);
+
+    internal static readonly DirectProperty<CalendarDayButton, bool> IsWeekHoverEndProperty =
+        AvaloniaProperty.RegisterDirect<CalendarDayButton, bool>(nameof(IsWeekHoverEnd),
+            o => o.IsWeekHoverEnd,
+            (o, v) => o.IsWeekHoverEnd = v);
+
     internal static readonly DirectProperty<CalendarDayButton, CornerRadius> EffectiveCornerRadiusProperty =
         AvaloniaProperty.RegisterDirect<CalendarDayButton, CornerRadius>(nameof(EffectiveCornerRadius),
             o => o.EffectiveCornerRadius,
@@ -73,19 +152,110 @@ internal sealed class CalendarDayButton : AvaloniaButton
         get => _isRangeStart;
         set => SetAndRaise(IsRangeStartProperty, ref _isRangeStart, value);
     }
-    
+
     private bool _isRangeEnd;
     internal bool IsRangeEnd
     {
         get => _isRangeEnd;
         set => SetAndRaise(IsRangeEndProperty, ref _isRangeEnd, value);
     }
-    
+
     private bool _isRangeMiddle;
     internal bool IsRangeMiddle
     {
         get => _isRangeMiddle;
         set => SetAndRaise(IsRangeMiddleProperty, ref _isRangeMiddle, value);
+    }
+
+    private bool _isRangePreviewStart;
+    internal bool IsRangePreviewStart
+    {
+        get => _isRangePreviewStart;
+        set => SetAndRaise(IsRangePreviewStartProperty, ref _isRangePreviewStart, value);
+    }
+
+    private bool _isRangePreviewEnd;
+    internal bool IsRangePreviewEnd
+    {
+        get => _isRangePreviewEnd;
+        set => SetAndRaise(IsRangePreviewEndProperty, ref _isRangePreviewEnd, value);
+    }
+
+    private bool _isRangePreviewMiddle;
+    internal bool IsRangePreviewMiddle
+    {
+        get => _isRangePreviewMiddle;
+        set => SetAndRaise(IsRangePreviewMiddleProperty, ref _isRangePreviewMiddle, value);
+    }
+
+    private bool _isWeekNumber;
+    internal bool IsWeekNumber
+    {
+        get => _isWeekNumber;
+        set => SetAndRaise(IsWeekNumberProperty, ref _isWeekNumber, value);
+    }
+
+    private bool _isWeekSelectionStart;
+    internal bool IsWeekSelectionStart
+    {
+        get => _isWeekSelectionStart;
+        set => SetAndRaise(IsWeekSelectionStartProperty, ref _isWeekSelectionStart, value);
+    }
+
+    private bool _isWeekSelectionMiddle;
+    internal bool IsWeekSelectionMiddle
+    {
+        get => _isWeekSelectionMiddle;
+        set => SetAndRaise(IsWeekSelectionMiddleProperty, ref _isWeekSelectionMiddle, value);
+    }
+
+    private bool _isWeekSelectionEnd;
+    internal bool IsWeekSelectionEnd
+    {
+        get => _isWeekSelectionEnd;
+        set => SetAndRaise(IsWeekSelectionEndProperty, ref _isWeekSelectionEnd, value);
+    }
+
+    private bool _isWeekRangeStart;
+    internal bool IsWeekRangeStart
+    {
+        get => _isWeekRangeStart;
+        set => SetAndRaise(IsWeekRangeStartProperty, ref _isWeekRangeStart, value);
+    }
+
+    private bool _isWeekRangeMiddle;
+    internal bool IsWeekRangeMiddle
+    {
+        get => _isWeekRangeMiddle;
+        set => SetAndRaise(IsWeekRangeMiddleProperty, ref _isWeekRangeMiddle, value);
+    }
+
+    private bool _isWeekRangeEnd;
+    internal bool IsWeekRangeEnd
+    {
+        get => _isWeekRangeEnd;
+        set => SetAndRaise(IsWeekRangeEndProperty, ref _isWeekRangeEnd, value);
+    }
+
+    private bool _isWeekHoverStart;
+    internal bool IsWeekHoverStart
+    {
+        get => _isWeekHoverStart;
+        set => SetAndRaise(IsWeekHoverStartProperty, ref _isWeekHoverStart, value);
+    }
+
+    private bool _isWeekHoverMiddle;
+    internal bool IsWeekHoverMiddle
+    {
+        get => _isWeekHoverMiddle;
+        set => SetAndRaise(IsWeekHoverMiddleProperty, ref _isWeekHoverMiddle, value);
+    }
+
+    private bool _isWeekHoverEnd;
+    internal bool IsWeekHoverEnd
+    {
+        get => _isWeekHoverEnd;
+        set => SetAndRaise(IsWeekHoverEndProperty, ref _isWeekHoverEnd, value);
     }
     
     private CornerRadius _effectiveCornerRadius;
@@ -115,11 +285,10 @@ internal sealed class CalendarDayButton : AvaloniaButton
     private bool _isSelected;
     private bool _isToday;
     
-    
     public CalendarDayButton()
     {
         //Focusable = false;
-        SetCurrentValue(ContentProperty, DefaultContent.ToString(CultureInfo.CurrentCulture));
+        SetCurrentValue(ContentProperty, DefaultContent.ToString(CultureInfo.InvariantCulture));
     }
 
     internal int Index { get; set; }
@@ -207,6 +376,7 @@ internal sealed class CalendarDayButton : AvaloniaButton
             {
                 _isSelected = value;
                 UpdatePseudoClasses();
+                ConfigureEffectiveCornerRadius();
             }
         }
     }
@@ -242,6 +412,7 @@ internal sealed class CalendarDayButton : AvaloniaButton
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         UpdatePseudoClasses();
+        ConfigureEffectiveCornerRadius();
     }
 
     private void UpdatePseudoClasses()
@@ -260,25 +431,21 @@ internal sealed class CalendarDayButton : AvaloniaButton
         PseudoClasses.Set(CalendarDayButtonPseudoClass.RangeStart, IsRangeStart);
         PseudoClasses.Set(CalendarDayButtonPseudoClass.RangeEnd, IsRangeEnd);
         PseudoClasses.Set(CalendarDayButtonPseudoClass.RangeMiddle, IsRangeMiddle);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.RangePreviewStart, IsRangePreviewStart);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.RangePreviewEnd, IsRangePreviewEnd);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.RangePreviewMiddle, IsRangePreviewMiddle);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekNumber, IsWeekNumber);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekSelectionStart, IsWeekSelectionStart);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekSelectionMiddle, IsWeekSelectionMiddle);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekSelectionEnd, IsWeekSelectionEnd);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekRangeStart, IsWeekRangeStart);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekRangeMiddle, IsWeekRangeMiddle);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekRangeEnd, IsWeekRangeEnd);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekHoverStart, IsWeekHoverStart);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekHoverMiddle, IsWeekHoverMiddle);
+        PseudoClasses.Set(CalendarDayButtonPseudoClass.WeekHoverEnd, IsWeekHoverEnd);
     }
 
-    /// <summary>
-    /// Provides class handling for the MouseLeftButtonDown event that
-    /// occurs when the left mouse button is pressed while the mouse pointer
-    /// is over this control.
-    /// </summary>
-    /// <param name="e">The event data. </param>
-    /// <exception cref="System.ArgumentNullException">
-    /// e is a null reference (Nothing in Visual Basic).
-    /// </exception>
-    /// <remarks>
-    /// This method marks the MouseLeftButtonDown event as handled by
-    /// setting the MouseButtonEventArgs.Handled property of the event data
-    /// to true when the button is enabled and its ClickMode is not set to
-    /// Hover.  Since this method marks the MouseLeftButtonDown event as
-    /// handled in some situations, you should use the Click event instead
-    /// to detect a button click.
-    /// </remarks>
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
@@ -289,23 +456,6 @@ internal sealed class CalendarDayButton : AvaloniaButton
         }
     }
 
-    /// <summary>
-    /// Provides handling for the MouseLeftButtonUp event that occurs when
-    /// the left mouse button is released while the mouse pointer is over
-    /// this control.
-    /// </summary>
-    /// <param name="e">The event data.</param>
-    /// <exception cref="System.ArgumentNullException">
-    /// e is a null reference (Nothing in Visual Basic).
-    /// </exception>
-    /// <remarks>
-    /// This method marks the MouseLeftButtonUp event as handled by setting
-    /// the MouseButtonEventArgs.Handled property of the event data to true
-    /// when the button is enabled and its ClickMode is not set to Hover.
-    /// Since this method marks the MouseLeftButtonUp event as handled in
-    /// some situations, you should use the Click event instead to detect a
-    /// button click.
-    /// </remarks>
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
@@ -322,14 +472,38 @@ internal sealed class CalendarDayButton : AvaloniaButton
 
         if (change.Property == IsRangeStartProperty ||
             change.Property == IsRangeEndProperty ||
-            change.Property == IsRangeMiddleProperty)
+            change.Property == IsRangeMiddleProperty ||
+            change.Property == IsRangePreviewStartProperty ||
+            change.Property == IsRangePreviewEndProperty ||
+            change.Property == IsRangePreviewMiddleProperty ||
+            change.Property == IsWeekNumberProperty ||
+            change.Property == IsWeekSelectionStartProperty ||
+            change.Property == IsWeekSelectionMiddleProperty ||
+            change.Property == IsWeekSelectionEndProperty ||
+            change.Property == IsWeekRangeStartProperty ||
+            change.Property == IsWeekRangeMiddleProperty ||
+            change.Property == IsWeekRangeEndProperty ||
+            change.Property == IsWeekHoverStartProperty ||
+            change.Property == IsWeekHoverMiddleProperty ||
+            change.Property == IsWeekHoverEndProperty)
         {
             UpdatePseudoClasses();
-
         }
         if (change.Property == IsRangeStartProperty ||
             change.Property == IsRangeEndProperty ||
             change.Property == IsRangeMiddleProperty ||
+            change.Property == IsRangePreviewStartProperty ||
+            change.Property == IsRangePreviewEndProperty ||
+            change.Property == IsRangePreviewMiddleProperty ||
+            change.Property == IsWeekSelectionStartProperty ||
+            change.Property == IsWeekSelectionMiddleProperty ||
+            change.Property == IsWeekSelectionEndProperty ||
+            change.Property == IsWeekRangeStartProperty ||
+            change.Property == IsWeekRangeMiddleProperty ||
+            change.Property == IsWeekRangeEndProperty ||
+            change.Property == IsWeekHoverStartProperty ||
+            change.Property == IsWeekHoverMiddleProperty ||
+            change.Property == IsWeekHoverEndProperty ||
             change.Property == CornerRadiusProperty)
         {
             ConfigureEffectiveCornerRadius();
@@ -338,13 +512,28 @@ internal sealed class CalendarDayButton : AvaloniaButton
 
     private void ConfigureEffectiveCornerRadius()
     {
-        if (IsRangeStart)
+        var isVisualRangeStart = IsRangeStart ||
+                                 IsRangePreviewStart ||
+                                 IsWeekSelectionStart ||
+                                 IsWeekRangeStart ||
+                                 IsWeekHoverStart;
+        var isVisualRangeMiddle = IsWeekSelectionMiddle || IsWeekRangeMiddle || IsWeekHoverMiddle;
+        var isVisualRangeEnd = IsRangeEnd ||
+                               IsRangePreviewEnd ||
+                               IsWeekSelectionEnd ||
+                               IsWeekRangeEnd ||
+                               IsWeekHoverEnd;
+        if (isVisualRangeStart && !isVisualRangeEnd)
         {
             SetCurrentValue(EffectiveCornerRadiusProperty, new CornerRadius(CornerRadius.TopLeft, 0, 0, CornerRadius.BottomLeft));
         }
-        else if (IsRangeEnd)
+        else if (isVisualRangeEnd && !isVisualRangeStart)
         {
             SetCurrentValue(EffectiveCornerRadiusProperty, new CornerRadius(0, CornerRadius.TopRight, CornerRadius.BottomRight, 0));
+        }
+        else if (isVisualRangeMiddle)
+        {
+            SetCurrentValue(EffectiveCornerRadiusProperty, new CornerRadius(0));
         }
         else
         {

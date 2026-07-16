@@ -5,56 +5,237 @@
              x:DataType="vm:InfoFlyoutViewModel"
              xmlns:atom="https://atomui.net"
              xmlns:gallery="https://atomui.net/oss-controls/gallery">
-    <gallery:ShowCasePanel>
-        <gallery:ShowCaseItem
-            Title="{gallery:InfoFlyoutShowCaseLangResource BasicTitle}"
-            Description="{gallery:InfoFlyoutShowCaseLangResource BasicDescription}">
-            <StackPanel Orientation="Vertical" Spacing="10">
-                <atom:FlyoutHost Trigger="Hover" ShouldUseOverlayPopup="False">
-                    <atom:FlyoutHost.Flyout>
-                        <atom:Flyout>
-                            <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                        </atom:Flyout>
-                    </atom:FlyoutHost.Flyout>
-                    <atom:Button ButtonType="Primary" Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHoverMe}" />
-                </atom:FlyoutHost>
-            </StackPanel>
-        </gallery:ShowCaseItem>
+    <Grid Background="{atom:SharedTokenResource ColorBgLayout}">
+        <gallery:GalleryStickyTabsHost StickyContentPadding="28,0,28,0">
+            <gallery:GalleryStickyTabsHost.Header>
+                <gallery:GalleryShowCaseHeader
+                    Title="InfoFlyout"
+                    Category="{gallery:InfoFlyoutShowCaseLangResource ComponentCategory}"
+                    Status="{gallery:InfoFlyoutShowCaseLangResource ComponentStatusStable}"
+                    Subtitle="{gallery:InfoFlyoutShowCaseLangResource PageSubtitle}"
+                    Description="{gallery:InfoFlyoutShowCaseLangResource PageDescription}"
+                    Namespace="AtomUI.Desktop.Controls"
+                    Package="AtomUI.Desktop.Controls"
+                    BaseClass="ContentControl" />
+            </gallery:GalleryStickyTabsHost.Header>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:InfoFlyoutShowCaseLangResource TriggerWaysTitle}"
-            Description="{gallery:InfoFlyoutShowCaseLangResource TriggerWaysDescription}">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <atom:FlyoutHost Trigger="Hover" ShouldUseOverlayPopup="False">
-                    <atom:FlyoutHost.Flyout>
-                        <atom:Flyout>
-                            <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                        </atom:Flyout>
-                    </atom:FlyoutHost.Flyout>
-                    <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHoverMe}" />
-                </atom:FlyoutHost>
-                <atom:FlyoutHost Trigger="Focus" ShouldUseOverlayPopup="False">
-                    <atom:FlyoutHost.Flyout>
-                        <atom:Flyout>
-                            <TextBlock Width="220" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                        </atom:Flyout>
-                    </atom:FlyoutHost.Flyout>
-                    <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentFocusMe}" />
-                </atom:FlyoutHost>
-                <atom:FlyoutHost Trigger="Click" ShouldUseOverlayPopup="False">
-                    <atom:FlyoutHost.Flyout>
-                        <atom:Flyout>
-                            <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                        </atom:Flyout>
-                    </atom:FlyoutHost.Flyout>
-                    <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentClickMe}" />
-                </atom:FlyoutHost>
-            </StackPanel>
-        </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:InfoFlyoutShowCaseLangResource PlacementTitle}"
-            Description="{gallery:InfoFlyoutShowCaseLangResource PlacementDescription}">
+            <gallery:ShowCasePanel Name="ExamplesContent"
+                                   IsScrollEnabled="False"
+                                   IsDeferredLoadingEnabled="True"
+                                   InitialDeferredLoadItemCount="4"
+                                   DeferredLoadBatchSize="2"
+                                   ContentMargin="28,10,28,28">
+    <gallery:ShowCaseItem
+        Title="{gallery:InfoFlyoutShowCaseLangResource BasicTitle}"
+        Description="{gallery:InfoFlyoutShowCaseLangResource BasicDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:InfoFlyoutViewModel">
+        <StackPanel Orientation="Vertical" Spacing="10">
+            <atom:FlyoutHost Trigger="Hover" ShouldUseOverlayPopup="False">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button ButtonType="Primary" Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHoverMe}" />
+            </atom:FlyoutHost>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:InfoFlyoutShowCaseLangResource TriggerWaysTitle}"
+        Description="{gallery:InfoFlyoutShowCaseLangResource TriggerWaysDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:InfoFlyoutViewModel">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <atom:FlyoutHost Trigger="Hover" ShouldUseOverlayPopup="False">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHoverMe}" />
+            </atom:FlyoutHost>
+            <atom:FlyoutHost Trigger="Focus" ShouldUseOverlayPopup="False">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="220" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentFocusMe}" />
+            </atom:FlyoutHost>
+            <atom:FlyoutHost Trigger="Click" ShouldUseOverlayPopup="False">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentClickMe}" />
+            </atom:FlyoutHost>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:InfoFlyoutShowCaseLangResource PlacementTitle}"
+        Description="{gallery:InfoFlyoutShowCaseLangResource PlacementDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:InfoFlyoutViewModel">
+        <Grid>
+            <Grid.Styles>
+                <Style Selector="atom|Button">
+                    <Setter Property="Margin" Value="5" />
+                    <Setter Property="Width" Value="80" />
+                </Style>
+            </Grid.Styles>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <atom:FlyoutHost Grid.Row="1" Grid.Column="0" Trigger="Hover" Placement="LeftEdgeAlignedTop">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLT}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="2" Grid.Column="0" Trigger="Hover" Placement="Left">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLeft}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="3" Grid.Column="0" Trigger="Hover" Placement="LeftEdgeAlignedBottom">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLB}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="0" Grid.Column="1" Trigger="Hover" Placement="TopEdgeAlignedLeft">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTL}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="0" Grid.Column="2" Trigger="Hover" Placement="Top">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTop}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="0" Grid.Column="3" Trigger="Hover" Placement="TopEdgeAlignedRight">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTR}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="1" Grid.Column="4" Trigger="Hover" Placement="RightEdgeAlignedTop">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRT}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="2" Grid.Column="4" Trigger="Hover" Placement="Right">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRight}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="3" Grid.Column="4" Trigger="Hover" Placement="RightEdgeAlignedBottom">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRB}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="4" Grid.Column="1" Trigger="Hover" Placement="BottomEdgeAlignedLeft">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBL}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="4" Grid.Column="2" Trigger="Hover" Placement="Bottom">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBottom}" />
+            </atom:FlyoutHost>
+
+            <atom:FlyoutHost Grid.Row="4" Grid.Column="3" Trigger="Hover" Placement="BottomEdgeAlignedRight">
+                <atom:FlyoutHost.Flyout>
+                    <atom:Flyout>
+                        <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
+                    </atom:Flyout>
+                </atom:FlyoutHost.Flyout>
+                <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBR}" />
+            </atom:FlyoutHost>
+
+        </Grid>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
+
+    <gallery:ShowCaseItem
+        Title="{gallery:InfoFlyoutShowCaseLangResource ArrowTitle}"
+        Description="{gallery:InfoFlyoutShowCaseLangResource ArrowDescription}"
+        IsDeferredContentEnabled="True">
+        <gallery:ShowCaseItem.DeferredContentTemplate>
+            <DataTemplate x:DataType="vm:InfoFlyoutViewModel">
+        <StackPanel Orientation="Vertical" Spacing="10">
+            <atom:Segmented x:Name="ArrowSegmented"
+                            SelectionChanged="HandleArrowSegmentedSelectionChanged">
+                <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentShow}" />
+                <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHide}" />
+                <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentCenter}" />
+            </atom:Segmented>
             <Grid>
                 <Grid.Styles>
                     <Style Selector="atom|Button">
@@ -77,7 +258,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <atom:FlyoutHost Grid.Row="1" Grid.Column="0" Trigger="Hover" Placement="LeftEdgeAlignedTop">
+                <atom:FlyoutHost Grid.Row="1" Grid.Column="0"
+                                 Trigger="Hover"
+                                 Placement="LeftEdgeAlignedTop"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -86,7 +271,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLT}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="2" Grid.Column="0" Trigger="Hover" Placement="Left">
+                <atom:FlyoutHost Grid.Row="2" Grid.Column="0"
+                                 Trigger="Hover"
+                                 Placement="Left"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -95,7 +284,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLeft}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="3" Grid.Column="0" Trigger="Hover" Placement="LeftEdgeAlignedBottom">
+                <atom:FlyoutHost Grid.Row="3" Grid.Column="0"
+                                 Trigger="Hover"
+                                 Placement="LeftEdgeAlignedBottom"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -104,7 +297,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLB}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="0" Grid.Column="1" Trigger="Hover" Placement="TopEdgeAlignedLeft">
+                <atom:FlyoutHost Grid.Row="0" Grid.Column="1"
+                                 Trigger="Hover"
+                                 Placement="TopEdgeAlignedLeft"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -113,7 +310,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTL}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="0" Grid.Column="2" Trigger="Hover" Placement="Top">
+                <atom:FlyoutHost Grid.Row="0" Grid.Column="2"
+                                 Trigger="Hover"
+                                 Placement="Top"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -122,7 +323,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTop}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="0" Grid.Column="3" Trigger="Hover" Placement="TopEdgeAlignedRight">
+                <atom:FlyoutHost Grid.Row="0" Grid.Column="3"
+                                 Trigger="Hover"
+                                 Placement="TopEdgeAlignedRight"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -131,7 +336,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTR}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="1" Grid.Column="4" Trigger="Hover" Placement="RightEdgeAlignedTop">
+                <atom:FlyoutHost Grid.Row="1" Grid.Column="4"
+                                 Trigger="Hover"
+                                 Placement="RightEdgeAlignedTop"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -140,7 +349,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRT}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="2" Grid.Column="4" Trigger="Hover" Placement="Right">
+                <atom:FlyoutHost Grid.Row="2" Grid.Column="4"
+                                 Trigger="Hover"
+                                 Placement="Right"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -149,7 +362,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRight}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="3" Grid.Column="4" Trigger="Hover" Placement="RightEdgeAlignedBottom">
+                <atom:FlyoutHost Grid.Row="3" Grid.Column="4"
+                                 Trigger="Hover"
+                                 Placement="RightEdgeAlignedBottom"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -158,7 +375,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRB}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="4" Grid.Column="1" Trigger="Hover" Placement="BottomEdgeAlignedLeft">
+                <atom:FlyoutHost Grid.Row="4" Grid.Column="1"
+                                 Trigger="Hover"
+                                 Placement="BottomEdgeAlignedLeft"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -167,7 +388,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBL}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="4" Grid.Column="2" Trigger="Hover" Placement="Bottom">
+                <atom:FlyoutHost Grid.Row="4" Grid.Column="2"
+                                 Trigger="Hover"
+                                 Placement="Bottom"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -176,7 +401,11 @@
                     <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBottom}" />
                 </atom:FlyoutHost>
 
-                <atom:FlyoutHost Grid.Row="4" Grid.Column="3" Trigger="Hover" Placement="BottomEdgeAlignedRight">
+                <atom:FlyoutHost Grid.Row="4" Grid.Column="3"
+                                 Trigger="Hover"
+                                 Placement="BottomEdgeAlignedRight"
+                                 IsArrowVisible="{Binding  ShowArrow}"
+                                 IsPointAtCenter="{Binding  IsPointAtCenter}">
                     <atom:FlyoutHost.Flyout>
                         <atom:Flyout>
                             <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
@@ -186,198 +415,12 @@
                 </atom:FlyoutHost>
 
             </Grid>
-        </gallery:ShowCaseItem>
+        </StackPanel>
+            </DataTemplate>
+        </gallery:ShowCaseItem.DeferredContentTemplate>
+    </gallery:ShowCaseItem>
 
-        <gallery:ShowCaseItem
-            Title="{gallery:InfoFlyoutShowCaseLangResource ArrowTitle}"
-            Description="{gallery:InfoFlyoutShowCaseLangResource ArrowDescription}">
-            <StackPanel Orientation="Vertical" Spacing="10">
-                <atom:Segmented x:Name="ArrowSegmented">
-                    <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentShow}" />
-                    <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentHide}" />
-                    <atom:SegmentedItem Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentCenter}" />
-                </atom:Segmented>
-                <Grid>
-                    <Grid.Styles>
-                        <Style Selector="atom|Button">
-                            <Setter Property="Margin" Value="5" />
-                            <Setter Property="Width" Value="80" />
-                        </Style>
-                    </Grid.Styles>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <atom:FlyoutHost Grid.Row="1" Grid.Column="0"
-                                     Trigger="Hover"
-                                     Placement="LeftEdgeAlignedTop"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLT}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="2" Grid.Column="0"
-                                     Trigger="Hover"
-                                     Placement="Left"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLeft}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="3" Grid.Column="0"
-                                     Trigger="Hover"
-                                     Placement="LeftEdgeAlignedBottom"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentLB}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="0" Grid.Column="1"
-                                     Trigger="Hover"
-                                     Placement="TopEdgeAlignedLeft"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTL}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="0" Grid.Column="2"
-                                     Trigger="Hover"
-                                     Placement="Top"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTop}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="0" Grid.Column="3"
-                                     Trigger="Hover"
-                                     Placement="TopEdgeAlignedRight"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentTR}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="1" Grid.Column="4"
-                                     Trigger="Hover"
-                                     Placement="RightEdgeAlignedTop"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRT}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="2" Grid.Column="4"
-                                     Trigger="Hover"
-                                     Placement="Right"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRight}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="3" Grid.Column="4"
-                                     Trigger="Hover"
-                                     Placement="RightEdgeAlignedBottom"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentRB}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="4" Grid.Column="1"
-                                     Trigger="Hover"
-                                     Placement="BottomEdgeAlignedLeft"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBL}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="4" Grid.Column="2"
-                                     Trigger="Hover"
-                                     Placement="Bottom"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBottom}" />
-                    </atom:FlyoutHost>
-
-                    <atom:FlyoutHost Grid.Row="4" Grid.Column="3"
-                                     Trigger="Hover"
-                                     Placement="BottomEdgeAlignedRight"
-                                     IsArrowVisible="{Binding  ShowArrow}"
-                                     IsPointAtCenter="{Binding  IsPointAtCenter}">
-                        <atom:FlyoutHost.Flyout>
-                            <atom:Flyout>
-                                <TextBlock Width="200" Height="100" Padding="20" Text="{gallery:InfoFlyoutShowCaseLangResource P2TextTheMostBasicExample}" />
-                            </atom:Flyout>
-                        </atom:FlyoutHost.Flyout>
-                        <atom:Button Content="{gallery:InfoFlyoutShowCaseLangResource P2ContentBR}" />
-                    </atom:FlyoutHost>
-
-                </Grid>
-            </StackPanel>
-        </gallery:ShowCaseItem>
-
-    </gallery:ShowCasePanel>
+            </gallery:ShowCasePanel>
+        </gallery:GalleryStickyTabsHost>
+    </Grid>
 </UserControl>

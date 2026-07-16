@@ -1,12 +1,13 @@
+using System.Collections.ObjectModel;
 using System.Reactive.Disposables;
 using System.Reactive.Disposables.Fluent;
+using AtomUI;
 using AtomUI.Controls;
 using AtomUI.Data;
 using AtomUI.Desktop.Controls;
 using AtomUI.Icons.AntDesign;
 using AtomUI.Theme.Language;
 using Avalonia;
-using Avalonia.Controls;
 using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.TreeSelect;
@@ -14,12 +15,6 @@ namespace AtomUIGallery.ShowCases.TreeSelect;
 public partial class TreeSelectShowCase : GalleryReactiveUserControl<TreeSelectViewModel>
 {
     public const string LanguageId = nameof(TreeSelectShowCase);
-
-    private const string BasicScenario      = "Basic";
-    private const string BehaviorScenario   = "Behavior";
-    private const string AppearanceScenario = "Appearance";
-
-    private readonly Dictionary<string, Control> _scenarioCache = new(StringComparer.Ordinal);
 
     public TreeSelectShowCase()
     {
@@ -44,84 +39,66 @@ public partial class TreeSelectShowCase : GalleryReactiveUserControl<TreeSelectV
                 {
                     viewModel.AsyncLoadTreeNodeLoader = null;
                     viewModel.BasicTreeNodes          = null;
+                    viewModel.BindingSingleTreeNodes   = null;
+                    viewModel.BindingMultipleTreeNodes = null;
+                    viewModel.BoundSelectedItem        = null;
+                    viewModel.BoundSelectedItems       = null;
                     viewModel.MultiSelectionTreeNodes = null;
                     viewModel.ItemsSourceTreeNodes    = null;
                     viewModel.CheckableTreeNodes      = null;
                     viewModel.AsyncLoadTreeNodes      = null;
                     viewModel.ShowTreeLineTreeNodes   = null;
-                    viewModel.LeftAddTreeNodes        = null;
                     viewModel.ContentLeftAddTreeNodes = null;
                     viewModel.PlacementTreeNodes      = null;
                     viewModel.MaxSelectedTreeNodes    = null;
                     viewModel.MaxCheckedTreeNodes     = null;
+                    viewModel.SizeTypeTreeNodes       = null;
                 }).DisposeWith(disposables);
             }
         });
 
         InitializeComponent();
-        ScenarioTabs.SelectionChanged += HandleScenarioSelectionChanged;
-        EnsureSelectedScenarioContent();
     }
 
-    protected override void OnDataContextChanged(EventArgs e)
+    private void HandlePlacementOptionCheckedChanged(object? sender, OptionCheckedChangedEventArgs args)
     {
-        base.OnDataContextChanged(e);
-        foreach (var content in _scenarioCache.Values)
-        {
-            content.DataContext = DataContext;
-        }
-    }
-
-    private void HandleScenarioSelectionChanged(object? sender, SelectionChangedEventArgs args)
-    {
-        EnsureSelectedScenarioContent();
-    }
-
-    private void EnsureSelectedScenarioContent()
-    {
-        if (ScenarioTabs.SelectedItem is not AtomUI.Desktop.Controls.TabItem tabItem ||
-            tabItem.Tag is not string scenario)
+        if (DataContext is not TreeSelectViewModel viewModel)
         {
             return;
         }
 
-        if (!_scenarioCache.TryGetValue(scenario, out var content))
+        viewModel.Placement = args.Index switch
         {
-            content             = CreateScenarioContent(scenario);
-            content.DataContext = DataContext;
-            _scenarioCache.Add(scenario, content);
-        }
-
-        if (tabItem.Content != content)
-        {
-            tabItem.Content = content;
-        }
+            0 => SelectPopupPlacement.TopEdgeAlignedLeft,
+            1 => SelectPopupPlacement.TopEdgeAlignedRight,
+            2 => SelectPopupPlacement.BottomEdgeAlignedLeft,
+            _ => SelectPopupPlacement.BottomEdgeAlignedRight
+        };
     }
 
-    private static Control CreateScenarioContent(string scenario)
+    private void HandleSizeTypeChanged(object? sender, OptionCheckedChangedEventArgs e)
     {
-        return scenario switch
+        if (DataContext is TreeSelectViewModel viewModel &&
+            e.CheckedOption.Tag is CustomizableSizeType sizeType)
         {
-            BasicScenario      => new TreeSelectBasicShowCase(),
-            BehaviorScenario   => new TreeSelectBehaviorShowCase(),
-            AppearanceScenario => new TreeSelectAppearanceShowCase(),
-            _                  => throw new InvalidOperationException($"Unknown TreeSelect scenario: {scenario}")
-        };
+            viewModel.TreeSelectSizeType = sizeType;
+        }
     }
 
     private void RefreshLocalizedTreeNodes(TreeSelectViewModel viewModel)
     {
         InitBasicTreeNodes(viewModel);
+        InitBindingTreeNodes(viewModel);
         InitMultiTreeNodes(viewModel);
         InitItemsSourceTreeNodes(viewModel);
         InitCheckableTreeNodes(viewModel);
         InitAsyncLoadTreeNodes(viewModel);
         InitShowLineTreeNodes(viewModel);
-        InitLeftAddOnTreeNodes(viewModel);
         InitContentLeftAddOnTreeNodes(viewModel);
         InitPlacementTreeNodes(viewModel);
         InitMaxSelectedTreeNodes(viewModel);
         InitMaxCheckedTreeNodes(viewModel);
+        InitSizeTypeTreeNodes(viewModel);
     }
 
     private static string Lang(TreeSelectShowCaseLangResourceKind resourceKind, string fallback)
@@ -139,9 +116,12 @@ public partial class TreeSelectShowCase : GalleryReactiveUserControl<TreeSelectV
         viewModel.MultiSelectionTreeNodes = CreatePersonalLeafTreeNodes();
     }
 
-    private void InitLeftAddOnTreeNodes(TreeSelectViewModel viewModel)
+    private void InitBindingTreeNodes(TreeSelectViewModel viewModel)
     {
-        viewModel.LeftAddTreeNodes = CreatePersonalLeafTreeNodes();
+        viewModel.BindingSingleTreeNodes   = CreatePersonalLeafTreeNodes();
+        viewModel.BindingMultipleTreeNodes = CreatePersonalLeafTreeNodes();
+        viewModel.BoundSelectedItem        = null;
+        viewModel.BoundSelectedItems       = new ObservableCollection<ITreeItemNode>();
     }
 
     private void InitContentLeftAddOnTreeNodes(TreeSelectViewModel viewModel)
@@ -272,6 +252,11 @@ public partial class TreeSelectShowCase : GalleryReactiveUserControl<TreeSelectV
     private void InitMaxCheckedTreeNodes(TreeSelectViewModel viewModel)
     {
         viewModel.MaxCheckedTreeNodes = CreateLineTreeNodes(false);
+    }
+
+    private void InitSizeTypeTreeNodes(TreeSelectViewModel viewModel)
+    {
+        viewModel.SizeTypeTreeNodes = CreatePersonalLeafTreeNodes();
     }
 
     private static List<ITreeItemNode> CreateBasicTreeNodes()

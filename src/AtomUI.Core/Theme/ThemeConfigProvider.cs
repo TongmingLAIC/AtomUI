@@ -1,10 +1,16 @@
-using System.Diagnostics;
-using AtomUI.Theme.Styling;
+using System.Collections.Specialized;
+using System.Reactive.Disposables;
+using AtomUI.Theme.Compilation;
+using AtomUI.Theme.Definitions;
+using AtomUI.Theme.Resources;
 using AtomUI.Theme.TokenSystem;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 using Avalonia.Metadata;
 using Avalonia.Styling;
+using Avalonia.Threading;
 
 namespace AtomUI.Theme;
 
@@ -12,19 +18,24 @@ using AtomUITheme = Theme;
 
 public class ThemeConfigProvider : Control, IThemeConfigProvider
 {
+    private const string LocalThemeId = "ThemeConfigProvider";
+
     #region 公共属性定义
 
     public static readonly StyledProperty<Control?> ContentProperty =
         AvaloniaProperty.Register<ThemeConfigProvider, Control?>(nameof(Content));
 
-    public static readonly StyledProperty<List<string>> AlgorithmsProperty =
-        AvaloniaProperty.Register<ThemeConfigProvider, List<string>>(nameof(Algorithms));
+    public static readonly StyledProperty<AvaloniaList<string>> AlgorithmsProperty =
+        AvaloniaProperty.Register<ThemeConfigProvider, AvaloniaList<string>>(nameof(Algorithms));
 
-    public static readonly StyledProperty<List<TokenSetter>> SharedTokenSettersProperty =
-        AvaloniaProperty.Register<ThemeConfigProvider, List<TokenSetter>>(nameof(SharedTokenSetters));
+    public static readonly StyledProperty<AvaloniaList<TokenSetter>> SharedTokenSettersProperty =
+        AvaloniaProperty.Register<ThemeConfigProvider, AvaloniaList<TokenSetter>>(nameof(SharedTokenSetters));
 
-    public static readonly StyledProperty<List<ControlTokenInfoSetter>> ControlTokenInfoSettersProperty =
-        AvaloniaProperty.Register<ThemeConfigProvider, List<ControlTokenInfoSetter>>(nameof(ControlTokenInfoSetters));
+    public static readonly StyledProperty<AvaloniaList<ControlTokenInfoSetter>> ControlTokenInfoSettersProperty =
+        AvaloniaProperty.Register<ThemeConfigProvider, AvaloniaList<ControlTokenInfoSetter>>(nameof(ControlTokenInfoSetters));
+
+    public static readonly StyledProperty<bool> InheritProperty =
+        AvaloniaProperty.Register<ThemeConfigProvider, bool>(nameof(Inherit), true);
 
     [Content]
     public Control? Content
@@ -33,22 +44,28 @@ public class ThemeConfigProvider : Control, IThemeConfigProvider
         set => SetValue(ContentProperty, value);
     }
 
-    public List<string> Algorithms
+    public AvaloniaList<string> Algorithms
     {
         get => GetValue(AlgorithmsProperty);
         set => SetValue(AlgorithmsProperty, value);
     }
 
-    public List<TokenSetter> SharedTokenSetters
+    public AvaloniaList<TokenSetter> SharedTokenSetters
     {
         get => GetValue(SharedTokenSettersProperty);
         set => SetValue(SharedTokenSettersProperty, value);
     }
 
-    public List<ControlTokenInfoSetter> ControlTokenInfoSetters
+    public AvaloniaList<ControlTokenInfoSetter> ControlTokenInfoSetters
     {
         get => GetValue(ControlTokenInfoSettersProperty);
         set => SetValue(ControlTokenInfoSettersProperty, value);
+    }
+
+    public bool Inherit
+    {
+        get => GetValue(InheritProperty);
+        set => SetValue(InheritProperty, value);
     }
 
     public DesignToken SharedToken => _sharedToken;
@@ -60,15 +77,22 @@ public class ThemeConfigProvider : Control, IThemeConfigProvider
 
     #endregion
 
-    #region 内部属性定义
-    
     private DesignToken _sharedToken;
     private Dictionary<string, IControlDesignToken> _controlTokens;
+    private ThemeSnapshot? _snapshot;
+    private ThemeSnapshot? _pinnedSnapshot;
+    private ThemeTokenResourceProvider? _tokenResourceProvider;
+    private IDisposable? _snapshotCachePin;
+    private IDisposable? _parentSnapshotSubscription;
+    private readonly CompositeDisposable _configurationSubscriptions;
+    private bool _isInitializing;
+    private bool _isLogicalAttached;
+    private bool _recompileQueued;
+    private int _recompileGeneration;
+    private int _lifecycleGeneration;
     private static int _idSeed = 1;
 
-    #endregion
-
-    private bool _needCalculateTokenResources = true;
+    internal event EventHandler<ThemeScopeCompileFailedEventArgs>? ThemeScopeCompileFailed;
 
     static ThemeConfigProvider()
     {
@@ -78,12 +102,15 @@ public class ThemeConfigProvider : Control, IThemeConfigProvider
 
     public ThemeConfigProvider()
     {
-        _controlTokens          = new Dictionary<string, IControlDesignToken>();
-        _sharedToken            = new DesignToken();
-        Algorithms              = new List<string>();
-        SharedTokenSetters      = new List<TokenSetter>();
-        ControlTokenInfoSetters = new List<ControlTokenInfoSetter>();
-        ThemeVariant            = new ThemeVariant($"ThemeConfigProvider-{_idSeed++}", null);
+        _controlTokens                = new Dictionary<string, IControlDesignToken>();
+        _sharedToken                  = new DesignToken();
+        _configurationSubscriptions   = new CompositeDisposable();
+        _isInitializing               = true;
+        Algorithms                    = new AvaloniaList<string>();
+        SharedTokenSetters            = new AvaloniaList<TokenSetter>();
+        ControlTokenInfoSetters       = new AvaloniaList<ControlTokenInfoSetter>();
+        ThemeVariant                  = new ThemeVariant($"ThemeConfigProvider-{_idSeed++}", null);
+        _isInitializing               = false;
     }
 
     private void ContentChanged(AvaloniaPropertyChangedEventArgs change)
@@ -93,6 +120,7 @@ public class ThemeConfigProvider : Control, IThemeConfigProvider
 
         if (oldChild != null)
         {
+            oldChild.ClearValue(ThemeScope.SnapshotProperty);
             ((ISetLogicalParent)oldChild).SetParent(null);
             LogicalChildren.Clear();
             VisualChildren.Remove(oldChild);
@@ -103,200 +131,393 @@ public class ThemeConfigProvider : Control, IThemeConfigProvider
             ((ISetLogicalParent)newChild).SetParent(this);
             VisualChildren.Add(newChild);
             LogicalChildren.Add(newChild);
+            if (_isLogicalAttached && _snapshot is not null)
+            {
+                newChild.SetValue(ThemeScope.SnapshotProperty, _snapshot);
+            }
         }
+
+        ScheduleRecompile();
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
-        base.OnAttachedToVisualTree(e);
-        if (_needCalculateTokenResources)
-        {
-            CalculateTokenResources();
-            _needCalculateTokenResources = false;
-        }
+        base.OnAttachedToLogicalTree(e);
+        _isLogicalAttached = true;
+        ResetConfigurationSubscriptions();
+        _parentSnapshotSubscription ??=
+            this.GetObservable(ThemeScope.SnapshotProperty).Subscribe(_ => ScheduleRecompile());
+        CompileAndPublishImmediately();
     }
 
-    private void CalculateTokenResources()
+    protected override void OnDetachedFromLogicalTree(LogicalTreeAttachmentEventArgs e)
     {
-        var checkedAlgorithms = AtomUITheme.CheckAlgorithmNames(Algorithms);
-        var hasDark    = checkedAlgorithms.Contains(ThemeAlgorithm.Dark);
-        var hasCompact = checkedAlgorithms.Contains(ThemeAlgorithm.Compact);
-        IsDarkMode = hasDark;
-
-        IThemeVariantCalculator? calculator = ThemeManager.Current?.CreateThemeVariantCalculator(
-            ThemeAlgorithm.Default,
-            null);
-        if (hasDark)
-        {
-            calculator = ThemeManager.Current?.CreateThemeVariantCalculator(ThemeAlgorithm.Dark, calculator);
-        }
-
-        if (hasCompact)
-        {
-            calculator = ThemeManager.Current?.CreateThemeVariantCalculator(ThemeAlgorithm.Compact, calculator);
-        }
-
-        Debug.Assert(calculator != null);
-        
-        var seedTokenKeys  = DesignToken.GetTokenPropertyNames(DesignTokenKind.Seed);
-        var mapTokenKeys   = DesignToken.GetTokenPropertyNames(DesignTokenKind.Map);
-        var aliasTokenKeys = DesignToken.GetTokenPropertyNames(DesignTokenKind.Alias);
-        
-        var sharedTokenConfig = new TokenConfigBuckets();
-        foreach (var tokenSetter in SharedTokenSetters)
-        {
-            sharedTokenConfig.AddByTokenName(tokenSetter.Key,
-                                             tokenSetter.Value,
-                                             seedTokenKeys,
-                                             mapTokenKeys,
-                                             aliasTokenKeys);
-        }
-
-        _sharedToken.LoadConfig(sharedTokenConfig.Seed);
-        // 计算得到 Map Tokens
-        calculator.Calculate(_sharedToken);
-
-        // 覆盖 Map Token
-        _sharedToken.LoadConfig(sharedTokenConfig.Map);
-
-        // 交付最终的基础色
-        _sharedToken.ColorBgBase   = calculator.ColorBgBase;
-        _sharedToken.ColorTextBase = calculator.ColorTextBase;
-        _sharedToken.CalculateAliasTokenValues();
-        
-        // 覆盖 Alias Token
-        _sharedToken.LoadConfig(sharedTokenConfig.Alias);
-
-        var resourceDictionary = new ResourceDictionary();
-        _sharedToken.BuildResourceDictionary(resourceDictionary);
-
-        CollectControlTokens();
-        foreach (var entry in ControlTokens)
-        {
-            // 如果没有修改就使用全局的
-            entry.Value.AssignSharedToken(_sharedToken);
-        }
-
-        var controlTokenConfig = new Dictionary<string, ControlTokenConfigInfo>(ControlTokenInfoSetters.Count);
-        foreach (var controlTokenInfoSetter in ControlTokenInfoSetters)
-        {
-            var key        = controlTokenInfoSetter.TokenId;
-            var configInfo = new ControlTokenConfigInfo();
-            configInfo.TokenId         = controlTokenInfoSetter.TokenId;
-            configInfo.EnableAlgorithm = controlTokenInfoSetter.EnableAlgorithm;
-            foreach (var setter in controlTokenInfoSetter.Setters)
-            {
-                if (setter is ControlTokenSetter)
-                {
-                    configInfo.Tokens.Add(setter.Key, setter.Value);
-                }
-                else
-                {
-                    configInfo.SharedTokens.Add(setter.Key, setter.Value);
-                }
-            }
-
-            controlTokenConfig.Add(key, configInfo);
-        }
-
-        foreach (var entry in controlTokenConfig)
-        {
-            var tokenId          = entry.Key;
-            var controlTokenInfo = entry.Value;
-            if (!ControlTokens.TryGetValue(tokenId, out var token))
-            {
-                continue;
-            }
-
-            var copiedSharedToken = (DesignToken)_sharedToken.Clone();
-
-            var tokenConfig = new TokenConfigBuckets();
-            foreach (var tokenSetter in controlTokenInfo.SharedTokens)
-            {
-                tokenConfig.AddByTokenName(tokenSetter.Key,
-                                           tokenSetter.Value,
-                                           seedTokenKeys,
-                                           mapTokenKeys,
-                                           aliasTokenKeys);
-            }
-
-            if (controlTokenInfo.EnableAlgorithm)
-            {
-                copiedSharedToken.LoadConfig(tokenConfig.Seed);
-                calculator.Calculate(copiedSharedToken);
-                copiedSharedToken.LoadConfig(tokenConfig.Map);
-                copiedSharedToken.CalculateAliasTokenValues();
-                copiedSharedToken.LoadConfig(tokenConfig.Alias);
-            }
-            else
-            {
-                copiedSharedToken.LoadConfig(tokenConfig.Seed);
-                copiedSharedToken.LoadConfig(tokenConfig.Map);
-                copiedSharedToken.LoadConfig(tokenConfig.Alias);
-            }
-
-            var controlToken = (token as AbstractControlDesignToken)!;
-            controlToken.AssignSharedToken(copiedSharedToken);
-            controlToken.SetHasCustomTokenConfig(true);
-            controlToken.SetCustomTokens(new List<string>(controlTokenInfo.Tokens.Keys));
-        }
-
-        foreach (var token in ControlTokens.Values)
-        {
-            var controlToken = (token as AbstractControlDesignToken)!;
-            controlToken.CalculateTokenValues(IsDarkMode);
-            if (controlTokenConfig.TryGetValue(controlToken.Id, out var tokenConfigInfo))
-            {
-                controlToken.LoadConfig(tokenConfigInfo.Tokens);
-            }
-
-            controlToken.BuildResourceDictionary(resourceDictionary);
-            
-            if (controlToken.HasCustomTokenConfig())
-            {
-                controlToken.BuildSharedResourceDeltaDictionary(_sharedToken);
-            }
-        }
-        
-        Resources.MergedDictionaries.Add(resourceDictionary);
+        base.OnDetachedFromLogicalTree(e);
+        _isLogicalAttached = false;
+        CancelScheduledRecompile();
+        _parentSnapshotSubscription?.Dispose();
+        _parentSnapshotSubscription = null;
+        _configurationSubscriptions.Clear();
+        ReleaseSnapshotPin();
+        ClearContentSnapshot();
     }
 
-    protected void CollectControlTokens()
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        _controlTokens.Clear();
-        var controlTokenTypes = ThemeManager.Current?.ControlTokenTypes;
-        if (controlTokenTypes is null)
+        base.OnPropertyChanged(change);
+        if (_isInitializing)
         {
             return;
         }
 
-        _controlTokens.EnsureCapacity(controlTokenTypes.Count);
-        foreach (var tokenRegistration in controlTokenTypes)
+        if (change.Property == AlgorithmsProperty ||
+            change.Property == SharedTokenSettersProperty ||
+            change.Property == ControlTokenInfoSettersProperty)
         {
-            var obj = Activator.CreateInstance(tokenRegistration.TokenType);
-            if (obj is AbstractControlDesignToken controlToken)
+            if (_isLogicalAttached)
             {
-                _controlTokens.Add(controlToken.Id, controlToken);
+                ResetConfigurationSubscriptions();
+            }
+            ScheduleRecompile();
+        }
+        else if (change.Property == InheritProperty)
+        {
+            ScheduleRecompile();
+        }
+    }
+
+    private void ScheduleRecompile()
+    {
+        if (!_isLogicalAttached)
+        {
+            return;
+        }
+
+        if (_recompileQueued)
+        {
+            return;
+        }
+
+        _recompileQueued = true;
+        var recompileGeneration = ++_recompileGeneration;
+        var lifecycleGeneration = _lifecycleGeneration;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_recompileQueued ||
+                recompileGeneration != _recompileGeneration ||
+                lifecycleGeneration != _lifecycleGeneration)
+            {
+                return;
+            }
+
+            _recompileQueued = false;
+            CompileAndPublish();
+        });
+    }
+
+    private void CompileAndPublishImmediately()
+    {
+        CancelScheduledRecompile();
+        CompileAndPublish();
+    }
+
+    private void CancelScheduledRecompile()
+    {
+        _recompileQueued = false;
+        _recompileGeneration++;
+        _lifecycleGeneration++;
+    }
+
+    private void CompileAndPublish()
+    {
+        var result = CreateCompileResult();
+        if (!result.Success)
+        {
+            ThemeScopeCompileFailed?.Invoke(this, new ThemeScopeCompileFailedEventArgs(result));
+            return;
+        }
+
+        PublishSnapshot(result.Snapshot!);
+    }
+
+    private ThemeCompileResult CreateCompileResult()
+    {
+        try
+        {
+            return CompileSnapshot();
+        }
+        catch (Exception exception)
+        {
+            return new ThemeCompileResult(
+                null,
+                Array.Empty<ThemeDefinitionDiagnostic>(),
+                exception);
+        }
+    }
+
+    private ThemeCompileResult CompileSnapshot()
+    {
+        var algorithms = GetRequestedAlgorithms();
+        var definition = new ThemeDefinition(
+            LocalThemeId,
+            LocalThemeId,
+            false,
+            algorithms,
+            new Dictionary<string, string>(),
+            new Dictionary<string, ThemeControlTokenDefinition>());
+        var themeManager = ThemeManager.Current;
+        var request = new ThemeCompileRequest(
+            LocalThemeId,
+            definition,
+            Inherit ? GetValue(ThemeScope.SnapshotProperty) : null,
+            algorithms,
+            ReadSharedOverrides(),
+            ReadControlOverrides(),
+            themeManager?.ControlTokenTypes ?? new List<ControlTokenRegistration>(),
+            new Dictionary<string, string>());
+
+        return themeManager is null
+            ? new ThemeCompiler().Compile(request)
+            : themeManager.CompileSnapshot(request);
+    }
+
+    private IReadOnlyList<ThemeAlgorithm> GetRequestedAlgorithms()
+    {
+        if (Algorithms.Count == 0)
+        {
+            return Array.Empty<ThemeAlgorithm>();
+        }
+
+        var requested = AtomUITheme.CheckAlgorithmNames(Algorithms);
+        var algorithms = new List<ThemeAlgorithm>
+        {
+            ThemeAlgorithm.Default
+        };
+
+        if (requested.Contains(ThemeAlgorithm.Dark))
+        {
+            algorithms.Add(ThemeAlgorithm.Dark);
+        }
+
+        if (requested.Contains(ThemeAlgorithm.Compact))
+        {
+            algorithms.Add(ThemeAlgorithm.Compact);
+        }
+
+        return algorithms;
+    }
+
+    private IReadOnlyDictionary<string, string> ReadSharedOverrides()
+    {
+        var overrides = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var setter in SharedTokenSetters)
+        {
+            overrides[setter.Key] = setter.Value;
+        }
+
+        return overrides;
+    }
+
+    private IReadOnlyDictionary<ControlTokenIdentity, ControlTokenConfigInfo> ReadControlOverrides()
+    {
+        var overrides = new Dictionary<ControlTokenIdentity, ControlTokenConfigInfo>();
+        foreach (var infoSetter in ControlTokenInfoSetters)
+        {
+            if (string.IsNullOrWhiteSpace(infoSetter.TokenId))
+            {
+                continue;
+            }
+
+            var config = new ControlTokenConfigInfo
+            {
+                TokenId = infoSetter.TokenId,
+                EnableAlgorithm = infoSetter.EnableAlgorithm
+            };
+            foreach (var setter in infoSetter.Setters)
+            {
+                if (setter is ControlTokenSetter)
+                {
+                    config.Tokens[setter.Key] = setter.Value;
+                }
+                else
+                {
+                    config.SharedTokens[setter.Key] = setter.Value;
+                }
+            }
+
+            overrides[new ControlTokenIdentity(ControlDesignTokenAttribute.DefaultCatalog, infoSetter.TokenId)] = config;
+        }
+
+        return overrides;
+    }
+
+    private void PublishSnapshot(ThemeSnapshot snapshot)
+    {
+        var sharedToken = DesignTokenClone.DeepClone(snapshot.SharedTokenCore);
+        var controlTokens = CreateCompatibilityControlTokenMap(snapshot, sharedToken);
+        PinSnapshot(snapshot);
+
+        _snapshot      = snapshot;
+        _sharedToken   = sharedToken;
+        _controlTokens = controlTokens;
+        IsDarkMode     = snapshot.IsDark;
+
+        if (Content is not null)
+        {
+            Content.SetValue(ThemeScope.SnapshotProperty, snapshot);
+        }
+
+        if (_tokenResourceProvider is null)
+        {
+            _tokenResourceProvider = new ThemeTokenResourceProvider(snapshot);
+            Resources.MergedDictionaries.Add(_tokenResourceProvider);
+            NotifyContentResourcesChanged();
+            return;
+        }
+
+        _tokenResourceProvider.PrepareSnapshot(snapshot);
+        _tokenResourceProvider.PublishSnapshotChanged();
+        NotifyContentResourcesChanged();
+    }
+
+    private void PinSnapshot(ThemeSnapshot snapshot)
+    {
+        if (ReferenceEquals(_pinnedSnapshot, snapshot))
+        {
+            return;
+        }
+
+        var pin = ThemeManager.Current?.PinSnapshot(snapshot);
+        _snapshotCachePin?.Dispose();
+        _snapshotCachePin = pin;
+        _pinnedSnapshot   = pin is null ? null : snapshot;
+    }
+
+    private void ReleaseSnapshotPin()
+    {
+        _snapshotCachePin?.Dispose();
+        _snapshotCachePin = null;
+        _pinnedSnapshot   = null;
+    }
+
+    private void NotifyContentResourcesChanged()
+    {
+        if (Content is IResourceHost resourceHost)
+        {
+            resourceHost.NotifyHostedResourcesChanged(ResourcesChangedEventArgs.Create());
+        }
+    }
+
+    private static Dictionary<string, IControlDesignToken> CreateCompatibilityControlTokenMap(
+        ThemeSnapshot snapshot,
+        DesignToken sharedToken)
+    {
+        var result = new Dictionary<string, IControlDesignToken>(StringComparer.Ordinal);
+        foreach (var (identity, control) in snapshot.Controls)
+        {
+            var source = control.ControlTokenCore;
+            var token = CloneCompatibilityControlToken(source);
+            token.AssignSharedToken(DesignTokenClone.DeepClone(control.EffectiveSharedTokenCore));
+            token.SetHasCustomTokenConfig(source.HasCustomTokenConfig());
+            token.SetCustomTokens(source.GetCustomTokens().ToList());
+            ((AbstractControlDesignToken)token).BuildSharedResourceDeltaDictionary(sharedToken);
+            result.TryAdd(identity.TokenId, token);
+        }
+
+        return result;
+    }
+
+    private static IControlDesignToken CloneCompatibilityControlToken(IControlDesignToken source)
+    {
+        return (IControlDesignToken)source.Clone();
+    }
+
+    private void ResetConfigurationSubscriptions()
+    {
+        _configurationSubscriptions.Clear();
+        Subscribe(Algorithms, HandleCollectionChanged);
+        Subscribe(SharedTokenSetters, HandleConfigurationCollectionChanged);
+        Subscribe(ControlTokenInfoSetters, HandleConfigurationCollectionChanged);
+
+        foreach (var setter in SharedTokenSetters)
+        {
+            Subscribe(setter);
+        }
+
+        foreach (var infoSetter in ControlTokenInfoSetters)
+        {
+            Subscribe(infoSetter);
+            Subscribe(infoSetter.Setters, HandleConfigurationCollectionChanged);
+            foreach (var setter in infoSetter.Setters)
+            {
+                Subscribe(setter);
             }
         }
+    }
+
+    private void Subscribe<T>(AvaloniaList<T> collection, NotifyCollectionChangedEventHandler handler)
+    {
+        collection.CollectionChanged += handler;
+        _configurationSubscriptions.Add(Disposable.Create((collection, handler), static state =>
+        {
+            state.collection.CollectionChanged -= state.handler;
+        }));
+    }
+
+    private void Subscribe(TokenSetter setter)
+    {
+        setter.PropertyChanged += HandleConfigurationObjectChanged;
+        _configurationSubscriptions.Add(Disposable.Create(() =>
+        {
+            setter.PropertyChanged -= HandleConfigurationObjectChanged;
+        }));
+    }
+
+    private void Subscribe(ControlTokenInfoSetter setter)
+    {
+        setter.PropertyChanged += HandleConfigurationObjectChanged;
+        _configurationSubscriptions.Add(Disposable.Create(() =>
+        {
+            setter.PropertyChanged -= HandleConfigurationObjectChanged;
+        }));
+    }
+
+    private void HandleCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        ScheduleRecompile();
+    }
+
+    private void HandleConfigurationCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        ResetConfigurationSubscriptions();
+        ScheduleRecompile();
+    }
+
+    private void HandleConfigurationObjectChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        ResetConfigurationSubscriptions();
+        ScheduleRecompile();
+    }
+
+    private void ClearContentSnapshot()
+    {
+        Content?.ClearValue(ThemeScope.SnapshotProperty);
     }
 
     public IControlDesignToken? GetControlToken(string tokenId)
     {
         return ControlTokens.GetValueOrDefault(tokenId);
     }
+}
 
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+internal sealed class ThemeScopeCompileFailedEventArgs : EventArgs
+{
+    internal ThemeScopeCompileFailedEventArgs(ThemeCompileResult result)
     {
-        base.OnPropertyChanged(change);
-        if (VisualRoot != null)
-        {
-            if (change.Property == ControlTokenInfoSettersProperty ||
-                change.Property == SharedTokenSettersProperty ||
-                change.Property == AlgorithmsProperty)
-            {
-                CalculateTokenResources();
-            }
-        }
+        Diagnostics = result.Diagnostics;
+        Exception   = result.Exception;
     }
+
+    public IReadOnlyList<ThemeDefinitionDiagnostic> Diagnostics { get; }
+    public Exception? Exception { get; }
 }

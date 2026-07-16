@@ -1,13 +1,16 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.DatePicker;
 
 [LanguageProvider(LanguageCode.zh_CN, DatePickerShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string BasicTitle = "基础用法";
     public const string BasicDescription = "点击 DatePicker 后，可以在面板中选择或输入日期。";
+    public const string BindingTitle = "SelectedDateTime 绑定";
+    public const string BindingDescription = "SelectedDateTime、RangeStartSelectedDate 与 RangeEndSelectedDate 默认与 ViewModel 双向同步，无需显式设置 Binding Mode=TwoWay。";
+    public const string PickerDisplayDateTitle = "弹出面板显示日期";
+    public const string PickerDisplayDateDescription = "打开弹出面板时定位到指定日期，但不提交选中值。";
     public const string RangePickerTitle = "范围选择器";
     public const string RangePickerDescription = "通过 picker 属性设置范围选择器类型。";
     public const string NeedConfirmTitle = "需要确认";
@@ -25,9 +28,21 @@ internal partial class zh_CN : LanguageProvider
     public const string PlacementTitle = "弹出位置";
     public const string PlacementDescription = "可以通过 placement 手动指定弹出层位置。";
     public const string P2PlaceholderTextSelectDate = "选择日期";
+    public const string P2PlaceholderTextSelectWeek = "选择周";
+    public const string P2PlaceholderTextSelectMonth = "选择月份";
+    public const string P2PlaceholderTextSelectQuarter = "选择季度";
+    public const string P2PlaceholderTextSelectYear = "选择年份";
     public const string P2SecondaryPlaceholderTextEndDate = "结束日期";
     public const string P2PlaceholderTextSelectTime = "选择时间";
     public const string P2PlaceholderTextStartDate = "开始日期";
+    public const string P2PlaceholderTextStartWeek = "开始周";
+    public const string P2SecondaryPlaceholderTextEndWeek = "结束周";
+    public const string P2PlaceholderTextStartMonth = "开始月份";
+    public const string P2SecondaryPlaceholderTextEndMonth = "结束月份";
+    public const string P2PlaceholderTextStartQuarter = "开始季度";
+    public const string P2SecondaryPlaceholderTextEndQuarter = "结束季度";
+    public const string P2PlaceholderTextStartYear = "开始年份";
+    public const string P2SecondaryPlaceholderTextEndYear = "结束年份";
     public const string P2PlaceholderTextOutline = "描边风格";
     public const string P2PlaceholderTextFilled = "填充风格";
     public const string P2PlaceholderTextBorderless = "无边框";
@@ -35,11 +50,55 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentLarge = "大号";
     public const string P2ContentDefault = "默认";
     public const string P2ContentSmall = "小号";
+    public const string P2ContentCustom = "自定义";
     public const string P2TextPlacement = "弹出位置：";
+    public const string P2TextSelectedDateTime = "选中值：";
+    public const string P2TextSelectedDateRange = "选中范围：";
+    public const string P2ContentSetTomorrow = "设置为明天";
+    public const string P2ContentSetThisWeek = "设置为本周";
+    public const string P2ContentClear = "清空";
     public const string P2ContentTopleft = "左上";
     public const string P2ContentTopright = "右上";
     public const string P2ContentBottomleft = "左下";
     public const string P2ContentBottomright = "右下";
+    public const string PageSubtitle = "从日历面板中选择日期、日期范围和可选时间。";
+    public const string PageDescription = "DatePicker 支持单选与范围选择、确认流程、时间选择、禁用状态、尺寸变体、校验状态、视觉变体和自定义弹出位置。";
+    public const string ComponentCategory = "数据录入";
+    public const string ComponentStatusStable = "稳定";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计变量";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertySelectedDateTime = "DatePicker 当前选中的日期和可选时间；默认 TwoWay 绑定，并支持 Avalonia data validation。";
+    public const string ApiPropertyDefaultDateTime = "DatePicker 重置行为使用的初始日期和可选时间。";
+    public const string ApiPropertyPickerDisplayDate = "弹出面板打开时使用的显示锚点，不提交选中值。";
+    public const string ApiPropertyRangeStartSelectedDate = "RangeDatePicker 当前选中的开始日期。";
+    public const string ApiPropertyRangeEndSelectedDate = "RangeDatePicker 当前选中的结束日期。";
+    public const string ApiPropertyFormat = "自定义日期/时间格式字符串。";
+    public const string ApiPropertyPickerMode = "选择颗粒度：日期、周、月份、季度或年份。";
+    public const string ApiPropertyIsShowTime = "启用时间选择面板。";
+    public const string ApiPropertyIsNeedConfirm = "要求用户确认选中值后再提交。";
+    public const string ApiPropertyClockIdentifier = "启用时间选择时，选择 12 小时制或 24 小时制显示。";
+    public const string ApiPropertyPickerPlacement = "控制弹出层相对于输入框的位置。";
+    public const string ApiPropertySecondaryPlaceholderText = "范围选择器结束输入框的占位文本。";
+    public const string TokenColumnToken = "变量";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
+    public const string TokenNameCellHoverBg = "日期单元格悬浮态背景色。";
+    public const string TokenNameCellActiveWithRangeBg = "选中范围内单元格的背景色。";
+    public const string TokenNameCellHoverWithRangeBg = "选中范围内单元格的悬浮态背景色。";
+    public const string TokenNameCellBgDisabled = "禁用日期单元格背景色。";
+    public const string TokenNameCellRangeBorderColor = "选择日期范围时使用的边框色。";
+    public const string TokenNameCellWidth = "每个日期单元格宽度。";
+    public const string TokenNameCellHeight = "每个日期单元格高度。";
+    public const string TokenNamePanelContentPadding = "日历面板内容内边距。";
+    public const string TokenNameItemPanelMinWidth = "日历项面板最小宽度。";
+    public const string TokenNameRangeCalendarSpacing = "范围日历面板之间的间距。";
 
-    protected override Type GetResourceKindType() => typeof(DatePickerShowCaseLangResourceKind);
 }

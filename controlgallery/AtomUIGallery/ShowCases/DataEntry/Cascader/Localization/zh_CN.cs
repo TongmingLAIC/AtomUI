@@ -1,15 +1,64 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Cascader;
 
 [LanguageProvider(LanguageCode.zh_CN, CascaderShowCase.LanguageId)]
-internal partial class zh_CN : LanguageProvider
+internal partial class zh_CN
 {
     public const string ScenarioBasic = "基础";
     public const string ScenarioMultiple = "多选";
     public const string ScenarioAdvanced = "高级";
     public const string ScenarioCascaderView = "级联视图";
+    public const string ScenarioExamples = "示例";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "设计 Token";
+    public const string PageSubtitle = "分层选择与级联选项浏览。";
+    public const string PageDescription = "Cascader 将输入选择器与联动选项列组合起来，CascaderView 则直接暴露列式浏览器，用于嵌入式选择场景。";
+    public const string ComponentCategory = "数据录入";
+    public const string ComponentStatusStable = "稳定";
+    public const string ApiColumnProperty = "属性";
+    public const string ApiColumnDescription = "说明";
+    public const string ApiColumnType = "类型";
+    public const string ApiColumnDefault = "默认值";
+    public const string ApiPropertyOptionsSource = "Cascader 或 CascaderView 展示的分层选项。";
+    public const string ApiPropertyOptionTemplate = "用于渲染每个选项节点的模板。";
+    public const string ApiPropertySelectedOption = "单选模式下当前选中的选项。";
+    public const string ApiPropertySelectedOptions = "多选模式下当前选中的选项集合。";
+    public const string ApiPropertyDefaultSelectOptionPath = "Cascader 的初始选中路径。";
+    public const string ApiPropertyIsAllowClear = "选中值后显示清除操作。";
+    public const string ApiPropertyIsMultiple = "允许选择多个叶子或父级选项。";
+    public const string ApiPropertyShowCheckedStrategy = "控制选中项在输入框中的展示策略。";
+    public const string ApiPropertyExpandTrigger = "控制子列通过点击或悬停展开。";
+    public const string ApiPropertyIsAllowSelectParent = "允许在到达叶子前选择父级选项。";
+    public const string ApiPropertyDataLoader = "为懒加载选项树按需加载子级。";
+    public const string ApiPropertyFilter = "启用搜索时用于过滤选项。";
+    public const string ApiPropertyIsShowOverflowTip = "选中路径或标签文本溢出时显示完整内容提示。";
+    public const string ApiPropertyOverflowTipDelay = "溢出提示打开前的延迟时间，单位毫秒。";
+    public const string ApiPropertyOverflowTipPlacement = "溢出提示相对被截断选中路径或标签的位置。";
+    public const string ApiPropertyStyleVariant = "输入框视觉变体。";
+    public const string ApiPropertyStatus = "校验状态样式。";
+    public const string ApiPropertyPlacement = "弹出层相对选择器的位置。";
+    public const string ApiPropertyCascaderViewOptionsSource = "CascaderView 展示的分层选项。";
+    public const string ApiPropertyCascaderViewIsCheckable = "在 CascaderView 中显示复选框。";
+    public const string ApiPropertyCascaderViewDefaultExpandedPath = "CascaderView 的初始展开路径。";
+    public const string ApiPropertyCascaderViewFilterValue = "CascaderView 当前过滤值。";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "说明";
+    public const string TokenColumnScope = "作用域";
+    public const string TokenColumnStatus = "状态";
+    public const string TokenScopeComponent = "组件";
+    public const string TokenStatusStable = "稳定";
+    public const string TokenNameHeaderHeight = "列标题高度。";
+    public const string TokenNameControlWidth = "Cascader 选择器默认宽度。";
+    public const string TokenNameControlItemWidth = "单列选项宽度。";
+    public const string TokenNameDropdownHeight = "弹出下拉层高度。";
+    public const string TokenNameOptionSelectedBg = "选中选项的背景色。";
+    public const string TokenNameOptionHoverBg = "悬停选项的背景色。";
+    public const string TokenNameOptionSelectedColor = "选中选项的文本颜色。";
+    public const string TokenNameOptionPadding = "每一行选项的内边距。";
+    public const string TokenNameMenuPadding = "单列选项菜单周围的内边距。";
+    public const string TokenNameFilterHighlightColor = "过滤文本使用的高亮颜色。";
+    public const string TokenNameItemHeaderSpacing = "选项标题内部元素间距。";
     public const string BasicTitle = "基础用法";
     public const string BasicDescription = "用于选择省、市、区的级联选择框。";
     public const string DefaultValueTitle = "默认值";
@@ -22,6 +71,13 @@ internal partial class zh_CN : LanguageProvider
     public const string ChangeOnSelectDescription = "允许只选择父级选项。";
     public const string MultipleTitle = "多选";
     public const string MultipleDescription = "选择多个选项。可以通过添加 disableCheckbox 属性禁用复选框并选择特定项，禁用样式可通过 className 修改。";
+    public const string SelectionBindingTitle = "SelectedOption / SelectedOptions 绑定";
+    public const string SelectionBindingDescription = "将 SelectedOption 和 SelectedOptions 绑定到 ViewModel，点击选项或操作按钮即可观察两侧状态同步。";
+    public const string SelectionBindingValueTitle = "绑定值";
+    public const string SelectionBindingSelectFirst = "选择西湖";
+    public const string SelectionBindingSelectSecond = "选择灵隐寺";
+    public const string SelectionBindingSelectBoth = "选择两项";
+    public const string SelectionBindingClear = "清空";
     public const string ShowCheckedStrategyTitle = "显示选中策略";
     public const string ShowCheckedStrategyDescription = "使用 showCheckedStrategy 在选择框中展示选中项。";
     public const string SearchTitle = "搜索";
@@ -37,7 +93,7 @@ internal partial class zh_CN : LanguageProvider
     public const string StatusTitle = "状态";
     public const string StatusDescription = "通过 status 为 Cascader 添加状态，可设置为错误或警告。";
     public const string SizeTitle = "尺寸";
-    public const string SizeDescription = "不同尺寸的级联选择框。";
+    public const string SizeDescription = "Cascader 支持大号、中号、小号，也支持通过 Custom 配合本地高度自定义。";
     public const string BasicCascaderViewTitle = "基础 CascaderView";
     public const string BasicCascaderViewDescription = "最基础的用法。";
     public const string GenerateByTemplateTitle = "使用模板生成";
@@ -49,8 +105,14 @@ internal partial class zh_CN : LanguageProvider
     public const string DefaultExpandedTitle = "默认展开";
     public const string DefaultExpandedDescription = "可以设置默认展开路径。";
     public const string P2PlaceholderTextPleaseSelect = "请选择";
+    public const string P2PlaceholderSizeTypeLarge = "SizeType：Large";
+    public const string P2PlaceholderSizeTypeMiddle = "SizeType：Middle";
+    public const string P2PlaceholderSizeTypeSmall = "SizeType：Small";
+    public const string P2PlaceholderSizeTypeCustom = "SizeType：Custom";
     public const string P2TitleShowcheckedstrategyAll = "ShowCheckedStrategy=All";
     public const string P2TitleShowcheckedstrategyShowparent = "ShowCheckedStrategy=ShowParent";
+    public const string P2TextSelectedOptionBinding = "SelectedOption";
+    public const string P2TextSelectedOptionsBinding = "SelectedOptions";
     public const string P2HeaderZhejiang = "浙江";
     public const string P2HeaderHangzhou = "杭州";
     public const string P2HeaderWestLake = "西湖";
@@ -93,5 +155,4 @@ internal partial class zh_CN : LanguageProvider
     public const string P2ContentBottomleft = "左下";
     public const string P2ContentBottomright = "右下";
 
-    protected override Type GetResourceKindType() => typeof(CascaderShowCaseLangResourceKind);
 }

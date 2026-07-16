@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using AtomUI.Controls;
 using AtomUI.Theme;
@@ -7,133 +8,196 @@ using Avalonia;
 using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Interactivity;
-using Avalonia.Platform.Storage;
-using Avalonia.Threading;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Metadata;
 
 namespace AtomUI.Desktop.Controls;
 
-public class Upload : ContentControl, 
-                      IMotionAwareControl,
-                      IFormItemAware
+public partial class Upload : ContentControl,
+                              IMotionAwareControl,
+                              IFormItemAware
 {
     #region 公共属性定义
+
+    public static readonly StyledProperty<IList<UploadFileItem>?> FilesProperty =
+        AvaloniaProperty.Register<Upload, IList<UploadFileItem>?>(
+            nameof(Files),
+            defaultBindingMode: BindingMode.TwoWay,
+            enableDataValidation: true);
+
     public static readonly StyledProperty<IReadOnlyList<string>?> AcceptsProperty =
         AvaloniaProperty.Register<Upload, IReadOnlyList<string>?>(nameof(Accepts));
-    
+
     public static readonly StyledProperty<object?> ExtraContextProperty =
-        AvaloniaProperty.Register<Upload, object?>(
-            nameof(ExtraContext));
-    
+        AvaloniaProperty.Register<Upload, object?>(nameof(ExtraContext));
+
     public static readonly StyledProperty<int> MaxCountProperty =
-        AvaloniaProperty.Register<Upload, int>(
-            nameof(MaxCount), int.MaxValue);
-    
-    public static readonly StyledProperty<bool> IsUploadDirectoryEnabledProperty =
-        AvaloniaProperty.Register<Upload, bool>(nameof(IsUploadDirectoryEnabled));
-    
-    public static readonly StyledProperty<UploadListType> ListTypeProperty =
-        AvaloniaProperty.Register<Upload, UploadListType>(nameof(ListType));
-    
-    public static readonly StyledProperty<bool> IsMultipleEnabledProperty =
-        AvaloniaProperty.Register<Upload, bool>(nameof(IsMultipleEnabled));
-    
-    public static readonly StyledProperty<bool> IsOpenFileDialogOnClickProperty =
-        AvaloniaProperty.Register<Upload, bool>(nameof(IsOpenFileDialogOnClick), true);
-    
-    public static readonly StyledProperty<bool> IsShowUploadListProperty =
-        AvaloniaProperty.Register<Upload, bool>(nameof(IsShowUploadList), true);
-    
-    public static readonly StyledProperty<bool> IsShowUploadTriggerProperty =
-        AvaloniaProperty.Register<Upload, bool>(nameof(IsShowUploadTrigger), true);
-    
-    public static readonly StyledProperty<IList<UploadTaskInfo>?> DefaultTaskListProperty =
-        AvaloniaProperty.Register<Upload, IList<UploadTaskInfo>?>(nameof(DefaultTaskList));
-    
+        AvaloniaProperty.Register<Upload, int>(nameof(MaxCount), int.MaxValue);
+
     public static readonly StyledProperty<int> MaxConcurrentTasksProperty =
         AvaloniaProperty.Register<Upload, int>(nameof(MaxConcurrentTasks), 3);
-    
+
+    public static readonly StyledProperty<bool> AutoUploadProperty =
+        AvaloniaProperty.Register<Upload, bool>(nameof(AutoUpload), true);
+
+    public static readonly StyledProperty<UploadListType> ListTypeProperty =
+        AvaloniaProperty.Register<Upload, UploadListType>(nameof(ListType));
+
+    public static readonly StyledProperty<bool> IsMultipleEnabledProperty =
+        AvaloniaProperty.Register<Upload, bool>(nameof(IsMultipleEnabled));
+
+    public static readonly StyledProperty<bool> IsOpenFileDialogOnClickProperty =
+        AvaloniaProperty.Register<Upload, bool>(nameof(IsOpenFileDialogOnClick), true);
+
+    public static readonly StyledProperty<bool> IsShowUploadListProperty =
+        AvaloniaProperty.Register<Upload, bool>(nameof(IsShowUploadList), true);
+
+    public static readonly StyledProperty<double> ListMaxHeightProperty =
+        AvaloniaProperty.Register<Upload, double>(
+            nameof(ListMaxHeight),
+            double.PositiveInfinity);
+
+    public static readonly StyledProperty<ScrollBarVisibility> ListScrollBarVisibilityProperty =
+        AvaloniaProperty.Register<Upload, ScrollBarVisibility>(
+            nameof(ListScrollBarVisibility),
+            ScrollBarVisibility.Disabled);
+
+    public static readonly StyledProperty<TimeSpan?> SuccessAutoRemoveDelayProperty =
+        AvaloniaProperty.Register<Upload, TimeSpan?>(nameof(SuccessAutoRemoveDelay));
+
+    public static readonly StyledProperty<string?> PendingTextProperty =
+        AvaloniaProperty.Register<Upload, string?>(nameof(PendingText));
+
+    public static readonly StyledProperty<UploadFileValueMode> FileValueModeProperty =
+        AvaloniaProperty.Register<Upload, UploadFileValueMode>(
+            nameof(FileValueMode),
+            UploadFileValueMode.SuccessfulFiles);
+
+    public static readonly StyledProperty<object?> TriggerContentProperty =
+        AvaloniaProperty.Register<Upload, object?>(nameof(TriggerContent));
+
+    public static readonly StyledProperty<IDataTemplate?> TriggerContentTemplateProperty =
+        AvaloniaProperty.Register<Upload, IDataTemplate?>(nameof(TriggerContentTemplate));
+
+    public static readonly StyledProperty<bool> IsMotionEnabledProperty =
+        MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<Upload>();
+
     public static readonly DirectProperty<Upload, IFileUploadTransport?> UploadTransportProperty =
         AvaloniaProperty.RegisterDirect<Upload, IFileUploadTransport?>(
             nameof(UploadTransport),
             o => o.UploadTransport,
             (o, v) => o.UploadTransport = v);
-    
+
     public static readonly DirectProperty<Upload, bool> IsTaskRunningProperty =
         AvaloniaProperty.RegisterDirect<Upload, bool>(
             nameof(IsTaskRunning),
             o => o.IsTaskRunning,
             (o, v) => o.IsTaskRunning = v);
-    
-    public static readonly StyledProperty<bool> IsMotionEnabledProperty =
-        MotionAwareControlProperty.IsMotionEnabledProperty.AddOwner<Upload>();
-    
+
+    public IList<UploadFileItem>? Files
+    {
+        get => GetValue(FilesProperty);
+        set => SetValue(FilesProperty, value);
+    }
+
     public IReadOnlyList<string>? Accepts
     {
         get => GetValue(AcceptsProperty);
         set => SetValue(AcceptsProperty, value);
     }
-    
+
     public object? ExtraContext
     {
         get => GetValue(ExtraContextProperty);
         set => SetValue(ExtraContextProperty, value);
     }
-    
+
     public int MaxCount
     {
         get => GetValue(MaxCountProperty);
         set => SetValue(MaxCountProperty, value);
     }
-    
-    public bool IsUploadDirectoryEnabled
-    {
-        get => GetValue(IsUploadDirectoryEnabledProperty);
-        set => SetValue(IsUploadDirectoryEnabledProperty, value);
-    }
-    
-    public UploadListType ListType
-    {
-        get => GetValue(ListTypeProperty);
-        set => SetValue(ListTypeProperty, value);
-    }
-    
-    public bool IsMultipleEnabled
-    {
-        get => GetValue(IsMultipleEnabledProperty);
-        set => SetValue(IsMultipleEnabledProperty, value);
-    }
-    
-    public bool IsOpenFileDialogOnClick
-    {
-        get => GetValue(IsOpenFileDialogOnClickProperty);
-        set => SetValue(IsOpenFileDialogOnClickProperty, value);
-    }
-    
-    public bool IsShowUploadList
-    {
-        get => GetValue(IsShowUploadListProperty);
-        set => SetValue(IsShowUploadListProperty, value);
-    }
-    
-    public bool IsShowUploadTrigger
-    {
-        get => GetValue(IsShowUploadTriggerProperty);
-        set => SetValue(IsShowUploadTriggerProperty, value);
-    }
-    
-    public IList<UploadTaskInfo>? DefaultTaskList
-    {
-        get => GetValue(DefaultTaskListProperty);
-        set => SetValue(DefaultTaskListProperty, value);
-    }
-    
+
     public int MaxConcurrentTasks
     {
         get => GetValue(MaxConcurrentTasksProperty);
         set => SetValue(MaxConcurrentTasksProperty, value);
     }
-    
+
+    public bool AutoUpload
+    {
+        get => GetValue(AutoUploadProperty);
+        set => SetValue(AutoUploadProperty, value);
+    }
+
+    public UploadListType ListType
+    {
+        get => GetValue(ListTypeProperty);
+        set => SetValue(ListTypeProperty, value);
+    }
+
+    public bool IsMultipleEnabled
+    {
+        get => GetValue(IsMultipleEnabledProperty);
+        set => SetValue(IsMultipleEnabledProperty, value);
+    }
+
+    public bool IsOpenFileDialogOnClick
+    {
+        get => GetValue(IsOpenFileDialogOnClickProperty);
+        set => SetValue(IsOpenFileDialogOnClickProperty, value);
+    }
+
+    public bool IsShowUploadList
+    {
+        get => GetValue(IsShowUploadListProperty);
+        set => SetValue(IsShowUploadListProperty, value);
+    }
+
+    public double ListMaxHeight
+    {
+        get => GetValue(ListMaxHeightProperty);
+        set => SetValue(ListMaxHeightProperty, value);
+    }
+
+    public ScrollBarVisibility ListScrollBarVisibility
+    {
+        get => GetValue(ListScrollBarVisibilityProperty);
+        set => SetValue(ListScrollBarVisibilityProperty, value);
+    }
+
+    public TimeSpan? SuccessAutoRemoveDelay
+    {
+        get => GetValue(SuccessAutoRemoveDelayProperty);
+        set => SetValue(SuccessAutoRemoveDelayProperty, value);
+    }
+
+    public string? PendingText
+    {
+        get => GetValue(PendingTextProperty);
+        set => SetValue(PendingTextProperty, value);
+    }
+
+    public UploadFileValueMode FileValueMode
+    {
+        get => GetValue(FileValueModeProperty);
+        set => SetValue(FileValueModeProperty, value);
+    }
+
+    [DependsOn(nameof(TriggerContentTemplate))]
+    public object? TriggerContent
+    {
+        get => GetValue(TriggerContentProperty);
+        set => SetValue(TriggerContentProperty, value);
+    }
+
+    public IDataTemplate? TriggerContentTemplate
+    {
+        get => GetValue(TriggerContentTemplateProperty);
+        set => SetValue(TriggerContentTemplateProperty, value);
+    }
+
     private IFileUploadTransport? _uploadTransport;
 
     public IFileUploadTransport? UploadTransport
@@ -141,7 +205,7 @@ public class Upload : ContentControl,
         get => _uploadTransport;
         set => SetAndRaise(UploadTransportProperty, ref _uploadTransport, value);
     }
-    
+
     private bool _isTaskRunning;
 
     public bool IsTaskRunning
@@ -149,18 +213,14 @@ public class Upload : ContentControl,
         get => _isTaskRunning;
         set => SetAndRaise(IsTaskRunningProperty, ref _isTaskRunning, value);
     }
-    
+
     public bool IsMotionEnabled
     {
         get => GetValue(IsMotionEnabledProperty);
         set => SetValue(IsMotionEnabledProperty, value);
     }
-    
-    public AvaloniaList<UploadTaskInfo> TaskInfoList { get; private set; } = new ();
-    
+
     #endregion
-    
-    private List<UploadTaskInfo> _allTaskList = new ();
 
     #region 公共事件定义
 
@@ -171,530 +231,152 @@ public class Upload : ContentControl,
     public event EventHandler<UploadTaskCancelledEventArgs>? UploadTaskCancelled;
     public event EventHandler<UploadTaskFailedEventArgs>? UploadTaskFailed;
     public event EventHandler<UploadTaskRemovedEventArgs>? UploadTaskRemoved;
-    
+
     #endregion
 
     #region 公共回调函数定义
+
     public Func<UploadFileInfo, bool>? IsImageFilePredicate { get; set; }
+
     #endregion
 
     #region 内部属性定义
 
-    internal static readonly DirectProperty<Upload, IEnumerable?> CurrentTaskListProperty =
-        AvaloniaProperty.RegisterDirect<Upload, IEnumerable?>(
-            nameof(CurrentTaskList),
-            o => o.CurrentTaskList,
-            (o, v) => o.CurrentTaskList = v);
+    internal static readonly DirectProperty<Upload, IList<UploadFileItem>> EffectiveFilesProperty =
+        AvaloniaProperty.RegisterDirect<Upload, IList<UploadFileItem>>(
+            nameof(EffectiveFiles),
+            o => o.EffectiveFiles);
 
-    private IEnumerable? _currentTaskList;
+    internal static readonly DirectProperty<Upload, IList<object?>> EffectivePictureItemsProperty =
+        AvaloniaProperty.RegisterDirect<Upload, IList<object?>>(
+            nameof(EffectivePictureItems),
+            o => o.EffectivePictureItems);
 
-    internal IEnumerable? CurrentTaskList
+    internal IList<UploadFileItem> EffectiveFiles
     {
-        get => _currentTaskList;
-        set => SetAndRaise(CurrentTaskListProperty, ref _currentTaskList, value);
+        get => _effectiveFiles;
+        private set => SetAndRaise(EffectiveFilesProperty, ref _effectiveFiles, value);
     }
+
+    internal IList<object?> EffectivePictureItems => _effectivePictureItems;
+
     #endregion
-    
-    private FileUploadScheduler _uploadScheduler;
+
     private static readonly Regex ImageExtensionRegex =
         new(@"\.(webp|svg|png|gif|jpg|jpeg|jfif|bmp|dpg|ico|heic|heif)$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    private bool _defaultTaskListApplied;
-    private CancellationTokenSource? _uploadCts;
+    private readonly AvaloniaList<UploadFileItem> _ownedFiles = new();
+    private readonly AvaloniaList<object?> _effectivePictureItems = new();
+    private readonly UploadAppendContentItem _appendContentItem = new();
+    private readonly HashSet<UploadFileItem> _observedFileItems = new();
+    private readonly Dictionary<Guid, CancellationTokenSource> _successAutoRemoveDelays = new();
+    private readonly UploadQueue _uploadQueue;
+    private IList<UploadFileItem> _effectiveFiles = null!;
+    private INotifyCollectionChanged? _attachedFileCollection;
+    private EventHandler? _formValueChanged;
 
     static Upload()
     {
-        AbstractUploadListItem.TaskRemoveRequestEvent.AddClassHandler<Upload>((upload, args) =>
-        {
-            upload.Dispatcher.InvokeAsync(async () =>
-            {
-                await upload.HandleUploadTaskRemoveRequestAsync(args.TaskId);
-            });
-        });
-        UploadTriggerContent.FileSelectRequestEvent.AddClassHandler<Upload>((upload, args) =>
-        {
-            upload.HandleFileSelectRequest();
-        });
-        UploadDefaultDropArea.FilesDroppedEvent.AddClassHandler<Upload>((upload, args) =>
-        {
-            upload.Dispatcher.InvokeAsync(async () =>
-            {
-                await upload.EnqueueUploadFiles(args.Files);
-            });
-        });
+        AbstractUploadListItem.TaskRemoveRequestEvent.AddClassHandler<Upload>(
+            (upload, args) => upload.HandleTaskRemoveRequest(args));
     }
-    
+
     public Upload()
     {
-        this.RegisterTokenResourceScope(UploadToken.ScopeProvider);
-        _uploadScheduler               =  new FileUploadScheduler();
-        TaskInfoList.CollectionChanged += HandleTaskListChanged;
+        _effectiveFiles = _ownedFiles;
+        _uploadQueue = new UploadQueue(this, UploadTransport, MaxConcurrentTasks);
+        SyncAppendContentItem();
+        AttachFileCollection(EffectiveFiles);
+        SyncEffectivePictureItems();
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        // Create a new CancellationTokenSource when attached to visual tree
-        _uploadCts = new CancellationTokenSource();
-    }
-
-    private void HandleTaskListChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        if (TaskInfoList.Count == 0)
-        {
-            CurrentTaskList = null;
-        }
-        else
-        {
-            CurrentTaskList = CopyTaskInfoList();
-        }
-    }
-
-    private UploadTaskInfo[] CopyTaskInfoList()
-    {
-        var count = TaskInfoList.Count;
-        var tasks = new UploadTaskInfo[count];
-        for (var i = 0; i < count; ++i)
-        {
-            tasks[i] = TaskInfoList[i];
-        }
-
-        return tasks;
-    }
-
-    protected virtual void OpenFileDialog()
-    {
-        var topLevel = TopLevel.GetTopLevel(this);
-
-        if (topLevel != null)
-        {
-            var storageProvider  = topLevel.StorageProvider;
-            if (!storageProvider.CanOpen)
-            {
-                if (RuntimePlatform.Features.SupportsNativeWindow)
-                {
-                    throw new InvalidOperationException("Can't open storage provider");
-                }
-
-                return;
-            }
-
-            Dispatcher.InvokeAsync(async () =>
-            {
-                if (IsUploadDirectoryEnabled)
-                {
-                    if (!RuntimePlatform.Features.SupportsLocalFileSystemEnumeration)
-                    {
-                        return;
-                    }
-
-                    var directories = await storageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions()
-                    {
-                        AllowMultiple = IsMultipleEnabled
-                    });
-                    List<UploadFileInfo>? files = null;
-                    foreach (var directory in directories)
-                    {
-                        foreach (var filePath in Directory.EnumerateFiles(directory.Path.LocalPath, "*", SearchOption.TopDirectoryOnly))
-                        {
-                            var fileInfo = new FileInfo(filePath);
-                            files ??= new List<UploadFileInfo>(directories.Count);
-                            files.Add(new UploadFileInfo(fileInfo.Name, new Uri(fileInfo.FullName), fileInfo.Length, fileInfo.CreationTime,  fileInfo.LastWriteTime));
-                        }
-                    }
-                    if (files != null)
-                    {
-                        await EnqueueUploadFiles(files);
-                    }
-                }
-                else
-                {
-                    var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
-                    {
-                        AllowMultiple     = IsMultipleEnabled,
-                        SuggestedFileType = new FilePickerFileType("filter")
-                        {
-                            MimeTypes = Accepts,
-                            Patterns  = Accepts,
-                            AppleUniformTypeIdentifiers = Accepts
-                        }
-                    });
-                    await EnqueueUploadFiles(files);
-                }
-            });
-        }
-    }
-
-    private async Task EnqueueUploadFiles(IReadOnlyList<IStorageFile> files)
+    public async Task EnqueueFilesAsync(IEnumerable<UploadFileInfo> files, CancellationToken cancellationToken = default)
     {
         foreach (var file in files)
         {
-            await EnqueueUploadFile(file);
-        }
-    }
-    
-    private async Task EnqueueUploadFiles(IList<UploadFileInfo> files)
-    {
-        foreach (var file in files)
-        {
-            await EnqueueUploadFile(file);
+            cancellationToken.ThrowIfCancellationRequested();
+            await EnqueueFileAsync(file, cancellationToken);
         }
     }
 
-    private async Task EnqueueUploadFile(IStorageFile file)
+    public async Task RemoveFileAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var properties = await file.GetBasicPropertiesAsync();
-        var uploadFile = new UploadFileInfo(
-            file.Name,
-            file.Path,
-            (long)(properties.Size ?? 0),
-            properties.DateCreated,
-            properties.DateModified);
-        await EnqueueUploadFile(uploadFile);
-    }
-
-    private async Task EnqueueUploadFile(UploadFileInfo uploadFile)
-    {
-        var task = new FileUploadTask
+        var files = EffectiveFiles;
+        var item = FindFile(id);
+        if (item is null)
         {
-            UploadFileInfo = uploadFile
-        };
-        
-        task.UploadProgressHandler  = HandleUploadProgressChanged;
-        task.UploadCompletedHandler = HandleUploadCompleted;
-        task.UploadFailedHandler    = HandleUploadFailed;
-        task.UploadCancelledHandler = HandleUploadCancelled;
-
-        var uploadTaskInfo = new UploadTaskInfo();
-        uploadTaskInfo.TaskId      = task.Id;
-        uploadTaskInfo.FileName    = uploadFile.Name;
-        uploadTaskInfo.Status      = task.Status;
-        uploadTaskInfo.Progress    = task.Progress;
-        uploadTaskInfo.IsImageFile = IsImageFile(uploadFile);
-        uploadTaskInfo.UploadTask  = task;
-        uploadTaskInfo.FilePath    = uploadFile.FilePath;
-
-        if (TaskInfoList.Count > 0 && TaskInfoList.Count == MaxCount)
-        {
-            if (MaxCount > 1)
-            {
-                return; 
-            }
-
-            await CancelAllUploadTaskAsync();
-        }
-        
-        _allTaskList.Add(uploadTaskInfo);
-        UploadTaskCreated?.Invoke(this, new UploadTaskCreatedEventArgs(task.Id, uploadFile));
-        var aboutToSchedulingEvent = new UploadTaskAboutToSchedulingEventArgs(task.Id, uploadFile);
-        UploadTaskAboutToScheduling?.Invoke(this, aboutToSchedulingEvent);
-        if (aboutToSchedulingEvent.Result == UploadPredicateResult.Schedule)
-        {
-            AddUploadTaskInfo(uploadTaskInfo);
-            _uploadScheduler.EnqueueTask(task);
-        }
-        else
-        {
-            if (aboutToSchedulingEvent.Result == UploadPredicateResult.CancelWithInTaskList)
-            {
-                AddUploadTaskInfo(uploadTaskInfo);
-            }
-            uploadTaskInfo.Status = FileUploadStatus.Failed;
-            UploadTaskFailed?.Invoke(this, new UploadTaskFailedEventArgs(task.Id, 
-                uploadFile, 
-                FileUploadResult.FailureResult(FileUploadErrorCode.ClientError, aboutToSchedulingEvent.CancelReason ?? "client error")));
-        }
-    }
-
-    private void AddUploadTaskInfo(UploadTaskInfo uploadTaskInfo)
-    {
-        if (ListType == UploadListType.PictureCircle || ListType == UploadListType.PictureCard)
-        {
-            var index = TaskInfoList.Count - 1;
-            TaskInfoList.Insert(index, uploadTaskInfo);
-        }
-        else
-        {
-            TaskInfoList.Add(uploadTaskInfo);
-        }
-    }
-
-    private void HandleUploadProgressChanged(Guid taskId, UploadFileInfo fileInfo, double progress)
-    {
-        var taskInfo = FindTaskInfo(taskId);
-        if (taskInfo != null)
-        {
-            if (!IsTaskRunning)
-            {
-                SetCurrentValue(IsTaskRunningProperty, true);
-            }
-            if (taskInfo.Status == FileUploadStatus.Pending)
-            {
-                taskInfo.Status = FileUploadStatus.Uploading;
-            }
-            taskInfo.Progress = progress;
-            UploadTaskProgress?.Invoke(this, new UploadTaskProgressEventArgs(taskId, fileInfo, progress));
-        }
-    }
-    
-    private void HandleUploadCompleted(Guid taskId, UploadFileInfo uploadFileInfo, FileUploadResult result)
-    {
-        var taskInfo = FindTaskInfo(taskId);
-        if (taskInfo != null)
-        {
-            taskInfo.Status = FileUploadStatus.Success;
-            UploadTaskCompleted?.Invoke(this, new UploadTaskCompletedEventArgs(taskId, uploadFileInfo, result));
-        }
-        CheckTaskRunning();
-    }
-    
-    private void HandleUploadFailed(Guid taskId, UploadFileInfo uploadFileInfo, FileUploadResult result)
-    {
-        var taskInfo = FindTaskInfo(taskId);
-        if (taskInfo != null)
-        {
-            taskInfo.Status       = FileUploadStatus.Failed;
-            taskInfo.ErrorMessage = result.UserFriendlyMessage;
-            UploadTaskFailed?.Invoke(this, new UploadTaskFailedEventArgs(taskId, uploadFileInfo, result));
-        }
-        CheckTaskRunning();
-    }
-    
-    private void HandleUploadCancelled(Guid taskId, UploadFileInfo uploadFileInfo, FileUploadResult result)
-    {
-        var taskInfo = FindTaskInfo(taskId);
-        if (taskInfo != null)
-        {
-            taskInfo.Status       = FileUploadStatus.Cancelled;
-            taskInfo.ErrorMessage = result.UserFriendlyMessage;
-            UploadTaskCancelled?.Invoke(this, new UploadTaskCancelledEventArgs(taskId, uploadFileInfo, result));
-        }
-        CheckTaskRunning();
-    }
-
-    private void CheckTaskRunning()
-    {
-        var isTaskRunning = false;
-        foreach (var uploadTaskInfo in _allTaskList)
-        {
-            if (uploadTaskInfo.Status == FileUploadStatus.Uploading)
-            {
-                isTaskRunning = true;
-                break;
-            }
+            return;
         }
 
-        if (IsTaskRunning != isTaskRunning)
+        await _uploadQueue.CancelAsync(id, cancellationToken);
+        CancelSuccessAutoRemove(id);
+        DetachFileItem(item);
+        files.Remove(item);
+        if (files is not INotifyCollectionChanged)
         {
-            SetCurrentValue(IsTaskRunningProperty, isTaskRunning);
+            RemoveEffectivePictureItem(item);
         }
-    }
-
-    private UploadTaskInfo? FindTaskInfo(Guid taskId)
-    {
-        foreach (var taskInfo in _allTaskList)
-        {
-            if (taskInfo.TaskId == taskId)
-            {
-                return taskInfo;
-            }
-        }
-        return null;
-    }
-
-    protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
-    {
-        base.OnApplyTemplate(e);
-        ConfigurePictureTriggerTask();
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        base.OnPropertyChanged(change);
-        if (change.Property == UploadTransportProperty)
-        {
-            if (UploadTransport != null)
-            {
-                Dispatcher.InvokeAsync(async () =>
-                {
-                   await _uploadScheduler.SetTransportAsync(UploadTransport);
-                });
-            }
-        }
-        else if (change.Property == MaxConcurrentTasksProperty)
-        {
-            Dispatcher.InvokeAsync(async () =>
-            {
-                await _uploadScheduler.SetMaxConcurrentTasksAsync(MaxConcurrentTasks);
-            });
-        }
-        else if (change.Property == ListTypeProperty)
-        {
-            ConfigurePictureTriggerTask();
-        }
-    }
-
-    private bool IsImageFile(UploadFileInfo uploadFileInfo)
-    {
-        if (IsImageFilePredicate != null)
-        {
-            return IsImageFilePredicate.Invoke(uploadFileInfo);
-        }
-        var extension = Path.GetExtension(uploadFileInfo.FilePath.LocalPath);
-        if (string.IsNullOrEmpty(extension))
-        {
-            return false;
-        }
-        return ImageExtensionRegex.IsMatch(extension);
-    }
-
-    private async Task HandleUploadTaskRemoveRequestAsync(Guid taskId)
-    {
-        var taskInfo = FindTaskInfo(taskId);
-        if (taskInfo != null)
-        {
-            if (taskInfo.Status != FileUploadStatus.Uploading || taskInfo.UploadTask == null)
-            {
-                TaskInfoList.Remove(taskInfo);
-                _allTaskList.Remove(taskInfo);
-            }
-            else
-            {
-                await Dispatcher.InvokeAsync(async () =>
-                {
-                    await _uploadScheduler.CancelUploadAsync(taskInfo.UploadTask);
-                    TaskInfoList.Remove(taskInfo);
-                    _allTaskList.Remove(taskInfo);
-                    UploadTaskRemoved?.Invoke(this, new UploadTaskRemovedEventArgs(taskId, taskInfo.UploadTask.UploadFileInfo!));
-                });
-            }
-        }
+        NotifyFormValueChanged(files);
+        UploadTaskRemoved?.Invoke(this, new UploadTaskRemovedEventArgs(id, CreateUploadFileInfo(item)));
     }
 
     public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        await CancelAllUploadTaskAsync(cancellationToken);
-        TaskInfoList = new();
+        await _uploadQueue.CancelAllAsync(cancellationToken);
+        ClearEffectiveFiles();
     }
 
     public void Reset()
     {
-        Dispatcher.InvokeAsync(async () =>
-        {
-            await CancelAllUploadTaskAsync();
-        });
+        Dispatcher.InvokeAsync(async () => await ResetAsync());
     }
-    
-    private async Task CancelAllUploadTaskAsync(CancellationToken cancellationToken = default)
+
+    private async void HandleTaskRemoveRequest(TaskRemoveRequestEventArgs args)
     {
-        for (int i = _allTaskList.Count - 1; i >= 0; i--)
+        if (args.Handled)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var taskInfo = TaskInfoList[i];
-            if (taskInfo.Status != FileUploadStatus.Uploading || taskInfo.UploadTask == null)
-            {
-                TaskInfoList.Remove(taskInfo);
-                _allTaskList.Remove(taskInfo);
-            }
-            else
-            {
-                await Dispatcher.InvokeAsync(async () =>
-                {
-                    await _uploadScheduler.CancelUploadAsync(taskInfo.UploadTask);
-                    _allTaskList.Remove(taskInfo);
-                    TaskInfoList.Remove(taskInfo);
-                    UploadTaskRemoved?.Invoke(this, new UploadTaskRemovedEventArgs(taskInfo.TaskId, taskInfo.UploadTask.UploadFileInfo!));
-                });
-            }
+            return;
         }
-    }
-    
-    private void HandleFileSelectRequest()
-    {
-        if (IsOpenFileDialogOnClick)
-        {
-            OpenFileDialog();
-        }
+
+        args.Handled = true;
+        await RemoveFileAsync(args.TaskId);
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        _uploadCts?.Cancel();
-        _uploadCts?.Dispose();
-        _uploadCts = null;
+        Dispatcher.InvokeAsync(async () => await _uploadQueue.CancelAllAsync());
+        CancelAllSuccessAutoRemove();
     }
 
-    protected override void OnLoaded(RoutedEventArgs e)
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
-        base.OnLoaded(e);
-        if (!_defaultTaskListApplied)
+        base.OnPropertyChanged(change);
+        if (change.Property == FilesProperty)
         {
-            if (DefaultTaskList != null)
-            {
-                if (ListType == UploadListType.PictureCircle || ListType == UploadListType.PictureCard)
-                {
-                    // 检查是否有 trigger
-                    var trigger = FindPictureTriggerTask();
-                    if (trigger != null)
-                    {
-                        TaskInfoList.InsertRange(0, DefaultTaskList);
-                    }
-                    else
-                    {
-                        TaskInfoList.AddRange(DefaultTaskList);
-                    }
-                }
-                else
-                {
-                    TaskInfoList.AddRange(DefaultTaskList);
-                }
-                
-                _allTaskList.AddRange(DefaultTaskList);
-                _defaultTaskListApplied = true;
-            }
+            var typedChange = (AvaloniaPropertyChangedEventArgs<IList<UploadFileItem>?>)change;
+            HandleFilesChanged(typedChange.OldValue.Value, typedChange.NewValue.Value);
+        }
+        else if (change.Property == TriggerContentProperty ||
+                 change.Property == TriggerContentTemplateProperty ||
+                 change.Property == HorizontalContentAlignmentProperty ||
+                 change.Property == VerticalContentAlignmentProperty)
+        {
+            SyncAppendContentItem();
+        }
+        else if (change.Property == UploadTransportProperty)
+        {
+            Dispatcher.InvokeAsync(async () => await _uploadQueue.SetTransportAsync(UploadTransport));
+        }
+        else if (change.Property == MaxConcurrentTasksProperty)
+        {
+            Dispatcher.InvokeAsync(async () => await _uploadQueue.SetMaxConcurrentTasksAsync(MaxConcurrentTasks));
         }
     }
 
-    private void ConfigurePictureTriggerTask()
-    {
-        var taskInfo = FindPictureTriggerTask();
-        if (ListType == UploadListType.PictureCircle || ListType == UploadListType.PictureCard)
-        {
-            if (taskInfo == null)
-            {
-                TaskInfoList.Add(new UploadTaskInfo()
-                {
-                    IsPictureTriggerTask = true,
-                });
-            }
-        }
-        else
-        {
-            if (taskInfo != null)
-            {
-                TaskInfoList.Remove(taskInfo);
-            }
-        }
-    }
-
-    private UploadTaskInfo? FindPictureTriggerTask()
-    {
-        foreach (var taskInfo in TaskInfoList)
-        {
-            if (taskInfo.IsPictureTriggerTask)
-            {
-                return taskInfo;
-            }
-        }
-        return null;
-    }
-    
     #region 实现 FormItem 接口
-    // TODO 这里对于上传值的定义需要做，目前没有做
-    
-    private EventHandler? _formValueChanged;
+
     event EventHandler? IFormItemAware.ValueChanged
     {
         add => _formValueChanged += value;
@@ -704,9 +386,11 @@ public class Upload : ContentControl,
     void IFormItemAware.SetFormValue(object? value) => NotifySetFormValue(value);
 
     object? IFormItemAware.GetFormValue() => NotifyGetFormValue();
+
     void IFormItemAware.ClearFormValue() => NotifyClearFormValue();
+
     void IFormItemAware.NotifyValidateStatus(FormValidateStatus status) => NotifyValidateStatus(status);
-    
+
     protected virtual void NotifyFormValueChanged(object? value)
     {
         _formValueChanged?.Invoke(this, EventArgs.Empty);
@@ -714,19 +398,467 @@ public class Upload : ContentControl,
 
     protected virtual void NotifySetFormValue(object? value)
     {
+        CancelAllSuccessAutoRemove();
+        CancelAllUploadQueue();
+
+        var files = EffectiveFiles;
+        foreach (var item in files.ToArray())
+        {
+            DetachFileItem(item);
+        }
+        files.Clear();
+
+        if (value is IEnumerable<UploadFileItem> items)
+        {
+            foreach (var item in items)
+            {
+                AttachFileItem(item);
+                files.Add(item);
+            }
+        }
+
+        SyncEffectivePictureItems();
+        NotifyFormValueChanged(files);
     }
 
     protected virtual object? NotifyGetFormValue()
     {
-        return null;
+        return FileValueMode switch
+        {
+            UploadFileValueMode.AllFiles => EffectiveFiles.ToArray(),
+            UploadFileValueMode.Results => EffectiveFiles
+                                           .Where(file => file.Status == FileUploadStatus.Success)
+                                           .Select(file => file.Result)
+                                           .Where(result => result is not null)
+                                           .ToArray(),
+            _ => EffectiveFiles
+                 .Where(file => file.Status == FileUploadStatus.Success)
+                 .ToArray()
+        };
     }
 
     protected virtual void NotifyClearFormValue()
     {
+        if (Dispatcher.CheckAccess())
+        {
+            ClearEffectiveFiles();
+            Dispatcher.InvokeAsync(async () => await _uploadQueue.CancelAllAsync());
+        }
+        else
+        {
+            Dispatcher.InvokeAsync(ClearEffectiveFiles);
+            Dispatcher.InvokeAsync(async () => await _uploadQueue.CancelAllAsync());
+        }
     }
 
     protected virtual void NotifyValidateStatus(FormValidateStatus status)
     {
     }
+
     #endregion
+
+    internal void NotifyUploadProgress(UploadFileItem item, UploadFileInfo fileInfo, double progress)
+    {
+        RunOnUiThread(() =>
+        {
+            item.Status   = FileUploadStatus.Uploading;
+            item.Progress = progress;
+            SetCurrentValue(IsTaskRunningProperty, true);
+            UploadTaskProgress?.Invoke(this, new UploadTaskProgressEventArgs(item.Id, fileInfo, progress));
+        });
+    }
+
+    internal void NotifyUploadCompleted(UploadFileItem item, UploadFileInfo fileInfo, FileUploadResult result)
+    {
+        RunOnUiThread(() =>
+        {
+            item.Status = FileUploadStatus.Success;
+            item.Result = result;
+            UploadTaskCompleted?.Invoke(this, new UploadTaskCompletedEventArgs(item.Id, fileInfo, result));
+            ScheduleSuccessAutoRemove(item);
+            UpdateTaskRunning();
+        });
+    }
+
+    internal void NotifyUploadFailed(UploadFileItem item, UploadFileInfo fileInfo, FileUploadResult result)
+    {
+        RunOnUiThread(() =>
+        {
+            item.Status       = FileUploadStatus.Failed;
+            item.ErrorMessage = result.UserFriendlyMessage;
+            item.Result       = result;
+            UploadTaskFailed?.Invoke(this, new UploadTaskFailedEventArgs(item.Id, fileInfo, result));
+            UpdateTaskRunning();
+        });
+    }
+
+    internal void NotifyUploadCancelled(UploadFileItem item, UploadFileInfo fileInfo, FileUploadResult result)
+    {
+        RunOnUiThread(() =>
+        {
+            item.Status       = FileUploadStatus.Cancelled;
+            item.ErrorMessage = result.UserFriendlyMessage;
+            item.Result       = result;
+            UploadTaskCancelled?.Invoke(this, new UploadTaskCancelledEventArgs(item.Id, fileInfo, result));
+            UpdateTaskRunning();
+        });
+    }
+
+    private async Task EnqueueFileAsync(UploadFileInfo file, CancellationToken cancellationToken)
+    {
+        var files = EffectiveFiles;
+        if (files.Count >= MaxCount)
+        {
+            if (MaxCount != 1)
+            {
+                return;
+            }
+            await ResetAsync(cancellationToken);
+        }
+
+        var item = new UploadFileItem
+        {
+            Name        = file.Name,
+            Path        = file.FilePath,
+            Size        = file.Size,
+            PendingText = PendingText,
+            IsImageFile = IsImageFile(file),
+            UserData    = ExtraContext
+        };
+
+        AttachFileItem(item);
+        files.Add(item);
+        if (files is not INotifyCollectionChanged)
+        {
+            InsertEffectivePictureItem(item, files.IndexOf(item));
+        }
+        NotifyFormValueChanged(files);
+        UploadTaskCreated?.Invoke(this, new UploadTaskCreatedEventArgs(item.Id, file));
+
+        var aboutToSchedulingEvent = new UploadTaskAboutToSchedulingEventArgs(item.Id, file);
+        UploadTaskAboutToScheduling?.Invoke(this, aboutToSchedulingEvent);
+        if (aboutToSchedulingEvent.Result == UploadPredicateResult.Cancel)
+        {
+            item.Status       = FileUploadStatus.Failed;
+            item.ErrorMessage = aboutToSchedulingEvent.CancelReason;
+            return;
+        }
+
+        if (AutoUpload && aboutToSchedulingEvent.Result == UploadPredicateResult.Schedule)
+        {
+            _uploadQueue.Enqueue(item, file);
+        }
+        else if (aboutToSchedulingEvent.Result == UploadPredicateResult.CancelWithInTaskList)
+        {
+            item.Status       = FileUploadStatus.Failed;
+            item.ErrorMessage = aboutToSchedulingEvent.CancelReason;
+        }
+    }
+
+    private void HandleFilesChanged(IList<UploadFileItem>? oldFiles, IList<UploadFileItem>? newFiles)
+    {
+        CancelAllSuccessAutoRemove();
+        CancelAllUploadQueue();
+        DetachFileCollection(oldFiles ?? _ownedFiles);
+        EffectiveFiles = newFiles ?? _ownedFiles;
+        AttachFileCollection(EffectiveFiles);
+        SyncEffectivePictureItems();
+        NotifyFormValueChanged(EffectiveFiles);
+    }
+
+    private void AttachFileCollection(IList<UploadFileItem> files)
+    {
+        if (files is INotifyCollectionChanged notifyCollectionChanged)
+        {
+            _attachedFileCollection = notifyCollectionChanged;
+            notifyCollectionChanged.CollectionChanged += HandleFilesCollectionChanged;
+        }
+
+        foreach (var item in files)
+        {
+            AttachFileItem(item);
+        }
+    }
+
+    private void DetachFileCollection(IList<UploadFileItem> files)
+    {
+        if (_attachedFileCollection is not null)
+        {
+            _attachedFileCollection.CollectionChanged -= HandleFilesCollectionChanged;
+            _attachedFileCollection = null;
+        }
+
+        foreach (var item in files)
+        {
+            DetachFileItem(item);
+        }
+    }
+
+    private void HandleFilesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems is not null)
+        {
+            foreach (var item in e.OldItems.OfType<UploadFileItem>())
+            {
+                DetachFileItem(item);
+                CancelSuccessAutoRemove(item.Id);
+                CancelUploadQueue(item.Id);
+            }
+        }
+
+        if (e.NewItems is not null)
+        {
+            foreach (var item in e.NewItems.OfType<UploadFileItem>())
+            {
+                AttachFileItem(item);
+            }
+        }
+
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            CancelAllSuccessAutoRemove();
+            CancelAllUploadQueue();
+            foreach (var item in _observedFileItems.ToArray())
+            {
+                DetachFileItem(item);
+            }
+            foreach (var item in EffectiveFiles)
+            {
+                AttachFileItem(item);
+            }
+        }
+
+        SyncEffectivePictureItems(e);
+        NotifyFormValueChanged(EffectiveFiles);
+    }
+
+    private void AttachFileItem(UploadFileItem item)
+    {
+        if (_observedFileItems.Add(item))
+        {
+            item.PropertyChanged += HandleFileItemPropertyChanged;
+        }
+    }
+
+    private void DetachFileItem(UploadFileItem item)
+    {
+        if (_observedFileItems.Remove(item))
+        {
+            item.PropertyChanged -= HandleFileItemPropertyChanged;
+        }
+    }
+
+    private void HandleFileItemPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (sender is not UploadFileItem item || e.Property != UploadFileItem.StatusProperty)
+        {
+            return;
+        }
+
+        if (item.Status == FileUploadStatus.Success)
+        {
+            ScheduleSuccessAutoRemove(item);
+        }
+        else
+        {
+            CancelSuccessAutoRemove(item.Id);
+        }
+
+        UpdateTaskRunning();
+    }
+
+    private UploadFileItem? FindFile(Guid id)
+    {
+        return EffectiveFiles.FirstOrDefault(file => file.Id == id);
+    }
+
+    private void ClearEffectiveFiles()
+    {
+        CancelAllSuccessAutoRemove();
+        foreach (var item in EffectiveFiles.ToArray())
+        {
+            DetachFileItem(item);
+        }
+        EffectiveFiles.Clear();
+        SyncEffectivePictureItems();
+        NotifyFormValueChanged(EffectiveFiles);
+    }
+
+    private void SyncAppendContentItem()
+    {
+        _appendContentItem.Content                    = TriggerContent;
+        _appendContentItem.ContentTemplate            = TriggerContentTemplate;
+        _appendContentItem.HorizontalContentAlignment = HorizontalContentAlignment;
+        _appendContentItem.VerticalContentAlignment   = VerticalContentAlignment;
+        _appendContentItem.IsVisible                  = TriggerContent is not null;
+    }
+
+    private void SyncEffectivePictureItems()
+    {
+        _effectivePictureItems.Clear();
+        foreach (var item in EffectiveFiles)
+        {
+            _effectivePictureItems.Add(item);
+        }
+        _effectivePictureItems.Add(_appendContentItem);
+    }
+
+    private void SyncEffectivePictureItems(NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                InsertEffectivePictureItems(e.NewItems, e.NewStartingIndex);
+                break;
+            case NotifyCollectionChangedAction.Remove:
+                RemoveEffectivePictureItems(e.OldItems);
+                break;
+            case NotifyCollectionChangedAction.Replace:
+                RemoveEffectivePictureItems(e.OldItems);
+                InsertEffectivePictureItems(e.NewItems, e.NewStartingIndex);
+                break;
+            case NotifyCollectionChangedAction.Move:
+                RemoveEffectivePictureItems(e.OldItems);
+                InsertEffectivePictureItems(e.NewItems, e.NewStartingIndex);
+                break;
+            default:
+                SyncEffectivePictureItems();
+                break;
+        }
+    }
+
+    private void InsertEffectivePictureItems(IList? items, int index)
+    {
+        if (items is null)
+        {
+            return;
+        }
+
+        var insertIndex = index;
+        foreach (var item in items.OfType<UploadFileItem>())
+        {
+            if (insertIndex < 0)
+            {
+                insertIndex = EffectiveFiles.IndexOf(item);
+            }
+            InsertEffectivePictureItem(item, insertIndex);
+            insertIndex++;
+        }
+    }
+
+    private void InsertEffectivePictureItem(UploadFileItem item, int index)
+    {
+        if (_effectivePictureItems.Contains(item))
+        {
+            return;
+        }
+
+        var appendIndex = EnsureAppendContentItem();
+        var insertIndex = Math.Clamp(index, 0, appendIndex);
+        _effectivePictureItems.Insert(insertIndex, item);
+    }
+
+    private void RemoveEffectivePictureItems(IList? items)
+    {
+        if (items is null)
+        {
+            return;
+        }
+
+        foreach (var item in items.OfType<UploadFileItem>())
+        {
+            RemoveEffectivePictureItem(item);
+        }
+    }
+
+    private void RemoveEffectivePictureItem(UploadFileItem item)
+    {
+        _effectivePictureItems.Remove(item);
+        EnsureAppendContentItem();
+    }
+
+    private int EnsureAppendContentItem()
+    {
+        var appendIndex = _effectivePictureItems.IndexOf(_appendContentItem);
+        if (appendIndex >= 0)
+        {
+            return appendIndex;
+        }
+
+        _effectivePictureItems.Add(_appendContentItem);
+        return _effectivePictureItems.Count - 1;
+    }
+
+    private bool IsImageFile(UploadFileInfo file)
+    {
+        if (IsImageFilePredicate is not null)
+        {
+            return IsImageFilePredicate.Invoke(file);
+        }
+
+        var extension = System.IO.Path.GetExtension(file.FilePath.LocalPath);
+        return !string.IsNullOrEmpty(extension) && ImageExtensionRegex.IsMatch(extension);
+    }
+
+    private static UploadFileInfo CreateUploadFileInfo(UploadFileItem item)
+    {
+        return new UploadFileInfo(
+            item.Name ?? string.Empty,
+            item.Path ?? new Uri("file:///", UriKind.Absolute),
+            item.Size);
+    }
+
+    private void UpdateTaskRunning()
+    {
+        var isTaskRunning = EffectiveFiles.Any(file => file.Status == FileUploadStatus.Uploading);
+        if (IsTaskRunning != isTaskRunning)
+        {
+            SetCurrentValue(IsTaskRunningProperty, isTaskRunning);
+        }
+    }
+
+    private void CancelUploadQueue(Guid id)
+    {
+        var task = _uploadQueue.CancelAsync(id);
+        if (!task.IsCompletedSuccessfully)
+        {
+            _ = ObserveUploadQueueTaskAsync(task);
+        }
+    }
+
+    private void CancelAllUploadQueue()
+    {
+        var task = _uploadQueue.CancelAllAsync();
+        if (!task.IsCompletedSuccessfully)
+        {
+            _ = ObserveUploadQueueTaskAsync(task);
+        }
+    }
+
+    private static async Task ObserveUploadQueueTaskAsync(Task task)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Upload queue cancellation failed: {ex.Message}");
+        }
+    }
+
+    private void RunOnUiThread(Action action)
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            Dispatcher.Post(action);
+        }
+    }
 }

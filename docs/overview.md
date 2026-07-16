@@ -39,6 +39,7 @@ docs/
 - [modules/desktop-controls-datagrid/overview.md](modules/desktop-controls-datagrid/overview.md) - `AtomUI.Desktop.Controls.DataGrid`
 - [modules/desktop-controls-colorpicker/overview.md](modules/desktop-controls-colorpicker/overview.md) - `AtomUI.Desktop.Controls.ColorPicker`
 - [modules/generator/overview.md](modules/generator/overview.md) - `AtomUI.Generator`
+- [modules/toolkits-gallery-base/overview.md](modules/toolkits-gallery-base/overview.md) - `AtomUI.Toolkits.GalleryBase`
 - [modules/icons/overview.md](modules/icons/overview.md) - 图标相关项目
 - [modules/fonts/overview.md](modules/fonts/overview.md) - 字体相关项目
 
@@ -49,7 +50,12 @@ docs/
 - [AsyncLoadingArchitecture.md](AsyncLoadingArchitecture.md) - 异步加载体系
 - [FilteringArchitecture.md](FilteringArchitecture.md) - 过滤体系
 - [PopupAnchorScopeGuide.md](PopupAnchorScopeGuide.md) - Popup Anchor 作用域检查
+- [modules/controls-shared/responsive-system.md](modules/controls-shared/responsive-system.md) - 响应式机制设计
 - [engineering/aot-programming-guidelines.md](engineering/aot-programming-guidelines.md) - AtomUI AOT 编程规范
+- [engineering/agent-guidelines.md](engineering/agent-guidelines.md) - AI 协作与修复约束
+- [engineering/changelog-guidelines.md](engineering/changelog-guidelines.md) - Changelog 维护规范
+- [engineering/compiler-diagnostics-guidelines.md](engineering/compiler-diagnostics-guidelines.md) - 编译期诊断规范
+- [engineering/gallery-aot-release-workflow.md](engineering/gallery-aot-release-workflow.md) - Gallery NativeAOT 发布 workflow 维护说明
 - [engineering/windows-native-aot-publish.md](engineering/windows-native-aot-publish.md) - Windows 11 Gallery Native AOT 发布维护手册
 - [engineering/linux-native-aot-publish.md](engineering/linux-native-aot-publish.md) - Linux Gallery Native AOT 发布维护手册
 - [modules/native/architecture.md](modules/native/architecture.md) - Native 项目架构

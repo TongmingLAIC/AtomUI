@@ -1,8 +1,12 @@
+using System.Threading;
 using Avalonia;
 using Avalonia.Headless;
-using System.Threading;
+using AtomUI;
+using AtomUI.Desktop.Controls;
+using Xunit;
 
 [assembly: AvaloniaTestApplication(typeof(AtomUIGallery.Tests.TestAppBuilder))]
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace AtomUIGallery.Tests;
 
@@ -30,4 +34,17 @@ public static class TestAppBuilder
     }
 }
 
-internal sealed class TestApplication : Application;
+internal sealed class TestApplication : Application
+{
+    public override void Initialize()
+    {
+        this.UseAtomUI(builder =>
+        {
+            builder.UseDesktopControls();
+            builder.UseDesktopExtras();
+            builder.UseDesktopColorPicker();
+            builder.UseDesktopDataGrid();
+            builder.UseGalleryControls();
+        });
+    }
+}

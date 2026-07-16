@@ -12,7 +12,6 @@ namespace AtomUI.Desktop.Controls;
 internal class ButtonToken : AbstractControlDesignToken
 {
     public const string ID = "Button";
-    public static readonly ControlTokenResourceScopeProvider ScopeProvider = new(ID);
     
     /// <summary>
     /// 文字字重
@@ -217,6 +216,11 @@ internal class ButtonToken : AbstractControlDesignToken
     public Thickness IconMargin { get; set; }
 
     /// <summary>
+    /// 位于内容右侧的 Icon 外边距
+    /// </summary>
+    public Thickness IconEndMargin { get; set; }
+
+    /// <summary>
     /// 按钮组边框颜色
     /// </summary>
     public Color GroupBorderColor { get; set; }
@@ -400,7 +404,8 @@ internal class ButtonToken : AbstractControlDesignToken
         IconSize   = SharedToken.IconSize;
         IconSizeLG = SharedToken.IconSize;
 
-        IconMargin = new Thickness(0, 0, SharedToken.UniformlyPaddingXXS, 0);
+        IconMargin    = new Thickness(0, 0, SharedToken.UniformlyPaddingXXS, 0);
+        IconEndMargin = new Thickness(SharedToken.UniformlyPaddingXXS, 0, 0, 0);
 
         IconOnyPadding   = new Thickness(Math.Max((controlHeight - ContentLineHeight) / 2 - lineWidth, 0));
         IconOnyPaddingLG = new Thickness(Math.Max((controlHeightLG - ContentLineHeightLG) / 2 - lineWidth, 0));

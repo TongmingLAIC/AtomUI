@@ -1,16 +1,47 @@
 using AtomUI.Theme.Language;
-using AtomUIGallery.Localization;
 
 namespace AtomUIGallery.ShowCases.Grid;
 
 [LanguageProvider(LanguageCode.en_US, GridShowCase.LanguageId)]
-internal partial class en_US : LanguageProvider
+internal partial class en_US
 {
     public const string ScenarioBasic = "Basic";
     public const string ScenarioSpacing = "Spacing";
     public const string ScenarioAlignment = "Alignment";
     public const string ScenarioOrder = "Order";
     public const string ScenarioColInfo = "ColInfo";
+    public const string ScenarioExamples = "Examples";
+    public const string ScenarioApi = "API";
+    public const string ScenarioDesignToken = "Design Token";
+    public const string PageSubtitle = "Build responsive 24-column layouts with rows and columns.";
+    public const string PageDescription = "Grid provides row gutters, alignment, offsets, ordering, and breakpoint-specific column sizing for application layouts.";
+    public const string ComponentCategory = "Layout";
+    public const string ComponentStatusStable = "Stable";
+    public const string ApiColumnProperty = "Property";
+    public const string ApiColumnDescription = "Description";
+    public const string ApiColumnType = "Type";
+    public const string ApiColumnDefault = "Default";
+    public const string ApiPropertyRowGutter = "Sets horizontal and vertical spacing between grid columns and wrapped rows.";
+    public const string ApiPropertyRowJustify = "Distributes columns along the row's main axis.";
+    public const string ApiPropertyRowJustifyInfo = "Provides breakpoint-specific main-axis distribution.";
+    public const string ApiPropertyRowAlign = "Aligns columns on the row's cross axis.";
+    public const string ApiPropertyRowAlignInfo = "Provides breakpoint-specific cross-axis alignment.";
+    public const string ApiPropertyRowIsWrapped = "Controls whether columns wrap to the next line when the row is full.";
+    public const string ApiPropertyColSpan = "Sets how many units the column occupies in the 24-column grid.";
+    public const string ApiPropertyColFlex = "Sets flex growth, shrink, and basis behavior for filling remaining row space.";
+    public const string ApiPropertyColOffset = "Moves the column to the right by grid units.";
+    public const string ApiPropertyColPush = "Moves the column forward visually by grid units.";
+    public const string ApiPropertyColPull = "Moves the column backward visually by grid units.";
+    public const string ApiPropertyColOrder = "Controls the visual order of a column inside the row.";
+    public const string ApiPropertyColBreakpoints = "Provides breakpoint-specific flex, span, offset, push, pull, and order overrides.";
+    public const string ApiPropertyColInfo = "Reusable responsive column configuration object.";
+    public const string TokenColumnToken = "Token";
+    public const string TokenColumnDescription = "Description";
+    public const string TokenColumnScope = "Scope";
+    public const string TokenColumnStatus = "Status";
+    public const string TokenScopeComponent = "Component";
+    public const string TokenStatusNotApplicable = "Not applicable";
+    public const string TokenNameNoComponentToken = "Grid has no component-specific design tokens; it uses shared layout, spacing, and border tokens through its child content.";
 
     public const string BasicGridTitle = "Basic Grid";
     public const string BasicGridDescription = "Basic 24-column layout.";
@@ -26,6 +57,8 @@ internal partial class en_US : LanguageProvider
     public const string AlignDescription = "Sub-element alignment on the cross axis.";
     public const string OrderTitle = "Order";
     public const string OrderDescription = "Change column order.";
+    public const string FlexTitle = "Flex";
+    public const string FlexDescription = "Fill remaining row space with fixed basis, auto, and responsive flex columns.";
     public const string ColInfoTitle = "ColInfo";
     public const string ColInfoDescription = "Use ColInfo for responsive overrides.";
     public const string P2TextCol = "col";
@@ -61,6 +94,15 @@ internal partial class en_US : LanguageProvider
     public const string P2TextN4ColOrderResponsive = "4 col-order-responsive";
     public const string P2TextN2ColOrderResponsive = "2 col-order-responsive";
     public const string P2TextN1ColOrderResponsive = "1 col-order-responsive";
+    public const string P2TextPercentageColumns = "Percentage columns";
+    public const string P2TextFillRest = "Fill rest";
+    public const string P2TextResponsiveFlex = "Responsive flex";
+    public const string P2TextColFlex2 = "2 / 5";
+    public const string P2TextColFlex3 = "3 / 5";
+    public const string P2TextCol100Px = "100px";
+    public const string P2TextColFlexAuto = "auto";
+    public const string P2TextColFlexFill = "fill rest";
+    public const string P2TextColFlexResponsive = "responsive flex";
     public const string P2TextBaseMdLgOverrides = "Base + Md/Lg overrides";
     public const string P2TextColN1WithColinfo = "col-1 with ColInfo";
     public const string P2TextColN2WithColinfo = "col-2 with ColInfo";
@@ -72,5 +114,4 @@ internal partial class en_US : LanguageProvider
     public const string P2TextResColN3 = "res-col-3";
     public const string P2TextResColN4 = "res-col-4";
 
-    protected override Type GetResourceKindType() => typeof(GridShowCaseLangResourceKind);
 }
